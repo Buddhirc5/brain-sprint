@@ -3,10 +3,12 @@
    - Wren the explorer: a girl in a big blue hooded cloak, flipping a gold coin
    - Puff the bunny: a round, fluffy bunny hugging a little treasure chest
    Same coordinate system as the Chibi characters (full 120×162, bust 14 12 92 92),
-   so they drop into every avatar, leaderboard and live-game spot.
+   so they drop into every avatar, leaderboard and live-game spot, and wear store items too.
    ===================================================================== */
-import type { CSSProperties } from "react";
-import type { Mood } from "./Chibi";
+import type { CSSProperties, ReactNode } from "react";
+import { accessories, type Mood } from "./Chibi";
+import type { Equipped } from "../types";
+import { BG_FILL } from "../lib/catalog";
 
 export type SpecialKey = "explorer" | "puff";
 export const SPECIALS: { key: SpecialKey; name: string; bg: string }[] = [
@@ -31,7 +33,7 @@ function mouthFor(mood: Mood, cx: number, cy: number) {
   );
 }
 
-function Explorer({ uid, mood }: { uid: string; mood: Mood }) {
+function Explorer({ uid, mood, acc }: { uid: string; mood: Mood; acc?: ReactNode }) {
   const cheer = mood === "cheer" || mood === "happy";
   return (
     <g className="body">
@@ -74,6 +76,7 @@ function Explorer({ uid, mood }: { uid: string; mood: Mood }) {
         <ellipse cx="44" cy="74" rx="4.5" ry="2.8" fill="#FF7A8A" opacity=".5" />
         <ellipse cx="76" cy="74" rx="4.5" ry="2.8" fill="#FF7A8A" opacity=".5" />
         {mouthFor(mood, 60, 76)}
+        {acc && <g transform="translate(60 65) scale(0.78) translate(-60 -63)">{acc}</g>}
       </g>
       {/* hand with a spinning coin */}
       <g className={cheer ? "sp-lift" : ""}>
@@ -91,7 +94,7 @@ function Explorer({ uid, mood }: { uid: string; mood: Mood }) {
   );
 }
 
-function Puff({ uid, mood }: { uid: string; mood: Mood }) {
+function Puff({ uid, mood, acc }: { uid: string; mood: Mood; acc?: ReactNode }) {
   const sad = mood === "sad";
   return (
     <g className="body">
@@ -136,6 +139,7 @@ function Puff({ uid, mood }: { uid: string; mood: Mood }) {
         <ellipse cx="78" cy="104" rx="6" ry="3.6" fill="#FF8FA6" opacity=".55" />
         <path d="M58.5 99 L61.5 99 L60 101 Z" fill="#FF7A95" />
         {mouthFor(mood, 60, 104)}
+        {acc && <g transform="translate(60 94) scale(0.9) translate(-60 -63)">{acc}</g>}
       </g>
       {/* treasure chest */}
       <g className="sp-chest">
@@ -157,8 +161,11 @@ function Puff({ uid, mood }: { uid: string; mood: Mood }) {
   );
 }
 
-export function SpecialChar({ kind, uid, mood, variant, still, size, className = "", style, title }: { kind: SpecialKey; uid: string; mood: Mood; variant: "full" | "bust"; still?: boolean; size?: number; className?: string; style?: CSSProperties; title?: string }) {
-  const bg = SPECIALS.find((s) => s.key === kind)!.bg;
+export function SpecialChar({ kind, uid, mood, variant, still, size, className = "", style, title, equipped = {} }: { kind: SpecialKey; uid: string; mood: Mood; variant: "full" | "bust"; still?: boolean; size?: number; className?: string; style?: CSSProperties; title?: string; equipped?: Equipped }) {
+  // store items: the same hats, glasses and earrings as everyone else, fitted to this character's head
+  const acc = accessories(equipped, uid);
+  const fill = equipped.bg ? BG_FILL[equipped.bg] : undefined;
+  const bg = fill ? `url(#${uid}b)` : SPECIALS.find((s) => s.key === kind)!.bg;
   const vb = variant === "bust" ? "14 12 92 92" : "0 0 120 162";
   const w = size ?? (variant === "bust" ? 48 : 120);
   const h = variant === "bust" ? w : Math.round((w * 162) / 120);
@@ -176,14 +183,28 @@ export function SpecialChar({ kind, uid, mood, variant, still, size, className =
       aria-hidden={title ? undefined : true}
     >
       <defs>
+        {fill && (
+          <linearGradient id={`${uid}b`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor={fill[0]} />
+            <stop offset="1" stopColor={fill[1]} />
+          </linearGradient>
+        )}
         <clipPath id={`${uid}c`}>
           <circle cx="60" cy="58" r="46" />
         </clipPath>
       </defs>
       {variant === "bust" && <circle cx="60" cy="58" r="46" fill={bg} />}
+      {variant === "bust" && equipped.bg === "bg-galaxy" && (
+        <g fill="#FFFFFF" opacity=".8">
+          <circle cx="30" cy="30" r="1.2" />
+          <circle cx="88" cy="24" r="1" />
+          <circle cx="96" cy="70" r="1.4" />
+          <circle cx="22" cy="74" r="1" />
+        </g>
+      )}
       {variant === "full" && <ellipse cx="60" cy="156" rx="32" ry="4.5" fill="#000" opacity=".12" className="shadow" />}
       <g clipPath={variant === "bust" ? `url(#${uid}c)` : undefined}>
-        <g transform={lift}>{kind === "explorer" ? <Explorer uid={uid} mood={mood} /> : <Puff uid={uid} mood={mood} />}</g>
+        <g transform={lift}>{kind === "explorer" ? <Explorer uid={uid} mood={mood} acc={acc.length ? acc : undefined} /> : <Puff uid={uid} mood={mood} acc={acc.length ? acc : undefined} />}</g>
       </g>
     </svg>
   );
