@@ -391,7 +391,7 @@ function Lobby({ v, pub, onKick }: { v: LiveHostView; pub: TenantPublic; onKick:
         </div>
         {v.players.length === 0 ? (
           <div className="lv-waiting">
-            <Mascot mood="think" size={130} />
+            <span className="lv-duo"><Mascot who="explorer" mood="think" size={110} /><Mascot who="puff" mood="idle" size={110} /></span>
             <p>Waiting for players to join…</p>
           </div>
         ) : (
@@ -466,7 +466,10 @@ function QuestionView({ v, left }: { v: LiveHostView; left: number }) {
         {q?.img ? (
           <img className="lv-qimg" src={q.img} alt="" />
         ) : (
-          <Mascot mood={reveal ? (pct >= 50 ? "cheer" : "sad") : "think"} size={170} className="lv-mascot" />
+          <span className="lv-mascot" aria-hidden="true">
+            <Mascot who="explorer" mood={reveal ? (pct >= 50 ? "cheer" : "sad") : "think"} size={150} />
+            <Mascot who="puff" mood={reveal ? (pct >= 50 ? "cheer" : "sad") : "idle"} size={150} />
+          </span>
         )}
         <div className="lv-answered">
           <b className="num">{reveal ? `${right}/${n}` : v.answered}</b>

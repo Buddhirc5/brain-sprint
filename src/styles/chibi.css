@@ -25,8 +25,6 @@
 .chibi .arm { transform-box: view-box; }
 .chibi .arm-l { transform-origin: 38px 97px; }
 .chibi .arm-r { transform-origin: 82px 97px; }
-.mascot .arm-l { transform-origin: 26px 74px; }
-.mascot .arm-r { transform-origin: 94px 74px; }
 
 /* Special characters (components/Specials.tsx) */
 .special .sp-cloak { transform-box: view-box; transform-origin: 60px 60px; animation: sp-sway 3.4s ease-in-out infinite; }
