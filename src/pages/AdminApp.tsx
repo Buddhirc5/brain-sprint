@@ -4,7 +4,7 @@ import "../styles/admin.css";
 import { useCallback, useEffect, useState } from "react";
 import { TenantProvider } from "../app/ctx";
 import { useApi, errMsg } from "../app/ApiCtx";
-import { AdminSignIn, MfaGate } from "../components/auth";
+import { AdminSignIn, MfaGate, SandboxSignInNote } from "../components/auth";
 import { Admin } from "../admin/Admin";
 import { Loading } from "../App";
 import { Gone } from "./TenantApp";
@@ -58,6 +58,7 @@ export function AdminApp({ slug, tab }: { slug: string; tab?: string }) {
     return (
       <div className="phone" style={{ paddingTop: 24 }}>
         <Brand name={pub.branding.productName} company={pub.name} logo={pub.branding.logo} />
+        <SandboxSignInNote back={`#/t/${slug}/admin`} />
         <AdminSignIn method={pub.signIn.adminAuth} redirectTo={absUrl({ r: "admin", slug })} note="For admins invited by your company. Players don't need to sign in here." />
         {isDemo(api) && <p className="banner blue">{DEMO_HINT(slug)}</p>}
         <p className="fine" style={{ justifySelf: "center", textAlign: "center" }}>

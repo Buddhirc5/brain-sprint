@@ -13,7 +13,7 @@ import { ApiError } from "../api/Api";
 import { useApi, errMsg } from "../app/ApiCtx";
 import { absUrl, nav } from "../app/router";
 import { applyBranding } from "../app/theme";
-import { AdminSignIn } from "../components/auth";
+import { AdminSignIn, SandboxSignInNote } from "../components/auth";
 import { Icon, Modal } from "../components/ui";
 import { Mascot } from "../components/Chibi";
 import { Loading } from "../App";
@@ -55,6 +55,7 @@ export function SuperApp({ tab }: { tab?: string }) {
     return (
       <div className="su-gate">
         <GateHead />
+        <SandboxSignInNote back="#/super" />
         <AdminSignIn method="password" title="Super admin" redirectTo={absUrl({ r: "super" })} note="Only for the people who run this Ant Arena service. Company admins sign in on their own company's page." />
         {isDemo(api) && (
           <p className="banner blue">

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useApi, errMsg } from "../app/ApiCtx";
 import { isDemo } from "../api/demo/guard";
 import { Icon } from "./ui";
+import { HAS_LIVE_BACKEND, exitSandbox } from "../app/sandbox";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -245,5 +246,20 @@ export function MfaGate({ enrolled, onDone }: { enrolled: boolean; onDone: () =>
       {err && <p className="err" role="alert">{err}</p>}
       <button className="btn primary block" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify"}</button>
     </form>
+  );
+}
+
+/**
+ * On a live site, a browser that entered the demo keeps using the in-browser demo until it exits,
+ * so real accounts get "Email or password is wrong" there. Say so, with a one-click way out.
+ */
+export function SandboxSignInNote({ back }: { back: string }) {
+  const { api } = useApi();
+  if (!HAS_LIVE_BACKEND || !isDemo(api)) return null;
+  return (
+    <p className="banner" role="note">
+      <b>You're in the demo sandbox</b>, so only the demo accounts below work here. Signing in with your real account?{" "}
+      <button type="button" className="link" onClick={() => exitSandbox(back)}>Exit the demo</button>
+    </p>
   );
 }

@@ -133,8 +133,15 @@ class SupabaseApi implements Api {
     };
   }
   async signInPassword(email: string, password: string) {
-    const { error } = await this.sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-    if (error) throw authError(error);
+    const e = email.trim().toLowerCase();
+    const { error } = await this.sb.auth.signInWithPassword({ email: e, password });
+    if (error) {
+      const ae = authError(error);
+      // the demo accounts (…@demo.app, …@x.demo) only exist inside the in-browser demo
+      if (ae.code === "auth" && /@(demo\.app|[a-z0-9-]+\.demo)$/.test(e))
+        throw new ApiError("auth", "That's a demo account — it only works inside the demo. Open the demo from \"Try it free\", or sign in with your real email.");
+      throw ae;
+    }
   }
   async signUpPassword(email: string, password: string) {
     const e = email.trim().toLowerCase();
