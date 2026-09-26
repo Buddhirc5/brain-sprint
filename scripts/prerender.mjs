@@ -27,20 +27,20 @@ const ld = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Brain Sprint",
+    name: "Ant Arena",
     ...(site ? { url: site + "/", logo: site + "/icon-512.png" } : {}),
     slogan: "Learning your team actually plays.",
   },
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Brain Sprint",
+    name: "Ant Arena",
     ...(site ? { url: site + "/" } : {}),
   },
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Brain Sprint",
+    name: "Ant Arena",
     applicationCategory: "BusinessApplication",
     applicationSubCategory: "Employee training",
     operatingSystem: "Web browser (iOS, Android, Windows, macOS)",

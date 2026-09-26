@@ -6,7 +6,7 @@ import type { Branding, Features, Game, Labels, OrgConfig, Poll, PollResponse, S
 import { answerPoints, shareMs } from "../lib/scoring";
 
 export const DEFAULT_BRANDING: Branding = {
-  productName: "Brain Sprint",
+  productName: "Ant Arena",
   tagline: "Daily quizzes, live games and polls for your team",
   primary: "#C6F432",
   accent: "#FF5A1F",

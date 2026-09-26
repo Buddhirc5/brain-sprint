@@ -208,7 +208,7 @@ class SupabaseApi implements Api {
     // drop half-finished enrolments so the user can start over
     const fs = await this.sb.auth.mfa.listFactors();
     for (const f of fs.data?.all || []) if (f.factor_type === "totp" && f.status !== "verified") await this.sb.auth.mfa.unenroll({ factorId: f.id });
-    const { data, error } = await this.sb.auth.mfa.enroll({ factorType: "totp", friendlyName: `Brain Sprint ${new Date().toISOString().slice(0, 16)}` });
+    const { data, error } = await this.sb.auth.mfa.enroll({ factorType: "totp", friendlyName: `Ant Arena ${new Date().toISOString().slice(0, 16)}` });
     if (error || !data) throw authError(error);
     return { factorId: data.id, qr: qrToDataUrl(data.totp.qr_code), secret: data.totp.secret };
   }

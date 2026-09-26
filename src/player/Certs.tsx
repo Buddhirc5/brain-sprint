@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useApp } from "../app/ctx";
-import { Sprinty } from "../components/Chibi";
+import { Mascot } from "../components/Chibi";
 import { Icon } from "../components/ui";
 import { isOpen, isScheduled, sortGames } from "../lib/games";
 import { limitMs } from "../lib/scoring";
@@ -23,7 +23,7 @@ export function Certs() {
           <h1>Get certified</h1>
           <p>Timed exams with a pass mark. Answers stay hidden until you finish. Pass to earn a certificate you can download.</p>
         </div>
-        <Sprinty mood="think" size={96} />
+        <Mascot mood="think" size={96} />
       </section>
       {!features.cert ? (
         <div className="empty">Certifications are turned off.</div>

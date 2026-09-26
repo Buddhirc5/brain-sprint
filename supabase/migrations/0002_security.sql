@@ -1,5 +1,5 @@
 -- =====================================================================
--- Brain Sprint — 0002 security: RLS on every table, role helpers, grants
+-- Ant Arena — 0002 security: RLS on every table, role helpers, grants
 --
 -- Model
 --   • The browser NEVER writes tables directly. INSERT/UPDATE/DELETE are

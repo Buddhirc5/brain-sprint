@@ -7,7 +7,7 @@ import { useTenantPub } from "../pages/useTenantPub";
 import { href, nav } from "../app/router";
 import { isDemo } from "../api/demo/guard";
 import { ApiError } from "../api/Api";
-import { Chibi, Sprinty } from "../components/Chibi";
+import { Chibi, Mascot } from "../components/Chibi";
 import { CountUp, Icon, confetti } from "../components/ui";
 import { Loading } from "../App";
 import type { LivePlayer, LiveSession, Player, TenantPublic } from "../types";
@@ -105,7 +105,7 @@ function PinEntry({ initial, err, busy, onSubmit }: { initial?: string; err: str
           if (pin.length === 6) onSubmit(pin);
         }}
       >
-        <Sprinty mood="happy" size={120} />
+        <Mascot mood="happy" size={120} />
         <h1>Join a live game</h1>
         <label className="sr" htmlFor="lv-pin">
           Game PIN
@@ -152,7 +152,7 @@ function Msg({ title, text, children }: { title: string; text: string; children?
   return (
     <div className="lv-phone">
       <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-        <Sprinty mood="sad" size={110} />
+        <Mascot mood="sad" size={110} />
         <h2>{title}</h2>
         <p className="fine">{text}</p>
         {children}
@@ -279,7 +279,7 @@ function JoinFlow({ found, pub, onLeave }: { found: Found; pub: TenantPublic; on
     <div className="lv-phone lv-enter">
       {head}
       <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-        <Sprinty mood="think" size={110} />
+        <Mascot mood="think" size={110} />
         <h2>Sign in to {pub.branding.productName} first</h2>
         <p className="fine">
           This game is for {pub.name} players. Sign in with your player card, then come back here — the PIN is <b className="num">{found.pin}</b>.
@@ -437,7 +437,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
               <em>{TILES[tileOf(q, pi)].letter}</em>
             </span>
           ) : (
-            <Sprinty mood="think" size={120} />
+            <Mascot mood="think" size={120} />
           )}
           <h1>Locked in!</h1>
           <p>Fingers crossed… eyes on the big screen.</p>
@@ -447,7 +447,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
     } else if (timeUp) {
       body = (
         <div className="lv-pmsg">
-          <Sprinty mood="sad" size={120} />
+          <Mascot mood="sad" size={120} />
           <h1>Time's up!</h1>
           <p>Be quicker on the next one.</p>
         </div>

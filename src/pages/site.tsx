@@ -124,7 +124,7 @@ export function SiteFooter() {
         </nav>
       ))}
       <div className="h-foot-copy">
-        <span>© {new Date().getFullYear()} Brain Sprint · Made for teams that like to play</span>
+        <span>© {new Date().getFullYear()} Ant Arena · Made for teams that like to play</span>
         <button type="button" className="h-totop" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Back to top ↑</button>
       </div>
     </footer>

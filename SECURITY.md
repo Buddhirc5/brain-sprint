@@ -1,4 +1,4 @@
-# Brain Sprint — security controls
+# Ant Arena — security controls
 
 Built for regulated clients such as banks. The production controls are enforced in Postgres (`supabase/migrations`), never only in the browser. The in-browser demo mirrors the same rules.
 

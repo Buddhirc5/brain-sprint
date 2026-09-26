@@ -6,7 +6,7 @@ import { useApi } from "../app/ApiCtx";
 import { absUrl, href } from "../app/router";
 import { qrDataUrl } from "../lib/qr";
 import { Icon } from "../components/ui";
-import { Sprinty } from "../components/Chibi";
+import { Mascot } from "../components/Chibi";
 import { Loading } from "../App";
 import { useTenantPub } from "../pages/useTenantPub";
 import type { Poll, PollResponse, Role, TenantPublic } from "../types";
@@ -51,7 +51,7 @@ function Gate({ title, text, children }: { title: string; text: string; children
   return (
     <div className="phone" style={{ paddingTop: 40 }}>
       <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-        <Sprinty mood="think" size={110} />
+        <Mascot mood="think" size={110} />
         <h2>{title}</h2>
         <p className="fine">{text}</p>
         {children}
@@ -177,7 +177,7 @@ function Stage({ pub, pollId }: { pub: TenantPublic; pollId: string }) {
       <main className="pl-main">
         {!slide ? (
           <div className="pl-empty">
-            <Sprinty mood="think" size={140} />
+            <Mascot mood="think" size={140} />
             <b>This poll has no slides yet.</b>
           </div>
         ) : (

@@ -1,10 +1,10 @@
 /* =====================================================================
-   The public landing page (#/): what Brain Sprint is and why a company
+   The public landing page (#/): what Ant Arena is and why a company
    should buy it. Trying it lives on #/experience; joining a game, voting
    and company sign-in live on #/signin (both in the top bar).
    ===================================================================== */
 import { useEffect, useState, type ReactNode } from "react";
-import { Chibi, Sprinty } from "../components/Chibi";
+import { Chibi, Mascot } from "../components/Chibi";
 import { Icon } from "../components/ui";
 import { CONTACT_EMAIL, SiteFooter, SiteHeader } from "./site";
 import type { Section } from "../app/router";
@@ -62,7 +62,7 @@ export function Home({ section }: { section?: Section } = {}) {
 
 function SalesCta({ className = "btn white" }: { className?: string }) {
   return CONTACT_EMAIL ? (
-    <a className={className} href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Brain Sprint demo")}`}>Book a demo</a>
+    <a className={className} href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Ant Arena demo")}`}>Book a demo</a>
   ) : (
     <a className={className} href="#/features">See the features</a>
   );
@@ -118,7 +118,7 @@ function Hero() {
         </div>
         <div className="h-lineup">
           <Chibi look={1} variant="full" mood="happy" size={132} />
-          <Sprinty mood="cheer" size={150} />
+          <Mascot mood="cheer" size={150} />
           <Chibi look={8} variant="full" mood="idle" size={132} />
         </div>
       </div>
@@ -180,9 +180,9 @@ function BeforeAfter() {
           <ul>{before.map((x) => <li key={x}><Icon.close /> {x}</li>)}</ul>
         </div>
         <div className="h-ba-col h-ba-after">
-          <h3>With Brain Sprint</h3>
+          <h3>With Ant Arena</h3>
           <ul>{after.map((x) => <li key={x}><Icon.check /> {x}</li>)}</ul>
-          <Sprinty mood="cheer" size={96} />
+          <Mascot mood="cheer" size={96} />
         </div>
       </div>
     </section>

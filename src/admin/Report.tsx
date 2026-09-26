@@ -211,7 +211,7 @@ export function ReportView({ data: r, onClose, onDownload }: { data: ReportData;
               )) : <p className="rp-empty">Not enough answers yet.</p>}
             </div>
           </div>
-          <footer className="rp-foot"><span>Prepared for {r.by} · Made with Brain Sprint</span><span>Page 2</span></footer>
+          <footer className="rp-foot"><span>Prepared for {r.by} · Made with Ant Arena</span><span>Page 2</span></footer>
         </section>
       </div>
     </div>,

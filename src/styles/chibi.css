@@ -25,5 +25,5 @@
 .chibi .arm { transform-box: view-box; }
 .chibi .arm-l { transform-origin: 38px 97px; }
 .chibi .arm-r { transform-origin: 82px 97px; }
-.sprinty .arm-l { transform-origin: 26px 74px; }
-.sprinty .arm-r { transform-origin: 94px 74px; }
+.mascot .arm-l { transform-origin: 26px 74px; }
+.mascot .arm-r { transform-origin: 94px 74px; }

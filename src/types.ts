@@ -1,5 +1,5 @@
 /* =====================================================================
-   Brain Sprint — shared data model (multi-tenant, white-label).
+   Ant Arena — shared data model (multi-tenant, white-label).
    Each type maps to a table (see supabase/migrations). The browser never
    receives answer keys: players get questions only, and scoring happens
    on the server (Postgres functions), or inside the demo engine.
@@ -14,7 +14,7 @@ export type Role = "owner" | "admin" | "editor" | "host" | "viewer";
 
 /* ---------------- tenants & white-label ---------------- */
 export interface Branding {
-  productName: string; // shown in headers, e.g. "Brain Sprint" or "Harbor Academy"
+  productName: string; // shown in headers, e.g. "Ant Arena" or "Harbor Academy"
   tagline?: string;
   logo?: string; // data: URL (PNG/SVG/JPEG, ≤ 150 KB)
   primary: string; // main accent (buttons, highlights) — default neon lime

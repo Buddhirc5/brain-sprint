@@ -6,7 +6,7 @@ import { absUrl } from "../app/router";
 import { brandProblems, okHex } from "../app/theme";
 import { DEFAULT_BRANDING, LABELS, normalizeCfg } from "../api/engine";
 import { Icon, Modal, Seg } from "../components/ui";
-import { Sprinty } from "../components/Chibi";
+import { Mascot } from "../components/Chibi";
 import { mix } from "../lib/util";
 import { CopyField, SI, Toggle, ago, EMAIL_RE, slugProblem, useSuper, type TenantRow } from "./shared";
 
@@ -153,7 +153,7 @@ export function CompanyDetail({ id }: { id: string }) {
   if (!t)
     return (
       <div className="panel su-center-text" style={{ justifyItems: "center" }}>
-        <Sprinty mood="sad" size={90} />
+        <Mascot mood="sad" size={90} />
         <h2>Company not found</h2>
         <p className="fine">It may have been deleted.</p>
         <button className="btn primary small" onClick={() => go("companies")}>All companies</button>
@@ -561,7 +561,7 @@ export function BrandPreview({ b, labels, company }: { b: Branding; labels?: Lab
           Today's <span>sprint</span>
         </span>
         <span className="su-prev-sub">{b.tagline || "Daily quizzes, live games and polls"}</span>
-        <Sprinty size={60} still />
+        <Mascot size={60} still />
       </div>
       <div className="su-prev-card">
         <b>{labels?.battle || "Team Battle"}</b>
@@ -645,7 +645,7 @@ function BrandPanel({ t }: { t: TenantRow }) {
           {labelProb && <p className="err">{labelProb}</p>}
           <div className="row end">
             {dirty && <button className="btn ghost small" onClick={() => { setB({ ...DEFAULT_BRANDING, ...t.branding }); setL(t.labels); }}>Undo</button>}
-            <button className="btn ghost small" onClick={() => setB({ ...DEFAULT_BRANDING, productName: b.productName, tagline: b.tagline, logo: b.logo })}>Brain Sprint colours</button>
+            <button className="btn ghost small" onClick={() => setB({ ...DEFAULT_BRANDING, productName: b.productName, tagline: b.tagline, logo: b.logo })}>Ant Arena colours</button>
             <button className="btn primary small" disabled={!dirty || !!prob || !!labelProb || busy || !b.productName.trim()} onClick={() => void save(t.id, { branding: { ...b, productName: b.productName.trim() }, labels: l }, "Brand saved")}>
               Save brand
             </button>

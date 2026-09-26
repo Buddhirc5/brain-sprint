@@ -281,7 +281,7 @@ class DemoApi implements Api {
     });
     const code = await totp(secret);
     store.tx((db) => this.mail(db, u.email || "", "Demo only: the current authenticator code", { code }));
-    return { factorId: "totp", secret, qr: qrDataUrl(otpauthUrl(secret, u.email || "admin", "Brain Sprint")) };
+    return { factorId: "totp", secret, qr: qrDataUrl(otpauthUrl(secret, u.email || "admin", "Ant Arena")) };
   }
   async mfaVerify(_factorId: string, code: string) {
     const u = this.need();
@@ -780,7 +780,7 @@ class DemoApi implements Api {
     store.tx((db) => {
       this.req(db, tid, "admin");
       const t = db.tenants[tid];
-      t.branding = { ...DEFAULT_BRANDING, ...branding, productName: cleanText(branding.productName, 40) || "Brain Sprint" };
+      t.branding = { ...DEFAULT_BRANDING, ...branding, productName: cleanText(branding.productName, 40) || "Ant Arena" };
       t.labels = { ...LABELS[t.template], ...labels };
       this.logT(db, tid, { action: "Branding changed" });
     });
@@ -1458,7 +1458,7 @@ class DemoApi implements Api {
           db.t[id].keys[gid] = { gid, answers: { ...it.answers }, updatedAt: now };
         }
       }
-      this.mail(db, email, `You're the owner of ${name} on Brain Sprint. Open #/t/${slug}/admin and sign in with this email.`);
+      this.mail(db, email, `You're the owner of ${name} on Ant Arena. Open #/t/${slug}/admin and sign in with this email.`);
       this.logS(db, { action: "Company created", target: name, detail: `${slug} · owner ${email}` });
       this.logT(db, id, { action: "Company created", detail: `owner ${email}` });
       return structuredClone(t);

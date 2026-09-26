@@ -6,7 +6,7 @@ import { useAdmin } from "../admin/Admin";
 import { href } from "../app/router";
 import { blankPoll } from "../api/engine";
 import { Seg } from "../components/ui";
-import { Sprinty } from "../components/Chibi";
+import { Mascot } from "../components/Chibi";
 import { clamp, fmtDT, newId, randHex } from "../lib/util";
 import type { Poll, Slide, SlideResults, SlideType } from "../types";
 import { Ico, Results, SLIDE_TYPES, TYPE_META, TypeIcon, fetchResults, fmtCode, sampleResults, stageVars } from "./shared";
@@ -71,7 +71,7 @@ export function PollsTab() {
       </p>
       {!polls.length ? (
         <div className="empty stack" style={{ justifyItems: "center" }}>
-          <Sprinty mood="idle" size={100} />
+          <Mascot mood="idle" size={100} />
           <b>No polls yet.</b>
           {can("editor") && <span>Create one with “New poll”.</span>}
         </div>

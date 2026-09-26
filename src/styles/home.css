@@ -87,8 +87,8 @@
   .h-f1 { top: 190px; left: 10px; }
   .h-f2 { top: 250px; right: 20px; }
   .h-scribble { top: auto; bottom: 250px; left: 0; right: auto; font-size: 32px; }
-  .h-lineup .chibi:not(.sprinty) { width: 170px; height: auto; }
-  .h-lineup .sprinty { width: 190px; height: auto; }
+  .h-lineup .chibi:not(.mascot) { width: 170px; height: auto; }
+  .h-lineup .mascot { width: 190px; height: auto; }
 }
 
 /* three big actions */
@@ -208,8 +208,8 @@
   .h-stage { min-height: 230px; }
   .h-f1 { top: 40px; }
   .h-f2 { top: 88px; }
-  .h-lineup .chibi:not(.sprinty) { width: 112px; height: auto; }
-  .h-lineup .sprinty { width: 124px; height: auto; }
+  .h-lineup .chibi:not(.mascot) { width: 112px; height: auto; }
+  .h-lineup .mascot { width: 124px; height: auto; }
 }
 @media (max-width: 560px) {
   .h-feats { gap: 10px; }
@@ -249,7 +249,7 @@
 .h-ba-after { background: var(--ink); color: #fff; padding-right: 110px; }
 .h-ba-after h3 { color: var(--lime); }
 .h-ba-after li svg { background: var(--lime); color: var(--ink); }
-.h-ba-after .sprinty { position: absolute; right: 10px; bottom: 6px; }
+.h-ba-after .mascot { position: absolute; right: 10px; bottom: 6px; }
 @media (max-width: 480px) { .h-ba-after { padding-right: 22px; padding-bottom: 100px; } }
 
 .h-cases { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }

@@ -1,8 +1,8 @@
 /* =====================================================================
-   Brain Sprint logo.
-   Mark: Sprinty (the lime brain-bean mascot) in "game mode" — headset,
+   Ant Arena logo.
+   Mark: the lime brain-bean mascot in "game mode" — headset,
    controller and a gaming chair — drawn in the app's cartoon style.
-   Wordmark: BRAIN SPRINT set in a custom 5×7 pixel font (game-screen
+   Wordmark: ANT ARENA set in a custom 5×7 pixel font (game-screen
    feel), plus a small tagline. Animations are CSS only and switch off
    for people who prefer reduced motion (see styles/logo.css).
    ===================================================================== */
@@ -16,6 +16,7 @@ const LIME = "#C6F432";
 const GLYPHS: Record<string, string[]> = {
   A: ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
   B: ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
+  E: ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
   I: ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
   N: ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
   P: ["11110", "10001", "10001", "11110", "10000", "10000", "10000"],
@@ -47,13 +48,13 @@ function pixelPath(text: string, x0 = 0, y0 = 0): { d: string; w: number; letter
   return { d: all, w: x - x0 - 1, letters };
 }
 
-const WORD = pixelPath("BRAIN SPRINT");
+const WORD = pixelPath("ANT ARENA");
 
 /** Pixel wordmark (animated "power-on" per letter). */
 export function PixelWord({ height = 20, color = ORANGE, className = "" }: { height?: number; color?: string; className?: string }) {
   const w = WORD.w;
   return (
-    <svg className={`bs-word ${className}`} viewBox={`-0.5 -0.5 ${w + 1.5} 8.5`} height={height} width={(height * (w + 1.5)) / 8.5} role="img" aria-label="Brain Sprint">
+    <svg className={`bs-word ${className}`} viewBox={`-0.5 -0.5 ${w + 1.5} 8.5`} height={height} width={(height * (w + 1.5)) / 8.5} role="img" aria-label="Ant Arena">
       <g fill={INK} opacity=".22" transform="translate(.5 .6)">
         <path d={WORD.d} />
       </g>

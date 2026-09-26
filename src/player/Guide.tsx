@@ -1,5 +1,5 @@
 import { useApp } from "../app/ctx";
-import { Chibi, Sprinty } from "../components/Chibi";
+import { Chibi, Mascot } from "../components/Chibi";
 import { Icon, Speech } from "../components/ui";
 import { ITEM } from "../lib/catalog";
 import { answerPoints, levelStart, levelTitle, RULES } from "../lib/scoring";
@@ -50,7 +50,7 @@ export function Guide() {
           </h1>
           <p>Everything about {pub.branding.productName}{f.coins ? " — points, coins and the leaderboard" : " — points and the leaderboard"} — in two minutes.</p>
         </div>
-        <Sprinty mood="cheer" size={110} />
+        <Mascot mood="cheer" size={110} />
         <nav className="toc" aria-label="Guide sections">
           {toc.map(([id, l]) => (
             <a key={id} href={"#g-" + id} onClick={jump(id)}>
@@ -64,7 +64,7 @@ export function Guide() {
         <section className="g-sec" id="g-sprint">
         <Head n={num("sprint")} title="The daily sprint" color="lime" />
         <div className="g-talk">
-          <Sprinty mood="happy" size={64} />
+          <Mascot mood="happy" size={64} />
           <Speech tone="lime">New quizzes drop regularly — usually 1 to 5 questions. Each takes about a minute.</Speech>
         </div>
         <div className="rule-grid">
@@ -194,7 +194,7 @@ export function Guide() {
         <section className="g-sec" id="g-rewards">
         <Head n={num("rewards")} title="Rewards" color="orange" />
         <div className="g-talk">
-          <Sprinty mood="cheer" size={64} />
+          <Mascot mood="cheer" size={64} />
           <Speech tone="ink">Top players get recognition, announced in the Hall of Fame.</Speech>
         </div>
         <div className="rule-grid">

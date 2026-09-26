@@ -1,6 +1,6 @@
 {
-  "name": "Brain Sprint — learning games for teams",
-  "short_name": "Brain Sprint",
+  "name": "Ant Arena — learning games for teams",
+  "short_name": "Ant Arena",
   "description": "Daily quiz sprints, live quiz games, polls and certification for your team.",
   "start_url": "/",
   "display": "standalone",

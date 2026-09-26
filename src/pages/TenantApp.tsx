@@ -1,6 +1,6 @@
 import "../styles/admin.css";
 import { useApp, TenantProvider } from "../app/ctx";
-import { Sprinty } from "../components/Chibi";
+import { Mascot } from "../components/Chibi";
 import { LogoMark } from "../components/Logo";
 import { Welcome, Setup } from "../player/Setup";
 import { Lobby } from "../player/Lobby";
@@ -20,7 +20,7 @@ export function Gone({ title, text }: { title: string; text: string }) {
   return (
     <div className="phone" style={{ paddingTop: 40 }}>
       <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-        <Sprinty mood="sad" size={110} />
+        <Mascot mood="sad" size={110} />
         <h2>{title}</h2>
         <p className="fine">{text}</p>
         <a className="btn ghost small" href="#/">Home</a>
@@ -95,7 +95,7 @@ function PlayerShell() {
       {view.v !== "play" && (
         <div className="phone" style={{ marginTop: 24, justifyItems: "center" }}>
           <p className="fine" style={{ textAlign: "center" }}>
-            {pub.name} · <span className="powered"><LogoMark size={18} still /> powered by Brain Sprint</span>
+            {pub.name} · <span className="powered"><LogoMark size={18} still /> powered by Ant Arena</span>
           </p>
         </div>
       )}

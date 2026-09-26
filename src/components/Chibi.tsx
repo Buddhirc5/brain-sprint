@@ -402,10 +402,10 @@ export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", si
 }
 
 /* =====================================================================
-   Sprinty — the Brain Sprint mascot (an original character):
+   The Ant Arena mascot (an original character):
    a lime brain-bean with an orange sweatband and running shoes.
    ===================================================================== */
-export function Sprinty({ mood = "idle", size = 120, className = "", still }: { mood?: Mood; size?: number; className?: string; still?: boolean }) {
+export function Mascot({ mood = "idle", size = 120, className = "", still }: { mood?: Mood; size?: number; className?: string; still?: boolean }) {
   const uid = useId().replace(/:/g, "");
   const closed = mood === "cheer";
   const eye = (cx: number) =>
@@ -433,7 +433,7 @@ export function Sprinty({ mood = "idle", size = 120, className = "", still }: { 
     );
   const armUp = mood === "cheer" || mood === "happy";
   return (
-    <svg viewBox="0 0 120 130" width={size} height={Math.round((size * 130) / 120)} className={`chibi sprinty m-${mood} ${still ? "still" : ""} ${className}`} aria-hidden="true">
+    <svg viewBox="0 0 120 130" width={size} height={Math.round((size * 130) / 120)} className={`chibi mascot m-${mood} ${still ? "still" : ""} ${className}`} aria-hidden="true">
       <defs>
         <radialGradient id={`${uid}g`} cx="38%" cy="30%" r="75%">
           <stop offset="0" stopColor="#E9FF8F" />

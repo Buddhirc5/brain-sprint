@@ -1,4 +1,4 @@
-/* Brain Sprint logo + its little animations */
+/* Ant Arena logo + its little animations */
 .bs-logo { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
 .bs-logo.row { gap: 10px; }
 .bs-logo.stack { flex-direction: column; gap: 8px; text-align: center; }

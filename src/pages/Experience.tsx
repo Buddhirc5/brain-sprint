@@ -198,7 +198,7 @@ function Accounts() {
         </DemoCard>
         <DemoCard
           name={nw?.name.replace(" (demo)", "") || "Northwind Traders"}
-          product={nw?.branding.productName || "Brain Sprint"}
+          product={nw?.branding.productName || "Ant Arena"}
           kind="Generic template"
           colors={nw ? [nw.branding.primary, nw.branding.accent, nw.branding.ink] : ["#C6F432", "#FF5A1F", "#161512"]}
           missing={nw === null}

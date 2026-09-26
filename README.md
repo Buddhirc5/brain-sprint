@@ -1,4 +1,4 @@
-# Brain Sprint
+# Ant Arena
 
 White-label learning games for companies: **Daily Sprint** quizzes (coins, streaks, levels, leaderboards, cartoon characters), **Live Quiz** (game-show style, game PIN + big screen), **Live Polls** (word cloud, multiple choice, scale, ranking, open text, Q&A) and **Certification** exams with printable certificates.
 
@@ -38,7 +38,7 @@ In the demo, email codes and links appear in a blue "Demo inbox" box instead of 
 
 ## 2. Open in Cursor
 
-1. Unzip, then **File → Open Folder…** and pick `brain-sprint`.
+1. Unzip, then **File → Open Folder…** and pick the project folder.
 2. Open the terminal (`` Ctrl+` ``) and run `npm install`, then `npm run dev`.
 3. Useful commands: `npm run typecheck`, `npm run build`, `npm run build:demo`.
 
@@ -66,7 +66,7 @@ supabase/               SQL migrations, seed, backend README
 ## 3. Set up Supabase (free plan)
 
 1. Create a project at [supabase.com](https://supabase.com) (the free plan is fine to start).
-2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, `0005_live_player_count.sql`, `0006_super_self_approve.sql`, then `supabase/seed.sql`.
+2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, `0005_live_player_count.sql`, `0006_super_self_approve.sql`, `0007_rename_ant_arena.sql`, then `supabase/seed.sql`.
 3. Make yourself super admin: `select public.bootstrap_super_admin('you@yourmail.com');`
 4. In **Authentication**, turn **Anonymous sign-ins ON**, set the **email OTP length to 6**, enable **MFA (TOTP)**, add your redirect URLs, and raise the anonymous sign-in rate limit. The full checklist is in `supabase/README.md` §3.
 5. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (**Project Settings → API**).
@@ -78,7 +78,7 @@ Optional: `npm run test:supabase` runs about 230 end-to-end checks against a Sup
 
 1. Push the folder to a GitHub repo, then use **Vercel → Add New → Project → Import** on it.
 2. The framework is detected as **Vite**; `vercel.json` already sets the build and the security headers.
-3. **Environment Variables:** add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_APP_URL` (your Vercel address, used in QR codes).
+3. **Environment Variables:** add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_APP_URL` (your site address, e.g. `https://antarena.vercel.app` — used in QR codes, share links, canonical URL and sitemap).
 4. Deploy. Then add the Vercel URL to Supabase → Authentication → URL Configuration (Site URL + Redirect URLs).
 
 Routes use `#/…` hash URLs, so no rewrites are needed and links work anywhere.
@@ -113,4 +113,4 @@ See `SECURITY.md`. In short:
 
 ## 8. Ownership
 
-Brain Sprint is your product. Before selling it, check that your employment contract or any client agreement doesn't claim the IP. The demo companies (Harbor Bank, Northwind Traders) are fictional.
+Ant Arena is your product. Before selling it, check that your employment contract or any client agreement doesn't claim the IP. The demo companies (Harbor Bank, Northwind Traders) are fictional.

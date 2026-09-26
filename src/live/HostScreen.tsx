@@ -10,7 +10,7 @@ import { absUrl, href } from "../app/router";
 import { qrDataUrl } from "../lib/qr";
 import { toCSV } from "../lib/security";
 import { isDemo } from "../api/demo/guard";
-import { Chibi, Sprinty } from "../components/Chibi";
+import { Chibi, Mascot } from "../components/Chibi";
 import { LogoMark } from "../components/Logo";
 import { CountUp, Icon, Modal, confetti } from "../components/ui";
 import { Loading } from "../App";
@@ -61,7 +61,7 @@ function HostMsg({ title, text, link }: { title: string; text: string; link?: { 
   return (
     <div className="phone" style={{ paddingTop: 40 }}>
       <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-        <Sprinty mood="think" size={110} />
+        <Mascot mood="think" size={110} />
         <h2>{title}</h2>
         <p className="fine">{text}</p>
         {link && (
@@ -391,7 +391,7 @@ function Lobby({ v, pub, onKick }: { v: LiveHostView; pub: TenantPublic; onKick:
         </div>
         {v.players.length === 0 ? (
           <div className="lv-waiting">
-            <Sprinty mood="think" size={130} />
+            <Mascot mood="think" size={130} />
             <p>Waiting for players to join…</p>
           </div>
         ) : (
@@ -466,7 +466,7 @@ function QuestionView({ v, left }: { v: LiveHostView; left: number }) {
         {q?.img ? (
           <img className="lv-qimg" src={q.img} alt="" />
         ) : (
-          <Sprinty mood={reveal ? (pct >= 50 ? "cheer" : "sad") : "think"} size={170} className="lv-mascot" />
+          <Mascot mood={reveal ? (pct >= 50 ? "cheer" : "sad") : "think"} size={170} className="lv-mascot" />
         )}
         <div className="lv-answered">
           <b className="num">{reveal ? `${right}/${n}` : v.answered}</b>

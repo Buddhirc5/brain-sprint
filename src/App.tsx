@@ -4,7 +4,7 @@ import { createApi } from "./api";
 import { ApiProvider } from "./app/ApiCtx";
 import { href, parse, useRoute, type Route } from "./app/router";
 import { applyBranding, setTitle } from "./app/theme";
-import { Sprinty } from "./components/Chibi";
+import { Mascot } from "./components/Chibi";
 import { LogoMark } from "./components/Logo";
 import { Home } from "./pages/Home";
 import { HAS_LIVE_BACKEND, exitSandbox, sandboxOn } from "./app/sandbox";
@@ -49,7 +49,7 @@ export default function App() {
     return (
       <div className="phone" style={{ paddingTop: 40 }}>
         <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-          <Sprinty mood="sad" size={110} />
+          <Mascot mood="sad" size={110} />
           <h2>Can't start</h2>
           <p className="fine">{fail}</p>
         </div>
@@ -86,14 +86,14 @@ function SandboxBar() {
   );
 }
 
-/** Pages outside a company: default Brain Sprint look + their own tab title. */
+/** Pages outside a company: default Ant Arena look + their own tab title. */
 const SITE_TITLES: Partial<Record<Route["r"], string>> = {
-  home: "Brain Sprint — Gamified employee training: daily quizzes, live quiz games & polls",
-  experience: "Try Brain Sprint free — interactive demo",
-  signin: "Sign in · Brain Sprint",
-  join: "Join a live quiz game · Brain Sprint",
-  super: "Super admin · Brain Sprint",
-  notfound: "Page not found · Brain Sprint",
+  home: "Ant Arena — Gamified employee training: daily quizzes, live quiz games & polls",
+  experience: "Try Ant Arena free — interactive demo",
+  signin: "Sign in · Ant Arena",
+  join: "Join a live quiz game · Ant Arena",
+  super: "Super admin · Ant Arena",
+  notfound: "Page not found · Ant Arena",
 };
 
 function Router({ route }: { route: Route }) {
@@ -176,8 +176,8 @@ function NotFound() {
   return (
     <div className="phone nf" style={{ paddingTop: 40 }}>
       <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-        <a href="#/" aria-label="Brain Sprint home"><LogoMark size={64} /></a>
-        <Sprinty mood="sad" size={110} />
+        <a href="#/" aria-label="Ant Arena home"><LogoMark size={64} /></a>
+        <Mascot mood="sad" size={110} />
         <h1 style={{ fontSize: 28, fontWeight: 900 }}>Page not found</h1>
         <p className="fine">That link doesn't lead anywhere. Here are some places that do:</p>
         <a className="btn primary block" href="#/">Home</a>
