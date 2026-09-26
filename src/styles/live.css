@@ -276,3 +276,4 @@ kbd { font: 700 11px/1 var(--body); border: 1.5px solid currentColor; border-rad
 /* question image (big screen replaces the mascot; phone shows a small copy) */
 .lv-qimg { max-width: min(46vw, 720px); max-height: 42vh; object-fit: contain; border-radius: 20px; background: #fff; box-shadow: 0 20px 40px -20px rgba(0,0,0,.5); }
 .lv-pqimg { display: block; max-width: 100%; max-height: 22vh; margin: 0 auto 8px; object-fit: contain; border-radius: 14px; background: #fff; }
+.lv-enter-links { font-size: 14px; text-align: center; color: var(--muted); }

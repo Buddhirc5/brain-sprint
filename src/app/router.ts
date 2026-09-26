@@ -1,6 +1,7 @@
 /* Tiny hash router. Hash URLs work on Vercel, any static host and straight from disk.
    Routes:
      #/                         product landing page
+     #/features|how-it-works|use-cases|security|faq   landing page, scrolled to that section
      #/experience               try it: guided demo sandbox
      #/signin                   join a game, vote, company & admin sign-in
      #/join[/:pin]              live quiz — players
@@ -14,7 +15,7 @@
 import { useEffect, useState } from "react";
 
 export type Route =
-  | { r: "home" }
+  | { r: "home"; section?: Section }
   | { r: "experience" }
   | { r: "signin" }
   | { r: "join"; pin?: string }
@@ -27,10 +28,25 @@ export type Route =
   | { r: "super"; tab?: string }
   | { r: "notfound" };
 
+/** Landing-page sections that have their own shareable link (#/features …). */
+export const SECTIONS = ["features", "how-it-works", "use-cases", "security", "faq"] as const;
+export type Section = (typeof SECTIONS)[number];
+/** Friendly aliases people type or link to. */
+const ALIAS: Record<string, string> = {
+  login: "signin", "sign-in": "signin", signup: "experience", "sign-up": "experience", demo: "experience", try: "experience",
+  tour: "experience", play: "join", pin: "join", poll: "vote", admin: "signin", home: "", pricing: "faq", how: "how-it-works",
+};
+
 export function parse(hash: string): Route {
   const [path] = hash.replace(/^#/, "").split("?");
   const p = path.split("/").filter(Boolean).map(decodeURIComponent);
+  if (p.length && p[0].toLowerCase() in ALIAS) {
+    const a = ALIAS[p[0].toLowerCase()];
+    p.splice(0, 1, ...(a ? [a] : []));
+  }
+  if (p[0]) p[0] = p[0].toLowerCase();
   if (!p.length) return { r: "home" };
+  if ((SECTIONS as readonly string[]).includes(p[0]) && p.length === 1) return { r: "home", section: p[0] as Section };
   if (p[0] === "experience") return { r: "experience" };
   if (p[0] === "signin") return { r: "signin" };
   if (p[0] === "join") return { r: "join", pin: p[1] };
@@ -49,7 +65,7 @@ export function parse(hash: string): Route {
 
 export function href(r: Route): string {
   switch (r.r) {
-    case "home": return "#/";
+    case "home": return "#/" + (r.section || "");
     case "experience": return "#/experience";
     case "signin": return "#/signin";
     case "join": return "#/join" + (r.pin ? "/" + r.pin : "");
@@ -85,4 +101,14 @@ export function useRoute(): Route {
     return () => window.removeEventListener("hashchange", f);
   }, []);
   return route;
+}
+
+/** Plain paths (/signin, /t/acme) — e.g. typed or shared without the # — become hash routes.
+ *  vercel.json rewrites every path to index.html so this runs instead of a 404. */
+export function pathToHash() {
+  if (typeof location === "undefined" || location.protocol === "file:") return;
+  const path = location.pathname.replace(/\/index\.html$/, "/");
+  if (path === "/" || path === "") return;
+  const hash = location.hash && location.hash !== "#" && location.hash !== "#/" ? location.hash : "#" + path.replace(/\/+$/, "");
+  history.replaceState(null, "", "/" + location.search + hash);
 }

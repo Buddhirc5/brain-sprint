@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { Api } from "./api/Api";
 import { createApi } from "./api";
 import { ApiProvider } from "./app/ApiCtx";
-import { useRoute, type Route } from "./app/router";
+import { href, parse, useRoute, type Route } from "./app/router";
 import { applyBranding, setTitle } from "./app/theme";
 import { Sprinty } from "./components/Chibi";
 import { LogoMark } from "./components/Logo";
@@ -86,25 +86,55 @@ function SandboxBar() {
   );
 }
 
-const SITE_PAGES = new Set(["home", "experience", "signin", "super", "notfound"]);
+/** Pages outside a company: default Brain Sprint look + their own tab title. */
+const SITE_TITLES: Partial<Record<Route["r"], string>> = {
+  home: "Brain Sprint — Gamified employee training: daily quizzes, live quiz games & polls",
+  experience: "Try Brain Sprint free — interactive demo",
+  signin: "Sign in · Brain Sprint",
+  join: "Join a live quiz game · Brain Sprint",
+  super: "Super admin · Brain Sprint",
+  notfound: "Page not found · Brain Sprint",
+};
 
 function Router({ route }: { route: Route }) {
-  // pages outside a company use the default Brain Sprint look
   useEffect(() => {
-    if (SITE_PAGES.has(route.r)) {
+    const t = SITE_TITLES[route.r];
+    if (t) {
       applyBranding(undefined);
-      setTitle(
-        route.r === "super" ? "Brain Sprint · Super admin"
-        : route.r === "experience" ? "Brain Sprint · Experience"
-        : route.r === "signin" ? "Brain Sprint · Sign in"
-        : "Brain Sprint · Learning your team actually plays",
-      );
+      setTitle(t);
     }
   }, [route.r]);
+  // a link to the page you're already on scrolls to its top (or to its section) instead of doing nothing
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a[href^='#']") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank") return;
+      const norm = (h: string) => (h === "" || h === "#" ? "#/" : h.toLowerCase());
+      if (norm(a.getAttribute("href") || "") !== norm(location.hash)) return;
+      e.preventDefault();
+      const r = parse(location.hash);
+      const el = r.r === "home" && r.section ? document.getElementById(r.section) : null;
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+  // new page → start at the top (section links scroll themselves)
+  const pageKey = route.r === "home" ? "home" : href(route);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (route.r !== "home" || !route.section) window.scrollTo({ top: 0, behavior: "auto" });
+  }, [pageKey]); // eslint-disable-line react-hooks/exhaustive-deps
   let el: JSX.Element;
   switch (route.r) {
     case "home":
-      el = <Home />;
+      el = <Home section={route.section} />;
       break;
     case "experience":
       el = <Experience />;
@@ -137,15 +167,26 @@ function Router({ route }: { route: Route }) {
       el = <SuperApp tab={route.tab} />;
       break;
     default:
-      el = (
-        <div className="phone" style={{ paddingTop: 40 }}>
-          <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-            <Sprinty mood="sad" size={110} />
-            <h2>Page not found</h2>
-            <a className="btn primary" href="#/">Go home</a>
-          </div>
-        </div>
-      );
+      el = <NotFound />;
   }
   return <Suspense fallback={<Loading text="Loading…" />}>{el}</Suspense>;
+}
+
+function NotFound() {
+  return (
+    <div className="phone nf" style={{ paddingTop: 40 }}>
+      <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
+        <a href="#/" aria-label="Brain Sprint home"><LogoMark size={64} /></a>
+        <Sprinty mood="sad" size={110} />
+        <h1 style={{ fontSize: 28, fontWeight: 900 }}>Page not found</h1>
+        <p className="fine">That link doesn't lead anywhere. Here are some places that do:</p>
+        <a className="btn primary block" href="#/">Home</a>
+        <div className="row" style={{ justifyContent: "center" }}>
+          <a className="btn ghost small" href="#/experience">Try the demo</a>
+          <a className="btn ghost small" href="#/signin">Sign in</a>
+          <a className="btn ghost small" href="#/join">Join a game</a>
+        </div>
+      </div>
+    </div>
+  );
 }

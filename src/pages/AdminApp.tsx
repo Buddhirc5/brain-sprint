@@ -60,7 +60,9 @@ export function AdminApp({ slug, tab }: { slug: string; tab?: string }) {
         <Brand name={pub.branding.productName} company={pub.name} logo={pub.branding.logo} />
         <AdminSignIn method={pub.signIn.adminAuth} redirectTo={absUrl({ r: "admin", slug })} note="For admins invited by your company. Players don't need to sign in here." />
         {isDemo(api) && <p className="banner blue">{DEMO_HINT(slug)}</p>}
-        <a className="link" style={{ justifySelf: "center" }} href={`#/t/${slug}`}>Back to the player app</a>
+        <p className="fine" style={{ justifySelf: "center", textAlign: "center" }}>
+          <a className="link" href={`#/t/${slug}`}>Back to the player app</a> · <a className="link" href="#/">Brain Sprint home</a>
+        </p>
       </div>
     );
   if (gate.s === "mfa")
