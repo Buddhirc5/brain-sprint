@@ -4,7 +4,7 @@ import "../styles/home.css";
 import { useApi } from "../app/ApiCtx";
 import { useRoute } from "../app/router";
 import { HAS_LIVE_BACKEND, enterSandbox } from "../app/sandbox";
-import { Sprinty } from "../components/Chibi";
+import { Logo } from "../components/Logo";
 
 export const CONTACT_EMAIL = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined) || "";
 
@@ -42,19 +42,17 @@ export function DemoHref({ href, className, children, newTab }: { href: string; 
 const NAV: [string, string][] = [
   ["#/", "Product"],
   ["#/experience", "Experience"],
-  ["#/world", "Knowledge World"],
 ];
 
 export function SiteHeader() {
   const route = useRoute();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [route.r]);
-  const here = (h: string) => (h === "#/" ? route.r === "home" : location.hash.startsWith(h));
+  const here = (h: string) => (h === "#/" ? route.r === "home" : h === "#/experience" ? route.r === "experience" : false);
   return (
     <header className={`h-top ${open ? "open" : ""}`}>
-      <a className="h-logo" href="#/" aria-label="Brain Sprint home">
-        <Sprinty size={40} still />
-        <span>Brain Sprint</span>
+      <a className="h-logo" href="#/">
+        <Logo size={44} />
       </a>
       <nav className="h-topnav" aria-label="Main">
         {NAV.map(([h, l]) => (
@@ -89,15 +87,14 @@ export function SiteFooter() {
   return (
     <footer className="h-foot">
       <div className="h-foot-col">
-        <span className="h-foot-brand">
-          <Sprinty size={28} still /> Brain Sprint
-        </span>
+        <a className="h-foot-brand" href="#/">
+          <Logo size={56} />
+        </a>
         <span>Learning your team actually plays.</span>
       </div>
       <nav className="h-foot-links" aria-label="Footer">
         <a href="#/">Product</a>
         <a href="#/experience">Experience</a>
-        <a href="#/world">Knowledge World</a>
         <a href="#/signin">Sign in</a>
         <a href="#/join">Join a game</a>
         <a href="#/vote">Vote</a>

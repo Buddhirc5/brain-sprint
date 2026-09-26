@@ -1,6 +1,7 @@
-import { lazy, Suspense } from "react";
+import "../styles/admin.css";
 import { useApp, TenantProvider } from "../app/ctx";
 import { Sprinty } from "../components/Chibi";
+import { LogoMark } from "../components/Logo";
 import { Welcome, Setup } from "../player/Setup";
 import { Lobby } from "../player/Lobby";
 import { Play } from "../player/Play";
@@ -14,8 +15,6 @@ import { Loading } from "../App";
 import { useTenantPub } from "./useTenantPub";
 import { useApi } from "../app/ApiCtx";
 import { isDemo } from "../api/demo/guard";
-
-const WorldView = lazy(() => import("../world/WorldView").then((m) => ({ default: m.WorldView })));
 
 export function Gone({ title, text }: { title: string; text: string }) {
   return (
@@ -44,7 +43,7 @@ export function TenantApp({ slug }: { slug: string }) {
 }
 
 function PlayerShell() {
-  const { d, me, view, go, pub, slug, features } = useApp();
+  const { d, me, view, go, pub, slug } = useApp();
   const { api } = useApi();
   let screen: JSX.Element;
   if (!me) {
@@ -78,22 +77,13 @@ function PlayerShell() {
       case "certs":
         screen = <Certs />;
         break;
-      case "world":
-        screen = features.world ? (
-          <Suspense fallback={<Loading text="Building the city…" />}>
-            <WorldView look={me.look} onExit={() => go({ v: "lobby" })} />
-          </Suspense>
-        ) : (
-          <Lobby />
-        );
-        break;
       default:
         screen = <Lobby />;
     }
   }
   return (
     <>
-      {isDemo(api) && view.v !== "play" && view.v !== "world" && (
+      {isDemo(api) && view.v !== "play" && (
         <div className="phone" style={{ marginBottom: 12 }}>
           <div className="banner blue">
             <b>Demo</b> — everything is saved in this browser only. {me ? "" : "Try Employee ID DEMO-101."}{" "}
@@ -102,10 +92,10 @@ function PlayerShell() {
         </div>
       )}
       {screen}
-      {view.v !== "play" && view.v !== "world" && (
+      {view.v !== "play" && (
         <div className="phone" style={{ marginTop: 24, justifyItems: "center" }}>
           <p className="fine" style={{ textAlign: "center" }}>
-            {pub.name} · powered by Brain Sprint ·{" "}
+            {pub.name} · <span className="powered"><LogoMark size={18} still /> powered by Brain Sprint</span> ·{" "}
             <a className="link" href={`#/t/${slug}/admin`} onClick={() => go({ v: "lobby" })}>
               Admin
             </a>

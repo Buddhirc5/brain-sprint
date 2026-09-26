@@ -2,14 +2,11 @@
    Loaded lazily (dynamic import) so it never ships in the production chunk. */
 import seed from "../../demo/seed.json";
 import library from "../../data/library.json";
-import type { AnswerKey, Game, LibraryItem, OrgConfig, Player, Poll, PollResponse, Tenant } from "../../types";
+import type { AnswerKey, Game, LibraryItem, Player, Poll, PollResponse, Tenant } from "../../types";
 import { DEFAULT_BRANDING, LABELS, defaultCfg } from "../engine";
 import { pbkdf2, PBKDF2_ITER, sha256 } from "../../lib/security";
 import { randHex } from "../../lib/util";
 import type { DB, TStore } from "./db";
-
-/** The demo companies show off the Knowledge World add-on (off by default for real companies). */
-const withWorld = (c: OrgConfig): OrgConfig => ({ ...c, features: { ...c.features, world: true } });
 
 export const DEMO_PASSWORD = "demo1234";
 export const DEMO_ACCOUNTS = {
@@ -74,7 +71,7 @@ export async function buildDemoDB(): Promise<DB> {
   const harbor: Tenant = {
     id: "t-harbor", slug: "harbor", name: "Harbor Bank (demo)", status: "active", template: "bank",
     branding: { productName: "Harbor Academy", tagline: "Learn a little every day", primary: "#5EEAD4", accent: "#EA580C", ink: "#0B1B2B", paper: "#EEF3F6" },
-    labels: LABELS.bank, cfg: withWorld(defaultCfg("bank")), createdAt: now - 120 * DAY,
+    labels: LABELS.bank, cfg: defaultCfg("bank"), createdAt: now - 120 * DAY,
   };
   harbor.cfg.makerChecker = false; // demo: let one admin publish straight away
   harbor.cfg.signIn.adminMfa = false; // demo: MFA optional (turn it on in Settings to try it)
@@ -109,7 +106,7 @@ export async function buildDemoDB(): Promise<DB> {
   /* ---------- Northwind Traders (generic template, default brand) ---------- */
   const northwind: Tenant = {
     id: "t-northwind", slug: "northwind", name: "Northwind Traders (demo)", status: "active", template: "generic",
-    branding: { ...DEFAULT_BRANDING }, labels: LABELS.generic, cfg: withWorld(defaultCfg("generic")), createdAt: now - 30 * DAY,
+    branding: { ...DEFAULT_BRANDING }, labels: LABELS.generic, cfg: defaultCfg("generic"), createdAt: now - 30 * DAY,
   };
   const ns = emptyStore();
   const picks: [string, string, Partial<Game>][] = [

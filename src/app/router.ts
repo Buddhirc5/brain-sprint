@@ -1,9 +1,8 @@
 /* Tiny hash router. Hash URLs work on Vercel, any static host and straight from disk.
    Routes:
      #/                         product landing page
-     #/experience               try it: guided demo sandbox, Knowledge World preview
+     #/experience               try it: guided demo sandbox
      #/signin                   join a game, vote, company & admin sign-in
-     #/world                    Knowledge World (3D mini game) — free roam preview
      #/join[/:pin]              live quiz — players
      #/vote[/:code]             live poll — audience
      #/t/:slug                  company player app
@@ -18,7 +17,6 @@ export type Route =
   | { r: "home" }
   | { r: "experience" }
   | { r: "signin" }
-  | { r: "world" }
   | { r: "join"; pin?: string }
   | { r: "vote"; code?: string }
   | { r: "tenant"; slug: string }
@@ -35,7 +33,6 @@ export function parse(hash: string): Route {
   if (!p.length) return { r: "home" };
   if (p[0] === "experience") return { r: "experience" };
   if (p[0] === "signin") return { r: "signin" };
-  if (p[0] === "world") return { r: "world" };
   if (p[0] === "join") return { r: "join", pin: p[1] };
   if (p[0] === "vote") return { r: "vote", code: p[1] };
   if (p[0] === "super") return { r: "super", tab: p[1] };
@@ -55,7 +52,6 @@ export function href(r: Route): string {
     case "home": return "#/";
     case "experience": return "#/experience";
     case "signin": return "#/signin";
-    case "world": return "#/world";
     case "join": return "#/join" + (r.pin ? "/" + r.pin : "");
     case "vote": return "#/vote" + (r.code ? "/" + r.code : "");
     case "tenant": return `#/t/${r.slug}`;
@@ -82,7 +78,7 @@ export function nav(r: Route, replace = false) {
 }
 
 export function useRoute(): Route {
-  const [route, setRoute] = useState(() => parse(location.hash));
+  const [route, setRoute] = useState(() => parse(typeof location === "undefined" ? "" : location.hash));
   useEffect(() => {
     const f = () => setRoute(parse(location.hash));
     window.addEventListener("hashchange", f);

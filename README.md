@@ -22,7 +22,6 @@ With no Supabase keys, the app runs a full **demo backend inside the browser** (
 | Landing page | `#/` | — |
 | Experience (guided demo tour) | `#/experience` | — |
 | Sign in (join a game, vote, company & admin sign-in) | `#/signin` | — |
-| Knowledge World (3D mini game preview) | `#/world` | — |
 | Harbor Bank, player app (bank template, custom brand) | `#/t/harbor` | Employee ID `DEMO-101` … `DEMO-130` |
 | Harbor Bank, admin portal | `#/t/harbor/admin` | `admin@harbor.demo` / `demo1234` (Owner) · `host@harbor.demo` / `demo1234` (Host) |
 | Northwind Traders (generic template) | `#/t/northwind` · `/admin` | `admin@northwind.demo` / `demo1234` |
@@ -32,6 +31,8 @@ With no Supabase keys, the app runs a full **demo backend inside the browser** (
 In the demo, email codes and links appear in a blue "Demo inbox" box instead of being emailed. To test a live game, host it from the admin portal and press **+ Open a test player** to open player tabs.
 
 **Demo sandbox on a live site.** When Supabase is configured, visitors can still try everything from `#/experience`: the first click switches their browser to the in-browser demo (a "Demo sandbox · Exit demo" bar stays on screen). Nothing they do is sent to the database; it's kept in their browser's localStorage.
+
+**SEO & speed.** `npm run build` pre-renders the landing page into `index.html` (real HTML for search engines and a fast first paint; the app hydrates it), adds Open Graph/Twitter cards, JSON-LD (Organization, SoftwareApplication, FAQPage), `robots.txt`, and — when `VITE_APP_URL` is set — a canonical URL and `sitemap.xml`. Brand assets (favicon, app icons, social image) are generated from `src/components/Logo.tsx` with `npm run gen:brand`.
 
 `npm run build:demo` produces **one self-contained HTML file** (`dist-demo/index.html`) that you can email to a prospect or open from disk.
 
@@ -57,13 +58,8 @@ src/
   polls/                live polls: editor, presenter screen, voting page
   cert/                 printable certificate
   super/                super admin console
-  world/                Knowledge World: 3D explore-and-race mini game (three.js, lazy-loaded)
 supabase/               SQL migrations, seed, backend README
 ```
-
-## Knowledge World (add-on)
-
-A 3D open world players can open from their lobby: walk their cartoon character around a city, drive any parked car, race a lap through checkpoints and pop "?" bubbles for trivia. Arrow keys/WASD + Space + E on desktop; a thumb stick and buttons on phones. It is **off by default**: switch it on per company in the super admin console (**Features & sign-in → Knowledge World**) or in the company's **Settings**. Nothing in it is saved to the server (coins and best lap live in the player's browser).
 
 **Question images:** every quiz question can carry a picture. The admin portal resizes and compresses it in the browser (about 50–250 KB) and it's stored with the question.
 

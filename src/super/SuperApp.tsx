@@ -5,6 +5,8 @@
    3. the super admin code has been entered in the last 30 minutes.
    The console auto-locks after 15 minutes without activity.
    ===================================================================== */
+import "../styles/admin.css";
+import { Logo, LogoMark, PixelWord } from "../components/Logo";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "../styles/super.css";
 import { ApiError } from "../api/Api";
@@ -96,11 +98,8 @@ export function SuperApp({ tab }: { tab?: string }) {
 function GateHead() {
   return (
     <div className="su-gate-head">
-      <Sprinty mood="idle" size={64} still />
-      <div>
-        <b className="su-word">Brain Sprint</b>
-        <div className="fine">Super admin console</div>
-      </div>
+      <Logo size={60} tagline={false} />
+      <div className="fine">Super admin console</div>
     </div>
   );
 }
@@ -333,8 +332,8 @@ function Console({ tab, st, recheck }: { tab?: string; st: Status; recheck: () =
       <div className="adm su">
         <nav className="adm-nav su-nav" aria-label="Super admin">
           <a className="adm-brand su-brand" href="#/super">
-            <Sprinty mood="idle" size={34} still />
-            <span className="adm-name">Brain Sprint</span>
+            <LogoMark size={38} />
+            <PixelWord height={15} className="su-pixel" />
             <span className="su-badge">Super</span>
           </a>
           <div className="adm-tabs su-tabs" role="tablist">

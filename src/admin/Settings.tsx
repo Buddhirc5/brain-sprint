@@ -166,7 +166,6 @@ const FEAT: Record<keyof Features, { title: (battle: string) => string; text: (l
   streaks: { title: () => "Streaks", text: () => "Rewards playing on days in a row." },
   avatars: { title: () => "Characters", text: () => "Each player picks a cartoon character shown on boards." },
   rewards: { title: () => "Hall of Fame", text: () => "Record prizes for top players; winners show in the player app." },
-  world: { title: () => "Knowledge World (3D mini game)", text: () => "A 3D city to explore on a break: walk, drive cars, race checkpoints and pop trivia bubbles. Arrow keys + space, or touch controls on phones. Nothing is scored or stored." },
   battle: { title: (b) => b, text: (l) => `A leaderboard between ${l.branches.toLowerCase()} and ${l.depts.toLowerCase()} (average points per active player).` },
 };
 const SI_NAME: Record<keyof SignIn, string> = { empId: "Employee ID sign-in", emailOtp: "Email code sign-in", sso: "Microsoft sign-in", liveGuests: "Live guests", adminAuth: "Admin sign-in", adminMfa: "Admin authenticator app" };

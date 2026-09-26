@@ -1,13 +1,22 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App";
 import "./styles/base.css";
 import "./styles/chibi.css";
+import "./styles/logo.css";
 import "./styles/player.css";
-import "./styles/admin.css";
 
-createRoot(document.getElementById("root")!).render(
+const root = document.getElementById("root")!;
+const app = (
   <StrictMode>
     <App />
-  </StrictMode>,
+  </StrictMode>
 );
+// The landing page is pre-rendered at build time (scripts/prerender.mjs): hydrate it instead of re-drawing.
+const home = !location.hash || location.hash === "#" || location.hash === "#/";
+if (root.firstElementChild && home) hydrateRoot(root, app);
+else {
+  root.textContent = "";
+  document.documentElement.classList.remove("deep");
+  createRoot(root).render(app);
+}

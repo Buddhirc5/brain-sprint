@@ -1,0 +1,40 @@
+/* Brain Sprint logo + its little animations */
+.bs-logo { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
+.bs-logo.row { gap: 10px; }
+.bs-logo.stack { flex-direction: column; gap: 8px; text-align: center; }
+.bs-logo-txt { display: grid; gap: 3px; justify-items: start; }
+.bs-tag { font-weight: 900; font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink); white-space: nowrap; line-height: 1; }
+.bs-logo.stack .bs-tag { font-size: 11px; }
+.bs-mark, .bs-word { display: block; overflow: visible; flex: none; }
+
+/* mark: gentle bob, blink, headset waves, controller buttons */
+.bs-mark .bs-body { transform-box: view-box; transform-origin: 60px 110px; animation: bs-bob 2.6s ease-in-out infinite; }
+.bs-mark .bs-eyes { transform-box: fill-box; transform-origin: center; animation: bs-blink 5s infinite; }
+.bs-mark .bs-waves path { animation: bs-wave 1.6s ease-in-out infinite; }
+.bs-mark .bs-waves path + path { animation-delay: .25s; }
+.bs-mark .bs-btn.a { animation: bs-btn 1.2s steps(1) infinite; }
+.bs-mark .bs-btn.b { animation: bs-btn 1.2s steps(1) infinite .6s; }
+a:hover .bs-mark .bs-body, .bs-logo:hover .bs-mark .bs-body { animation: bs-hop .5s cubic-bezier(.3,.8,.4,1) 2; }
+
+/* wordmark: letters power on one by one, like a game title screen */
+.bs-word .bs-px { animation: bs-on .45s cubic-bezier(.2,.9,.3,1.3) both; transform-box: fill-box; transform-origin: 50% 100%; }
+
+@keyframes bs-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes bs-hop { 0%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(0) scale(1.04, .95); } 60% { transform: translateY(-7px) scale(.98, 1.03); } }
+@keyframes bs-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes bs-wave { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
+@keyframes bs-btn { 0% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes bs-on { 0% { opacity: 0; transform: translateY(3px) scaleY(.2); } 100% { opacity: 1; transform: none; } }
+
+.bs-mark.still *, .still .bs-mark * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .bs-mark *, .bs-word * { animation: none !important; }
+}
+
+/* placements */
+.h-logo { display: flex; align-items: center; text-decoration: none; }
+.h-foot-brand { text-decoration: none; }
+.su-pixel { margin-left: 2px; }
+.su-gate-head { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.powered { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+@media (max-width: 400px) { .h-logo .bs-tag { display: none; } }

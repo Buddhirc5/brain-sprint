@@ -12,7 +12,6 @@ import { Icon } from "../components/ui";
 import type { TenantPublic } from "../types";
 import { DEMO_ADMINS, DEMO_PASSWORD, DEMO_SUPER } from "./demoHints";
 import { DemoHref, SiteFooter, SiteHeader, jump, useInDemo } from "./site";
-import { WorldTeaser } from "./WorldTeaser";
 
 export function Experience() {
   const inDemo = useInDemo();
@@ -35,7 +34,6 @@ export function Experience() {
             ) : (
               <button type="button" className="btn primary" onClick={() => jump("missions")}>Start the tour</button>
             )}
-            <a className="btn white" href="#/world">Play Knowledge World</a>
           </div>
           <ul className="h-trust">
             <li><Icon.check /> Private sandbox in your browser</li>
@@ -63,7 +61,6 @@ export function Experience() {
       <Missions />
       <LiveGameSteps />
       <Accounts />
-      <WorldTeaser />
       <SiteFooter />
     </div>
   );
@@ -214,7 +211,7 @@ function Accounts() {
             <span className="h-dcard-ic"><Icon.shield /></span>
             <div>
               <b>Super admin console</b>
-              <span>Create companies, brand them, switch features on (like Knowledge World)</span>
+              <span>Create companies, brand them and choose their features</span>
             </div>
           </div>
           <dl className="h-creds">

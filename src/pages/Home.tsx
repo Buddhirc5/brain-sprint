@@ -3,22 +3,47 @@
    should buy it. Trying it lives on #/experience; joining a game, voting
    and company sign-in live on #/signin (both in the top bar).
    ===================================================================== */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Chibi, Sprinty } from "../components/Chibi";
 import { Icon } from "../components/ui";
 import { CONTACT_EMAIL, SiteFooter, SiteHeader, jump } from "./site";
-import { WorldTeaser } from "./WorldTeaser";
+import { FAQ } from "./faq";
+
+/** Fades sections up as they scroll into view. Sections already on screen stay put (no flicker),
+ *  and nothing is hidden without JavaScript or when reduced motion is requested. */
+function useReveal() {
+  useEffect(() => {
+    const all = [...document.querySelectorAll<HTMLElement>(".rv:not(.in)")];
+    all.forEach((e) => e.getBoundingClientRect().top < innerHeight && e.classList.add("in"));
+    const els = all.filter((e) => !e.classList.contains("in"));
+    if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return els.forEach((e) => e.classList.add("in"));
+    document.documentElement.classList.add("rv-on");
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries)
+          if (e.isIntersecting) {
+            e.target.classList.add("in");
+            io.unobserve(e.target);
+          }
+      },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
+    );
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+}
 
 export function Home() {
+  useReveal();
   return (
     <div className="home">
       <SiteHeader />
       <Hero />
+      <Ticker />
       <Proof />
       <BeforeAfter />
       <Features />
       <UseCases />
-      <WorldTeaser />
       <HowItWorks />
       <Security />
       <Faq />
@@ -41,7 +66,7 @@ function Hero() {
   return (
     <section className="h-hero">
       <div className="h-hero-copy">
-        <span className="h-tag">The employee learning game</span>
+        <span className="h-tag">Gamified employee training</span>
         <h1 className="h-mega">
           Learning your team <span className="ink">actually plays.</span>
         </h1>
@@ -91,6 +116,24 @@ function Hero() {
   );
 }
 
+/* ---------------- scrolling ticker ---------------- */
+const TICKER = ["Daily quiz sprints", "Live quiz games", "Word clouds & polls", "Certification exams", "Knowledge-gap analytics", "Coins, streaks & levels", "Team battles", "Your brand, everywhere"];
+function Ticker() {
+  const row = TICKER.map((t) => (
+    <span key={t} className="h-tick">
+      {t}
+    </span>
+  ));
+  return (
+    <div className="h-ticker" aria-label="What's inside">
+      <div className="h-ticker-track">
+        <div className="h-ticker-row">{row}</div>
+        <div className="h-ticker-row" aria-hidden="true">{row}</div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------- proof strip (product facts) ---------------- */
 function Proof() {
   const facts: [string, string][] = [
@@ -100,7 +143,7 @@ function Proof() {
     ["100%", "your brand on every screen"],
   ];
   return (
-    <section className="h-proof" aria-label="At a glance">
+    <section className="h-proof rv" aria-label="At a glance">
       {facts.map(([n, t]) => (
         <div key={t}>
           <b>{n}</b>
@@ -116,7 +159,7 @@ function BeforeAfter() {
   const before = ["Hour-long modules nobody finishes", "Click-through slides, no idea what stuck", "Annual refreshers, forgotten by Friday", "Reports that only show completion"];
   const after = ["Two-minute sprints people look forward to", "Every answer tagged to a topic and a team", "Little and often — with streaks that stick", "A live map of knowledge gaps, closing week by week"];
   return (
-    <section className="h-sec" aria-labelledby="h-ba">
+    <section className="h-sec rv" aria-labelledby="h-ba">
       <div className="h-sec-h">
         <span className="h-kicker">Why teams switch</span>
         <h2 id="h-ba">Training people skip vs. a game they play</h2>
@@ -149,15 +192,15 @@ const FEATURES: { k: string; t: string; d: string; c: string; art: ReactNode }[]
 
 function Features() {
   return (
-    <section className="h-sec" aria-labelledby="h-feat" id="features">
+    <section className="h-sec rv" aria-labelledby="h-feat" id="features">
       <div className="h-sec-h">
         <span className="h-kicker">The platform</span>
         <h2 id="h-feat">Everything your team needs to learn</h2>
         <p>One app for daily practice, big-room energy and proof of competence.</p>
       </div>
       <div className="h-feats">
-        {FEATURES.map((f) => (
-          <article key={f.k} className={`h-feat c-${f.c}`}>
+        {FEATURES.map((f, i) => (
+          <article key={f.k} className={`h-feat c-${f.c}`} style={{ ["--i" as string]: i }}>
             <div className="h-feat-art">{f.art}</div>
             <h3>{f.t}</h3>
             <p>{f.d}</p>
@@ -177,7 +220,7 @@ function UseCases() {
     ["Leaders & Comms", "Town hall polls, anonymous Q&A and live games that get the whole room talking.", 11],
   ];
   return (
-    <section className="h-sec" aria-labelledby="h-uc">
+    <section className="h-sec rv" aria-labelledby="h-uc">
       <div className="h-sec-h">
         <span className="h-kicker">Who it's for</span>
         <h2 id="h-uc">Built for the whole company</h2>
@@ -204,7 +247,7 @@ function HowItWorks() {
     ["You close the gaps", "Spot weak topics by team, re-train with a live game, and watch the trend improve.", <Chibi key="c" look={5} mood="idle" size={72} />],
   ];
   return (
-    <section className="h-sec" aria-labelledby="h-how">
+    <section className="h-sec rv" aria-labelledby="h-how">
       <div className="h-sec-h">
         <span className="h-kicker">Up and running in a day</span>
         <h2 id="h-how">How it works</h2>
@@ -234,7 +277,7 @@ function Security() {
     ["Full audit trail", "Every admin action is logged per company, with exportable reports."],
   ];
   return (
-    <section className="h-secband" aria-labelledby="h-sec-t">
+    <section className="h-secband rv" aria-labelledby="h-sec-t">
       <div className="h-secband-h">
         <span className="h-dcard-ic"><Icon.shield /></span>
         <div>
@@ -256,17 +299,10 @@ function Security() {
 
 /* ---------------- FAQ ---------------- */
 function Faq() {
-  const qs: [string, string][] = [
-    ["Do employees need to install an app?", "No. Brain Sprint runs in any modern browser on phones, tablets and computers. Share a link or a QR code and they're in."],
-    ["Can we use our own questions?", "Yes. Build quizzes in the admin portal — multiple choice, true/false, matching and ordering, with images — or start from the built-in library."],
-    ["How do people sign in?", "With an Employee ID, a 6-digit email code or Microsoft sign-in. Admins can require an authenticator app."],
-    ["Does it look like our brand?", "Completely. Your product name, logo and colours appear on every screen, including big screens and certificates."],
-    ["What is Knowledge World?", "An optional 3D mini game — explore a city, drive cars, race checkpoints and pop trivia bubbles. Admins switch it on per company."],
-    ["Can I try it before talking to anyone?", "Yes. The Experience page opens a private demo that runs entirely in your browser — nothing is saved to our servers."],
-  ];
+  const qs = FAQ;
   const [open, setOpen] = useState(0);
   return (
-    <section className="h-sec" aria-labelledby="h-faq">
+    <section className="h-sec rv" aria-labelledby="h-faq">
       <div className="h-sec-h">
         <span className="h-kicker">FAQ</span>
         <h2 id="h-faq">Questions, answered</h2>
@@ -288,7 +324,7 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="h-final">
+    <section className="h-final rv">
       <div>
         <h2>Make learning the best two minutes of the day.</h2>
         <p>Try the full product in your browser right now — no sign-up, no credit card.</p>
