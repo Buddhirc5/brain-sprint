@@ -85,6 +85,7 @@ export interface Tenant {
 export type TenantPublic = Pick<Tenant, "id" | "slug" | "name" | "status" | "template" | "branding" | "labels"> & {
   features: Features;
   signIn: SignIn;
+  joinKeyRequired?: boolean; // new players need the private invite link (#/t/<slug>/k/<KEY>)
   pubCfg: Pick<OrgConfig, "branches" | "departments" | "maskIds" | "lastInitialOnly" | "retentionDays" | "requireAllowlist">;
 };
 

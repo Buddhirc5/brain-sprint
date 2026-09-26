@@ -389,6 +389,7 @@ class DemoApi implements Api {
   private pub(t: Tenant): TenantPublic {
     const cfg = normalizeCfg(t.cfg, t.template);
     return { id: t.id, slug: t.slug, name: t.name, status: t.status, template: t.template, branding: t.branding, labels: t.labels, features: cfg.features, signIn: cfg.signIn,
+      joinKeyRequired: !!store.read().joinKeys?.[t.id]?.required,
       pubCfg: { branches: cfg.branches, departments: cfg.departments, maskIds: cfg.maskIds, lastInitialOnly: cfg.lastInitialOnly, retentionDays: cfg.retentionDays, requireAllowlist: cfg.requireAllowlist } };
   }
   async tenantBySlug(slug: string) {
@@ -495,6 +496,7 @@ class DemoApi implements Api {
   async playerLookup(tid: string, empId: string): Promise<LookupCard | null> {
     const db = store.read();
     const t = this.tenant(db, tid);
+    this.needJoin(db, tid);
     if (!normalizeCfg(t.cfg, t.template).signIn.empId) throw err("forbidden", "Employee ID sign-in is turned off.");
     const id = normEmpId(empId);
     const rl = this.rate(`lookup:${tid}:${this.sess?.userId || "anon"}`);
@@ -507,12 +509,56 @@ class DemoApi implements Api {
     const parts = p.name.trim().split(/\s+/);
     return { first: parts[0], lastInitial: parts.length > 1 ? parts[parts.length - 1][0] + "." : "", unit: p.unit, unitType: p.unitType, level: levelOf(statsOf(p, db.t[tid].dq).points).level, look: p.look };
   }
+  /** New players need the private invite key when the company requires it. */
+  private needJoin(db: DB, tid: string) {
+    if (!db.joinKeys?.[tid]?.required) return;
+    if (this.sess && db.joinPasses?.[`${tid}:${this.sess.userId}`]) return;
+    throw err("forbidden", "Use the invite link from your company to join.");
+  }
+  private joinKeyOf(db: DB, tid: string) {
+    db.joinKeys ||= {};
+    return (db.joinKeys[tid] ||= { key: newJoinKey(), required: false, rotatedAt: Date.now() });
+  }
+  async joinCompany(tid: string, key: string) {
+    const u = this.need();
+    const rl = this.rate(`join:${tid}:${u.id}`);
+    const k = store.read().joinKeys?.[tid];
+    if (!k) return true;
+    if (key.toUpperCase().replace(/[^A-Z0-9]/g, "") !== k.key) {
+      rl.fail();
+      return false;
+    }
+    rl.ok();
+    store.tx((db) => void ((db.joinPasses ||= {})[`${tid}:${u.id}`] = Date.now()));
+    return true;
+  }
+  async joinKeyGet(tid: string) {
+    return store.tx((db) => {
+      this.req(db, tid, "admin");
+      return { ...this.joinKeyOf(db, tid) };
+    });
+  }
+  async joinKeySet(tid: string, required: boolean, rotate = false) {
+    return store.tx((db) => {
+      this.req(db, tid, "admin");
+      const k = this.joinKeyOf(db, tid);
+      k.required = required;
+      if (rotate) {
+        k.key = newJoinKey();
+        k.rotatedAt = Date.now();
+        for (const p of Object.keys(db.joinPasses || {})) if (p.startsWith(tid + ":")) delete db.joinPasses![p];
+        this.logT(db, tid, { action: "Invite link rotated", detail: "Old player invite links stop working", sev: "warn" });
+      } else this.logT(db, tid, { action: "Invite link setting", detail: required ? "Invite link required" : "Invite link optional" });
+      return { ...k };
+    });
+  }
   async playerClaim(tid: string, empId: string, device: string) {
     const u = this.need();
     const id = normEmpId(empId);
     return store.tx((db) => {
       const t = this.tenant(db, tid);
       if (t.status !== "active") throw err("suspended", "This company's account is paused.");
+      this.needJoin(db, tid);
       if (!normalizeCfg(t.cfg, t.template).signIn.empId) throw err("forbidden", "Employee ID sign-in is turned off.");
       const p = Object.values(db.t[tid].players).find((x) => x.empId === id);
       if (!p) throw err("not_found", "No player card with that Employee ID.");
@@ -533,6 +579,7 @@ class DemoApi implements Api {
     if (!validEmpId(empId)) throw err("invalid", "Employee ID should be 3–12 letters or numbers.");
     if (!validName(name)) throw err("invalid", "Please enter your name (letters only).");
     const db0 = store.read();
+    this.needJoin(db0, tid);
     const t0 = this.tenant(db0, tid);
     const cfg = normalizeCfg(t0.cfg, t0.template);
     if (cfg.requireAllowlist) {
@@ -1468,6 +1515,7 @@ class DemoApi implements Api {
         cfg: defaultCfg(input.template), createdAt: Date.now(),
       };
       db.tenants[id] = t;
+      (db.joinKeys ||= {})[id] = { key: newJoinKey(), required: true, rotatedAt: Date.now() }; // new companies: private link from day one
       db.t[id] = { games: {}, keys: {}, players: {}, gifts: {}, dq: { runs: {} }, roster: null, audit: [], members: [{ email, role: "owner", invitedAt: Date.now() }] };
       if (input.starter) {
         const now = Date.now();
@@ -1538,3 +1586,9 @@ class DemoApi implements Api {
   }
 }
 
+/** 10 characters from an unambiguous alphabet (no 0/O, 1/I/L) — same as the database. */
+function newJoinKey() {
+  const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const b = crypto.getRandomValues(new Uint8Array(10));
+  return Array.from(b, (x) => A[x % A.length]).join("");
+}

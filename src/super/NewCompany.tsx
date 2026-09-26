@@ -103,7 +103,7 @@ export function NewCompany() {
 1. Open the admin portal: ${admin}
 2. Click "First time? Set a password" and use ${email}.
 3. ${starter ? "Your starter quizzes are waiting as drafts — review them, then publish." : "Create your first quiz."}
-4. Share the player link with your team: ${player}`;
+4. Share the private player invite link with your team — copy it (or its QR code) from Settings → Links to share. The plain address ${player} only works with the invite link.`;
     return (
       <>
         <div className="toolbar">

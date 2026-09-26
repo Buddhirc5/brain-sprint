@@ -15,6 +15,9 @@ import { Loading } from "../App";
 import { useTenantPub } from "./useTenantPub";
 import { useApi } from "../app/ApiCtx";
 import { isDemo } from "../api/demo/guard";
+import { useEffect } from "react";
+import { nav } from "../app/router";
+import { cleanJoinKey, setJoinKey } from "../app/joinKey";
 
 export function Gone({ title, text }: { title: string; text: string }) {
   return (
@@ -29,7 +32,13 @@ export function Gone({ title, text }: { title: string; text: string }) {
   );
 }
 
-export function TenantApp({ slug }: { slug: string }) {
+export function TenantApp({ slug, joinKey }: { slug: string; joinKey?: string }) {
+  // private invite link: remember the key on this device, then drop it from the address bar
+  useEffect(() => {
+    if (!joinKey) return;
+    setJoinKey(slug, cleanJoinKey(joinKey));
+    nav({ r: "tenant", slug }, true);
+  }, [slug, joinKey]);
   const { pub, error } = useTenantPub(slug);
   if (error) return <Gone title="Can't load" text={error} />;
   if (pub === undefined) return <Loading text="Loading…" />;

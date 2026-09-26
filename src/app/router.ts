@@ -18,9 +18,10 @@ export type Route =
   | { r: "home"; section?: Section }
   | { r: "experience" }
   | { r: "signin" }
+  | { r: "contact" }
   | { r: "join"; pin?: string }
   | { r: "vote"; code?: string }
-  | { r: "tenant"; slug: string }
+  | { r: "tenant"; slug: string; key?: string }
   | { r: "admin"; slug: string; tab?: string }
   | { r: "host"; slug: string; id: string }
   | { r: "present"; slug: string; id: string }
@@ -34,7 +35,7 @@ export type Section = (typeof SECTIONS)[number];
 /** Friendly aliases people type or link to. */
 const ALIAS: Record<string, string> = {
   login: "signin", "sign-in": "signin", signup: "experience", "sign-up": "experience", demo: "experience", try: "experience",
-  tour: "experience", play: "join", pin: "join", poll: "vote", admin: "signin", home: "", pricing: "faq", how: "how-it-works",
+  tour: "experience", sales: "contact", "contact-sales": "contact", play: "join", pin: "join", poll: "vote", admin: "signin", home: "", pricing: "faq", how: "how-it-works",
 };
 
 export function parse(hash: string): Route {
@@ -49,12 +50,14 @@ export function parse(hash: string): Route {
   if ((SECTIONS as readonly string[]).includes(p[0]) && p.length === 1) return { r: "home", section: p[0] as Section };
   if (p[0] === "experience") return { r: "experience" };
   if (p[0] === "signin") return { r: "signin" };
+  if (p[0] === "contact") return { r: "contact" };
   if (p[0] === "join") return { r: "join", pin: p[1] };
   if (p[0] === "vote") return { r: "vote", code: p[1] };
   if (p[0] === "super") return { r: "super", tab: p[1] };
   if (p[0] === "t" && p[1]) {
     const slug = p[1].toLowerCase();
     if (!p[2]) return { r: "tenant", slug };
+    if (p[2] === "k" && p[3]) return { r: "tenant", slug, key: p[3] };
     if (p[2] === "admin") return { r: "admin", slug, tab: p[3] };
     if (p[2] === "host" && p[3]) return { r: "host", slug, id: p[3] };
     if (p[2] === "present" && p[3]) return { r: "present", slug, id: p[3] };
@@ -68,9 +71,10 @@ export function href(r: Route): string {
     case "home": return "#/" + (r.section || "");
     case "experience": return "#/experience";
     case "signin": return "#/signin";
+    case "contact": return "#/contact";
     case "join": return "#/join" + (r.pin ? "/" + r.pin : "");
     case "vote": return "#/vote" + (r.code ? "/" + r.code : "");
-    case "tenant": return `#/t/${r.slug}`;
+    case "tenant": return `#/t/${r.slug}` + (r.key ? `/k/${r.key}` : "");
     case "admin": return `#/t/${r.slug}/admin` + (r.tab ? "/" + r.tab : "");
     case "host": return `#/t/${r.slug}/host/${r.id}`;
     case "present": return `#/t/${r.slug}/present/${r.id}`;

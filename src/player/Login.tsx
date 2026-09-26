@@ -7,6 +7,7 @@ import { EmailCode } from "../components/auth";
 import { levelTitle } from "../lib/scoring";
 import { normEmpId, validEmpId } from "../lib/security";
 import { firstName, TopBar, unitLabel } from "./common";
+import { joinIfNeeded } from "../app/joinKey";
 
 /* Sign in with Employee ID + "Is this you?" (no password or PIN).
    Safeguards (enforced by the server): wrong IDs are rate-limited, only first name + last
@@ -44,6 +45,7 @@ export function Login() {
     setBusy(true);
     try {
       if (!api.user()) await api.signInAnonymous();
+      await joinIfNeeded(api, tid, pub.slug);
       const card = await api.playerLookup(tid, emp);
       if (!card) setErr("We couldn't find that Employee ID. New here? Create your player card instead.");
       else setFound(card);
@@ -59,6 +61,7 @@ export function Login() {
     setBusy(true);
     try {
       if (!api.user()) await api.signInAnonymous();
+      await joinIfNeeded(api, tid, pub.slug);
       const p = await api.playerClaim(tid, normEmpId(id), deviceLabel());
       setMe(p);
       toast(`Welcome back, ${firstName(p.name)}!`);

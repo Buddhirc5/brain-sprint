@@ -45,6 +45,8 @@ export interface DB {
     audit: AuditEntry[];
   };
   library: LibraryItem[];
+  joinKeys?: Record<string, { key: string; required: boolean; rotatedAt: number }>; // tenant id → private invite key
+  joinPasses?: Record<string, number>; // "tid:userId" → when the key was accepted
   rate: Record<string, { n: number; until: number }>;
 }
 

@@ -300,6 +300,18 @@ class SupabaseApi implements Api {
   async playerLookup(tenantId: string, empId: string) {
     return (await this.rpc<LookupCard | null>("player_lookup", { p_tid: tenantId, p_emp_id: empId })) ?? null;
   }
+  async joinCompany(tenantId: string, key: string) {
+    this.needSession();
+    return !!(await this.rpc<boolean>("join_company", { p_tid: tenantId, p_key: key }));
+  }
+  async joinKeyGet(tenantId: string) {
+    return this.rpc<{ key: string; required: boolean; rotatedAt: number }>("join_key_get", { p_tid: tenantId });
+  }
+  async joinKeySet(tenantId: string, required: boolean, rotate = false) {
+    const r = await this.rpc<{ key: string; required: boolean; rotatedAt: number }>("join_key_set", { p_tid: tenantId, p_required: required, p_rotate: rotate });
+    this.refresh(tenantId);
+    return r;
+  }
   async playerClaim(tenantId: string, empId: string, device: string) {
     this.needSession();
     const p = await this.rpc<Player>("player_claim", { p_tid: tenantId, p_emp_id: empId, p_device: device });
