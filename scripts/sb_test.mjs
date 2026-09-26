@@ -519,7 +519,7 @@ section("rate limits");
   await rejects(p6.playerClaim(tA.id, "E1001", "x"), "rate_limited", "claim shares the lookup limiter");
 }
 
-section("live quiz (Kahoot-style)");
+section("live quiz (game-show style)");
 {
   const s = await owner.liveCreate(tA.id, L.game.id, { guests: false });
   ok(/^\d{6}$/.test(s.pin) && s.state === "lobby" && s.total === 2 && !("canon" in s), "liveCreate", s);
@@ -554,7 +554,7 @@ section("live quiz (Kahoot-style)");
   ok(h.answered === 2 && h.counts.join() === "1,1,0" && h.players.length === 2, "host view counts answers", h);
   await owner.liveControl(s.id, "reveal");
   v = await once((cb) => p1.watchLivePlayer(s.id, j1.livePlayerId, cb));
-  ok(v.me.score >= 900 && v.me.score <= 1000 && v.me.lastOk === true && v.lastOk === true && v.rank === 1 && v.session.reveal.canon === "1" && v.session.reveal.explain === "Four.", "reveal: Kahoot points (500–1000 by speed)", v);
+  ok(v.me.score >= 900 && v.me.score <= 1000 && v.me.lastOk === true && v.lastOk === true && v.rank === 1 && v.session.reveal.canon === "1" && v.session.reveal.explain === "Four.", "reveal: game-show points (500–1000 by speed)", v);
   const s1 = v.me.score;
   ok(v.ahead === null || v.ahead === undefined, "leader has nobody ahead", v.ahead);
   const v2 = await once((cb) => p2.watchLivePlayer(s.id, j2.livePlayerId, cb));
@@ -602,7 +602,7 @@ section("live quiz (Kahoot-style)");
   await rejects(guest.liveFind("123456"), "rate_limited", "PIN guessing is rate limited");
 }
 
-section("polls (Mentimeter-style)");
+section("polls (interactive)");
 {
   const pollId = "poll-" + run;
   const poll = {

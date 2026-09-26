@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../app/ctx";
 import { useApi } from "../app/ApiCtx";
 import { Icon, Modal, Seg } from "../components/ui";
@@ -8,6 +8,7 @@ import { COLOR_HEX, COLORS, DARK_CARDS, MINUTE_OPTS, sortGames, statusOf } from 
 const CERT_MINUTES = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180]; // exams: 1–180 min (server clamps the same)
 import { limitMs, runCorrect } from "../lib/scoring";
 import { cleanText } from "../lib/security";
+import { compressImage } from "../lib/image";
 import { fmtDate, fmtMin, newId, pct, todayKey } from "../lib/util";
 import { LIVE } from "../api/engine";
 import type { AnswerKey, CardColor, CertSettings, Game, GameStatus, LibraryItem, QType, QuizKind } from "../types";
@@ -578,6 +579,7 @@ function QEditor({ q, i, n, topics, live, setQ, move, remove }: { q: DraftQ; i: 
         <label htmlFor={`q${i}t`}>{q.type === "tf" ? "Statement" : "Question"}</label>
         <textarea className="inp" id={`q${i}t`} rows={2} maxLength={300} value={q.q} onChange={(e) => setQ(i, { q: e.target.value })} />
       </div>
+      <QImage img={q.img} i={i} onChange={(img) => setQ(i, { img })} />
       {q.type === "mcq" && (
         <div className="field">
           <span className="flabel">Options — tap the letter to mark the right one</span>
@@ -643,6 +645,45 @@ function QEditor({ q, i, n, topics, live, setQ, move, remove }: { q: DraftQ; i: 
       <div className="field">
         <label htmlFor={`q${i}e`}>Why? (shown after answering)</label>
         <textarea className="inp" id={`q${i}e`} rows={2} maxLength={300} value={q.explain} placeholder="One or two lines that teach the point" onChange={(e) => setQ(i, { explain: e.target.value })} />
+      </div>
+    </div>
+  );
+}
+
+/** Optional picture for a question — resized and compressed in the browser before it's saved. */
+function QImage({ img, i, onChange }: { img?: string; i: number; onChange: (img: string | undefined) => void }) {
+  const { toast } = useApp();
+  const [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const pick = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      onChange(await compressImage(file));
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't add that image.");
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = "";
+    }
+  };
+  return (
+    <div className="field">
+      <span className="flabel">Image (optional)</span>
+      <div
+        className={`qimg-drop ${img ? "has" : ""}`}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          void pick(e.dataTransfer.files?.[0]);
+        }}
+      >
+        {img ? <img src={img} alt={`Question ${i + 1} image`} /> : <span className="fine">Drop a picture here, or choose one. It's resized automatically.</span>}
+        <div className="row">
+          <input ref={input} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr" tabIndex={-1} aria-hidden="true" onChange={(e) => void pick(e.target.files?.[0])} />
+          <button type="button" className="btn ghost tiny" disabled={busy} onClick={() => input.current?.click()}>{busy ? "Processing…" : img ? "Replace image" : "+ Add image"}</button>
+          {img && <button type="button" className="link danger" onClick={() => onChange(undefined)}>Remove</button>}
+        </div>
       </div>
     </div>
   );

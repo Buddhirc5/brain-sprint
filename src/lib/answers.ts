@@ -23,6 +23,7 @@ export interface DraftQ {
   pairs: [string, string][];
   steps: string[];
   seconds?: number; // live quiz: time limit for this question
+  img?: string; // optional picture (data: URL)
 }
 
 function notIdentity<T>(orig: T[]): T[] {
@@ -37,7 +38,7 @@ const sameSet = (a?: string[], b?: string[]) => !!a && !!b && a.length === b.len
 /** Turn an admin's draft into the player-facing question plus its canonical answer.
  *  Match meanings and order steps are shuffled once and kept stable across edits. */
 export function sealQuestion(d: DraftQ, prev?: Question): { q: Question; canon: string } {
-  const base = { id: d.id, type: d.type, topic: d.topic, q: d.q, explain: d.explain || "", ...(d.seconds ? { seconds: d.seconds } : {}) };
+  const base = { id: d.id, type: d.type, topic: d.topic, q: d.q, explain: d.explain || "", ...(d.seconds ? { seconds: d.seconds } : {}), ...(d.img ? { img: d.img } : {}) };
   if (d.type === "mcq") return { q: { ...base, options: d.options.slice() }, canon: String(d.answer) };
   if (d.type === "tf") return { q: { ...base }, canon: d.tf ? "T" : "F" };
   if (d.type === "match") {
@@ -51,7 +52,7 @@ export function sealQuestion(d: DraftQ, prev?: Question): { q: Question; canon: 
 }
 
 export function unseal(q: Question, canon: string | undefined): DraftQ {
-  const d: DraftQ = { id: q.id, type: q.type, topic: q.topic, q: q.q, explain: q.explain || "", options: ["", "", "", ""], answer: 0, tf: true, pairs: [], steps: [], seconds: q.seconds };
+  const d: DraftQ = { id: q.id, type: q.type, topic: q.topic, q: q.q, explain: q.explain || "", options: ["", "", "", ""], answer: 0, tf: true, pairs: [], steps: [], seconds: q.seconds, ...(q.img ? { img: q.img } : {}) };
   const idx = (canon || "").split(",").map(Number);
   if (q.type === "mcq") {
     d.options = (q.options || []).slice();

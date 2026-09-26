@@ -215,7 +215,7 @@ create table public.audit_log (
 create index audit_log_tenant_idx on public.audit_log (tenant_id, at desc);
 
 -- ---------------------------------------------------------------------
--- live quiz (Kahoot-style)
+-- live quiz (game-show style)
 -- ---------------------------------------------------------------------
 create table public.live_sessions (
   id              text primary key,
@@ -281,7 +281,7 @@ create table public.live_answers (
 create index live_answers_session_idx on public.live_answers (session_id, q_index);
 
 -- ---------------------------------------------------------------------
--- live polls (Mentimeter-style)
+-- live polls (interactive)
 -- ---------------------------------------------------------------------
 create table public.polls (
   id            text primary key check (length(id) between 1 and 64),

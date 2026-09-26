@@ -295,6 +295,7 @@ export function Play({ gid }: { gid: string }) {
           <span className="chip">{q.topic}</span>
         </div>
         <h2 className="qtext">{q.q}</h2>
+        {q.img && <img className="qimg" src={q.img} alt="" />}
         <QBody key={q.id + qi} q={q} qs={qs} setQs={setQs} rv={rv} busy={phase === "sending"} last={last} onSubmit={submit} />
       </section>
 

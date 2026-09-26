@@ -438,7 +438,7 @@ function AdminsPanel({ t }: { t: TenantRow }) {
 
 const FEATURE_LABEL: [keyof Features, string, string][] = [
   ["sprint", "Daily Sprint", "Short self-paced quizzes every day"],
-  ["live", "Live Quiz", "Kahoot-style games on a big screen"],
+  ["live", "Live Quiz", "Game-show quizzes on a big screen"],
   ["polls", "Live Polls", "Word clouds, ratings, Q&A"],
   ["cert", "Certification", "Pass-mark exams with certificates"],
   ["coins", "Coins", "Earned for playing"],
@@ -447,6 +447,7 @@ const FEATURE_LABEL: [keyof Features, string, string][] = [
   ["avatars", "Cartoon avatars", "Players pick a character"],
   ["rewards", "Hall of Fame & gifts", "Weekly winners"],
   ["battle", "Team leaderboard", "Units compete"],
+  ["world", "Knowledge World", "3D explore-and-race mini game (add-on)"],
 ];
 const SIGNIN_LABEL: [Exclude<keyof SignIn, "adminAuth">, string, string][] = [
   ["empId", "Employee ID", "Players type their ID, no password"],

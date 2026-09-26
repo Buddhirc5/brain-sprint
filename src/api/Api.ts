@@ -178,7 +178,7 @@ export interface Api {
   importLibrary(tenantId: string, ids: string[]): Promise<number>;
   download(filename: string, text: string, mime?: string): void;
 
-  /* ---- live quiz (Kahoot-style) ---- */
+  /* ---- live quiz (game-show style) ---- */
   liveCreate(tenantId: string, gid: string, opts: { guests: boolean }): Promise<LiveSession>;
   /** host actions: start → question → reveal → board → next question … → ended */
   liveControl(sessionId: string, action: "start" | "reveal" | "board" | "next" | "end" | "kick", arg?: string): Promise<void>;
@@ -188,7 +188,7 @@ export interface Api {
   watchLivePlayer(sessionId: string, livePlayerId: string, cb: (v: { session: LiveSession; me: import("../types").LivePlayer | null; rank: number; count: number; answered: boolean; lastOk: boolean | null; ahead?: { nick: string; score: number } | null }) => void): Unsub;
   liveAnswer(sessionId: string, livePlayerId: string, qIndex: number, choice: string): Promise<void>;
 
-  /* ---- live polls (Mentimeter-style) ---- */
+  /* ---- live polls (interactive) ---- */
   savePoll(tenantId: string, poll: Poll): Promise<void>;
   deletePoll(tenantId: string, id: string): Promise<void>;
   pollControl(pollId: string, patch: Partial<Pick<Poll, "current" | "status" | "showResults" | "locked">>): Promise<void>;

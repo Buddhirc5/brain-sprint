@@ -1361,7 +1361,7 @@ begin
 end $$;
 
 -- =====================================================================
--- 9. live quiz (Kahoot-style)
+-- 9. live quiz (game-show style)
 -- =====================================================================
 
 create or replace function public.live_create(p_tid text, p_gid text, p_guests boolean) returns jsonb
@@ -1610,7 +1610,7 @@ begin
 end $$;
 
 -- =====================================================================
--- 10. live polls (Mentimeter-style)
+-- 10. live polls (interactive)
 -- =====================================================================
 
 create or replace function private.poll_host(p public.polls) returns boolean

@@ -1,4 +1,4 @@
-/* ================= live quiz (Kahoot-style): host big screen, player phone, admin tab ================= */
+/* ================= live quiz (game-show style): host big screen, player phone, admin tab ================= */
 body.lv-body { padding: 0; overflow: hidden; }
 
 /* ---------- shared ---------- */
@@ -272,3 +272,7 @@ kbd { font: 700 11px/1 var(--body); border: 1.5px solid currentColor; border-rad
   .lv-mascot { display: none; }
   .lv-mid { grid-template-columns: 1fr 1fr; }
 }
+
+/* question image (big screen replaces the mascot; phone shows a small copy) */
+.lv-qimg { max-width: min(46vw, 720px); max-height: 42vh; object-fit: contain; border-radius: 20px; background: #fff; box-shadow: 0 20px 40px -20px rgba(0,0,0,.5); }
+.lv-pqimg { display: block; max-width: 100%; max-height: 22vh; margin: 0 auto 8px; object-fit: contain; border-radius: 14px; background: #fff; }

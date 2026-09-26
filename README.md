@@ -1,6 +1,6 @@
 # Brain Sprint
 
-White-label learning games for companies: **Daily Sprint** quizzes (coins, streaks, levels, leaderboards, cartoon characters), **Live Quiz** (Kahoot-style, game PIN + big screen), **Live Polls** (Mentimeter-style: word cloud, multiple choice, scale, ranking, open text, Q&A) and **Certification** exams with printable certificates.
+White-label learning games for companies: **Daily Sprint** quizzes (coins, streaks, levels, leaderboards, cartoon characters), **Live Quiz** (game-show style, game PIN + big screen), **Live Polls** (word cloud, multiple choice, scale, ranking, open text, Q&A) and **Certification** exams with printable certificates.
 
 You run one installation. You (the **super admin**) create a company for each client. Each company gets its own web address, brand (name, logo, colours, wording), admins, players and questions, and can't see any other company's data.
 
@@ -19,7 +19,10 @@ With no Supabase keys, the app runs a full **demo backend inside the browser** (
 
 | What | Where | Sign in |
 |---|---|---|
-| Home page | `#/` | — |
+| Landing page | `#/` | — |
+| Experience (guided demo tour) | `#/experience` | — |
+| Sign in (join a game, vote, company & admin sign-in) | `#/signin` | — |
+| Knowledge World (3D mini game preview) | `#/world` | — |
 | Harbor Bank, player app (bank template, custom brand) | `#/t/harbor` | Employee ID `DEMO-101` … `DEMO-130` |
 | Harbor Bank, admin portal | `#/t/harbor/admin` | `admin@harbor.demo` / `demo1234` (Owner) · `host@harbor.demo` / `demo1234` (Host) |
 | Northwind Traders (generic template) | `#/t/northwind` · `/admin` | `admin@northwind.demo` / `demo1234` |
@@ -27,6 +30,8 @@ With no Supabase keys, the app runs a full **demo backend inside the browser** (
 | Super admin console | `#/super` | `super@demo.app` / `demo1234`, then code **Sandeepa** |
 
 In the demo, email codes and links appear in a blue "Demo inbox" box instead of being emailed. To test a live game, host it from the admin portal and press **+ Open a test player** to open player tabs.
+
+**Demo sandbox on a live site.** When Supabase is configured, visitors can still try everything from `#/experience`: the first click switches their browser to the in-browser demo (a "Demo sandbox · Exit demo" bar stays on screen). Nothing they do is sent to the database; it's kept in their browser's localStorage.
 
 `npm run build:demo` produces **one self-contained HTML file** (`dist-demo/index.html`) that you can email to a prospect or open from disk.
 
@@ -52,13 +57,20 @@ src/
   polls/                live polls: editor, presenter screen, voting page
   cert/                 printable certificate
   super/                super admin console
+  world/                Knowledge World: 3D explore-and-race mini game (three.js, lazy-loaded)
 supabase/               SQL migrations, seed, backend README
 ```
+
+## Knowledge World (add-on)
+
+A 3D open world players can open from their lobby: walk their cartoon character around a city, drive any parked car, race a lap through checkpoints and pop "?" bubbles for trivia. Arrow keys/WASD + Space + E on desktop; a thumb stick and buttons on phones. It is **off by default**: switch it on per company in the super admin console (**Features & sign-in → Knowledge World**) or in the company's **Settings**. Nothing in it is saved to the server (coins and best lap live in the player's browser).
+
+**Question images:** every quiz question can carry a picture. The admin portal resizes and compresses it in the browser (about 50–250 KB) and it's stored with the question.
 
 ## 3. Set up Supabase (free plan)
 
 1. Create a project at [supabase.com](https://supabase.com) (the free plan is fine to start).
-2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, then `supabase/seed.sql`.
+2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, then `supabase/seed.sql`.
 3. Make yourself super admin: `select public.bootstrap_super_admin('you@yourmail.com');`
 4. In **Authentication**, turn **Anonymous sign-ins ON**, set the **email OTP length to 6**, enable **MFA (TOTP)**, add your redirect URLs, and raise the anonymous sign-in rate limit. The full checklist is in `supabase/README.md` §3.
 5. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (**Project Settings → API**).

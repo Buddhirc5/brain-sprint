@@ -21,6 +21,7 @@ export const LABELS: Record<Tenant["template"], Labels> = {
 
 export const DEFAULT_FEATURES: Features = {
   sprint: true, live: true, polls: true, cert: true, coins: true, store: true, streaks: true, avatars: true, rewards: true, battle: true,
+  world: false, // Knowledge World is an add-on: the super admin or a company admin switches it on
 };
 export const DEFAULT_SIGNIN: SignIn = { empId: true, emailOtp: true, sso: false, liveGuests: false, adminAuth: "both", adminMfa: false };
 
@@ -70,7 +71,7 @@ export function scoreAnswer(g: Game, ok: boolean, ms: number) {
 /** A small grace for network latency before an answer counts as late. */
 export const GRACE_MS = 1500;
 
-/* ---------------- live quiz scoring (Kahoot-style) ---------------- */
+/* ---------------- live quiz scoring (game-show style) ---------------- */
 export const LIVE = { maxPts: 1000, minPts: 500, streakStep: 100, streakCap: 500, defaultSeconds: 20 };
 /** Right answer: 500–1000 by speed, plus 100 per answer in a row before this one (max +500). */
 export function livePoints(ok: boolean, ms: number, limitMs: number, streakBefore: number) {

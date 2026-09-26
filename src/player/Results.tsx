@@ -131,6 +131,7 @@ function CertResult({ g, fresh }: { g: Game; fresh?: boolean }) {
                 return (
                   <li key={q.id} className={ok ? "ok" : "no"}>
                     <b>{q.q}</b>
+                    {q.img && <img className="qimg" src={q.img} alt="" loading="lazy" />}
                     <span>
                       Your answer: {a?.sk ? "Not answered" : choiceText(q, a?.c)} {ok ? "✓" : "✕"}
                     </span>
