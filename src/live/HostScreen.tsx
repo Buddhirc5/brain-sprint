@@ -2,6 +2,7 @@
    lobby → question → reveal → board → … → podium. The server owns the state; this
    screen just shows it and sends the host's commands, so it can be reloaded or opened
    on another device at any time. */
+import "../styles/admin.css";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useApi } from "../app/ApiCtx";
 import { useTenantPub } from "../pages/useTenantPub";

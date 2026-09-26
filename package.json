@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
-    "build:demo": "tsc --noEmit && BUILD_TARGET=demo vite build",
+    "build": "tsc --noEmit && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs dist",
+    "build:demo": "tsc --noEmit && BUILD_TARGET=demo vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs dist-demo",
     "preview": "vite preview",
     "gen:library": "python3 scripts/gen_library.py && node scripts/sb_gen_seed.mjs",
-    "test:supabase": "node scripts/sb_test.mjs"
+    "test:supabase": "node scripts/sb_test.mjs",
+    "gen:brand": "node scripts/gen-brand.mjs"
   },
   "dependencies": {
     "@fontsource-variable/figtree": "5.1.1",
@@ -29,5 +30,5 @@
     "vite": "5.4.11",
     "vite-plugin-singlefile": "2.0.3"
   },
-  "description": "Brain Sprint — white-label daily quizzes, live quiz games, live polls and certification for companies."
+  "description": "Brain Sprint \u2014 white-label daily quizzes, live quiz games, live polls and certification for companies."
 }

@@ -144,3 +144,6 @@ textarea.inp { resize: vertical; line-height: 1.4; }
 .sandbox-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 4px rgba(198,244,50,.25); flex: none; }
 @media (max-width: 480px) { .sandbox-sub { display: none; } }
 @media print { .sandbox-bar { display: none; } }
+
+/* deep links: hide the pre-rendered landing page until the app draws the real screen (see index.html + main.tsx) */
+.deep #root { visibility: hidden; }

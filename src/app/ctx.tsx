@@ -20,8 +20,7 @@ export type PView =
   | { v: "guide" }
   | { v: "login" }
   | { v: "email" }
-  | { v: "certs" }
-  | { v: "world" };
+  | { v: "certs" };
 
 export interface ConfirmReq {
   label: string;

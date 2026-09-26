@@ -1,15 +1,16 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { Api } from "./api/Api";
 import { createApi } from "./api";
 import { ApiProvider } from "./app/ApiCtx";
-import { useRoute } from "./app/router";
+import { useRoute, type Route } from "./app/router";
 import { applyBranding, setTitle } from "./app/theme";
 import { Sprinty } from "./components/Chibi";
+import { LogoMark } from "./components/Logo";
 import { Home } from "./pages/Home";
-import { TenantApp } from "./pages/TenantApp";
 import { HAS_LIVE_BACKEND, exitSandbox, sandboxOn } from "./app/sandbox";
 
-// Big screens load on demand so a player's phone only downloads what it needs.
+// Everything except the landing page loads on demand, so the first visit only downloads what it shows.
+const TenantApp = lazy(() => import("./pages/TenantApp").then((m) => ({ default: m.TenantApp })));
 const AdminApp = lazy(() => import("./pages/AdminApp").then((m) => ({ default: m.AdminApp })));
 const HostScreen = lazy(() => import("./live/HostScreen").then((m) => ({ default: m.HostScreen })));
 const JoinPage = lazy(() => import("./live/JoinPage").then((m) => ({ default: m.JoinPage })));
@@ -18,15 +19,32 @@ const VotePage = lazy(() => import("./polls/VotePage").then((m) => ({ default: m
 const CertificatePage = lazy(() => import("./cert/CertificatePage").then((m) => ({ default: m.CertificatePage })));
 const Experience = lazy(() => import("./pages/Experience").then((m) => ({ default: m.Experience })));
 const SignIn = lazy(() => import("./pages/SignIn").then((m) => ({ default: m.SignIn })));
-const WorldPage = lazy(() => import("./world/WorldPage").then((m) => ({ default: m.WorldPage })));
 const SuperApp = lazy(() => import("./super/SuperApp").then((m) => ({ default: m.SuperApp })));
 
+/** Stand-in while the real backend starts: the landing page needs no data. */
+const STUB = { mode: "supabase", user: () => null, onAuth: () => () => undefined } as unknown as Api;
+
 export default function App() {
+  const route = useRoute();
   const [api, setApi] = useState<Api | null>(null);
   const [fail, setFail] = useState("");
+  const started = useRef(false);
   useEffect(() => {
-    createApi(HAS_LIVE_BACKEND && sandboxOn()).then(setApi, (e) => setFail(String(e?.message || e)));
-  }, []);
+    const start = () => {
+      if (started.current) return;
+      started.current = true;
+      createApi(HAS_LIVE_BACKEND && sandboxOn()).then(setApi, (e) => setFail(String(e?.message || e)));
+    };
+    if (route.r !== "home") return start();
+    // landing page: paint first, start the backend when the browser is idle
+    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(start, { timeout: 2500 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = window.setTimeout(start, 1200);
+    return () => window.clearTimeout(t);
+  }, [route.r]);
   if (fail)
     return (
       <div className="phone" style={{ paddingTop: 40 }}>
@@ -37,11 +55,11 @@ export default function App() {
         </div>
       </div>
     );
-  if (!api) return <Loading text="Warming up…" />;
+  if (!api && route.r !== "home") return <Loading text="Warming up…" />;
   return (
-    <ApiProvider api={api}>
-      <Router />
-      {HAS_LIVE_BACKEND && api.mode === "demo" && <SandboxBar />}
+    <ApiProvider api={api ?? STUB}>
+      <Router route={route} />
+      {HAS_LIVE_BACKEND && api?.mode === "demo" && <SandboxBar />}
     </ApiProvider>
   );
 }
@@ -49,7 +67,7 @@ export default function App() {
 export function Loading({ text }: { text: string }) {
   return (
     <div className="phone" style={{ justifyItems: "center", paddingTop: 60, textAlign: "center" }}>
-      <Sprinty mood="think" size={120} />
+      <LogoMark size={96} />
       <p style={{ fontWeight: 800 }}>{text}</p>
     </div>
   );
@@ -68,10 +86,9 @@ function SandboxBar() {
   );
 }
 
-const SITE_PAGES = new Set(["home", "experience", "signin", "world", "super", "notfound"]);
+const SITE_PAGES = new Set(["home", "experience", "signin", "super", "notfound"]);
 
-function Router() {
-  const route = useRoute();
+function Router({ route }: { route: Route }) {
   // pages outside a company use the default Brain Sprint look
   useEffect(() => {
     if (SITE_PAGES.has(route.r)) {
@@ -80,7 +97,6 @@ function Router() {
         route.r === "super" ? "Brain Sprint · Super admin"
         : route.r === "experience" ? "Brain Sprint · Experience"
         : route.r === "signin" ? "Brain Sprint · Sign in"
-        : route.r === "world" ? "Brain Sprint · Knowledge World"
         : "Brain Sprint · Learning your team actually plays",
       );
     }
@@ -95,9 +111,6 @@ function Router() {
       break;
     case "signin":
       el = <SignIn />;
-      break;
-    case "world":
-      el = <WorldPage />;
       break;
     case "join":
       el = <JoinPage pin={route.pin} />;

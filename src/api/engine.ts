@@ -21,7 +21,6 @@ export const LABELS: Record<Tenant["template"], Labels> = {
 
 export const DEFAULT_FEATURES: Features = {
   sprint: true, live: true, polls: true, cert: true, coins: true, store: true, streaks: true, avatars: true, rewards: true, battle: true,
-  world: false, // Knowledge World is an add-on: the super admin or a company admin switches it on
 };
 export const DEFAULT_SIGNIN: SignIn = { empId: true, emailOtp: true, sso: false, liveGuests: false, adminAuth: "both", adminMfa: false };
 

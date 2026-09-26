@@ -1,5 +1,6 @@
 /* Company admin portal: sign-in (password / email link, per company setting),
    invite acceptance, optional authenticator-app check, then the portal. */
+import "../styles/admin.css";
 import { useCallback, useEffect, useState } from "react";
 import { TenantProvider } from "../app/ctx";
 import { useApi, errMsg } from "../app/ApiCtx";

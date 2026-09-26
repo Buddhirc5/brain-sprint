@@ -134,20 +134,6 @@ export function Lobby() {
         </a>
       )}
 
-      {features.world && (
-        <button type="button" className="world-cta" onClick={() => go({ v: "world" })}>
-          <span className="world-cta-art" aria-hidden="true">
-            <Chibi look={me.look} equipped={me.equipped} variant="full" mood="cheer" size={74} still />
-          </span>
-          <span className="grow">
-            <small className="world-cta-k">Break time</small>
-            <b>Knowledge World</b>
-            <small>Explore the city, race a car, pop trivia bubbles</small>
-          </span>
-          <span className="btn lime small" aria-hidden="true">Play</span>
-        </button>
-      )}
-
       {certTodo > 0 && (
         <button type="button" className="cert-cta" onClick={() => go({ v: "certs" })}>
           <span className="seal" aria-hidden="true">

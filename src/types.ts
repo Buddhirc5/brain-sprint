@@ -35,7 +35,6 @@ export interface Features {
   sprint: boolean; // daily self-paced quizzes
   live: boolean; // game-show style live quiz
   polls: boolean; // interactive live polls
-  world: boolean; // Knowledge World — papercraft explore-and-race mini game (off by default)
   cert: boolean; // certification exams
   coins: boolean;
   store: boolean;

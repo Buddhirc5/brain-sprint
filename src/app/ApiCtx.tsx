@@ -18,7 +18,10 @@ export function ApiProvider({ api, children }: { api: Api; children: ReactNode }
   const [user, setUser] = useState<AuthUser | null>(api.user());
   const [msg, setMsg] = useState("");
   const t = useRef<number>();
-  useEffect(() => api.onAuth(setUser), [api]);
+  useEffect(() => {
+    setUser(api.user());
+    return api.onAuth(setUser);
+  }, [api]);
   const toast = useCallback((m: string) => {
     setMsg(m);
     clearTimeout(t.current);
