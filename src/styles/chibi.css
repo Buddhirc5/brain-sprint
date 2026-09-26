@@ -1,0 +1,29 @@
+/* Character animation — all CSS, paused for people who prefer less motion. */
+.chibi { overflow: visible; display: block; }
+.chibi .eye { transform-box: fill-box; transform-origin: center; animation: blink 4.6s infinite; }
+.chibi .body { transform-box: view-box; transform-origin: 50% 96%; }
+.chibi.m-idle .body { animation: bob 2.8s ease-in-out infinite; }
+.chibi.m-happy .body { animation: hop .55s cubic-bezier(.3,.8,.4,1) 3; }
+.chibi.m-cheer .body { animation: hop .6s cubic-bezier(.3,.8,.4,1) infinite; }
+.chibi.m-cheer .arm-l { animation: wave-l .6s ease-in-out infinite alternate; }
+.chibi.m-cheer .arm-r { animation: wave-r .6s ease-in-out infinite alternate; }
+.chibi.m-sad .body { animation: droop 3.2s ease-in-out infinite; }
+.chibi.m-sad .tear { animation: tear 1.8s ease-in infinite; }
+.chibi.m-think .head { transform-box: view-box; transform-origin: 50% 56%; animation: tilt 2.6s ease-in-out infinite; }
+.chibi.m-cheer .shadow, .chibi.m-happy .shadow { animation: shadow .6s cubic-bezier(.3,.8,.4,1) infinite; transform-box: fill-box; transform-origin: center; }
+.chibi.still .body, .chibi.still .eye, .chibi.still .arm, .chibi.still .head, .chibi.still .shadow { animation: none !important; }
+@keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 95.5% { transform: scaleY(.08); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
+@keyframes hop { 0%, 100% { transform: translateY(0) scale(1, 1); } 20% { transform: translateY(0) scale(1.04, .95); } 50% { transform: translateY(-12px) scale(.97, 1.04); } }
+@keyframes droop { 0%, 100% { transform: rotate(-2deg) translateY(1px); } 50% { transform: rotate(-3.5deg) translateY(2px); } }
+@keyframes tilt { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-6deg); } }
+@keyframes tear { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(14px); opacity: 0; } }
+@keyframes shadow { 0%, 100% { transform: scaleX(1); opacity: .12; } 50% { transform: scaleX(.7); opacity: .06; } }
+@keyframes wave-l { from { transform: rotate(135deg); } to { transform: rotate(165deg); } }
+@keyframes wave-r { from { transform: rotate(-135deg); } to { transform: rotate(-165deg); } }
+/* Arms rotate with CSS transforms around the shoulder (never mix with SVG transform attributes). */
+.chibi .arm { transform-box: view-box; }
+.chibi .arm-l { transform-origin: 38px 97px; }
+.chibi .arm-r { transform-origin: 82px 97px; }
+.sprinty .arm-l { transform-origin: 26px 74px; }
+.sprinty .arm-r { transform-origin: 94px 74px; }

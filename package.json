@@ -1,0 +1,33 @@
+{
+  "name": "brain-sprint",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "build:demo": "tsc --noEmit && BUILD_TARGET=demo vite build",
+    "preview": "vite preview",
+    "gen:library": "python3 scripts/gen_library.py && node scripts/sb_gen_seed.mjs",
+    "test:supabase": "node scripts/sb_test.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/figtree": "5.1.1",
+    "@fontsource/anton": "5.1.0",
+    "@fontsource/caveat": "5.1.0",
+    "@supabase/supabase-js": "^2.117.2",
+    "qrcode-generator": "^1.4.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.6.3",
+    "vite": "5.4.11",
+    "vite-plugin-singlefile": "2.0.3"
+  },
+  "description": "Brain Sprint \u2014 white-label daily quizzes, live quiz games, live polls and certification for companies."
+}

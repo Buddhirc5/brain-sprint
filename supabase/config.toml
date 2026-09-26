@@ -1,0 +1,70 @@
+# Supabase CLI config — used by `supabase start` (local stack) and `supabase link` / `supabase db push`.
+# Hosted projects take their auth settings from the dashboard (see README.md); the values here mirror them.
+project_id = "brain-sprint"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173", "http://127.0.0.1:5173", "https://*.vercel.app"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = true
+minimum_password_length = 10
+
+[auth.rate_limit]
+# a whole office can share one IP: allow many guest (anonymous) sign-ins per hour
+anonymous_users = 1000
+sign_in_sign_ups = 300
+token_verifications = 300
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+# LOCAL ONLY (so scripts/sb_test.mjs can sign up without an inbox). Keep confirmations ON in production.
+enable_confirmations = false
+secure_password_change = true
+otp_length = 6
+otp_expiry = 600
+
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+# Microsoft Entra ID (optional) — see README.md → "Microsoft sign-in"
+[auth.external.azure]
+enabled = false
+client_id = "env(AZURE_CLIENT_ID)"
+secret = "env(AZURE_SECRET)"
+url = "https://login.microsoftonline.com/YOUR-TENANT-ID/v2.0"
