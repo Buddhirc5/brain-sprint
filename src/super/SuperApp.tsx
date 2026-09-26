@@ -13,7 +13,7 @@ import { ApiError } from "../api/Api";
 import { useApi, errMsg } from "../app/ApiCtx";
 import { absUrl, nav } from "../app/router";
 import { applyBranding } from "../app/theme";
-import { AdminSignIn } from "../components/auth";
+import { AdminSignIn, MfaGate, SandboxSignInNote } from "../components/auth";
 import { Icon, Modal } from "../components/ui";
 import { Mascot } from "../components/Chibi";
 import { Loading } from "../App";
@@ -50,15 +50,22 @@ export function SuperApp({ tab }: { tab?: string }) {
     );
   }, [api, user]);
   useEffect(recheck, [recheck]);
+  // super admins always verify with an authenticator app (set up on first sign-in)
+  const [mfa, setMfa] = useState<{ enrolled: boolean; verified: boolean } | null>(null);
+  useEffect(() => {
+    if (!user || user.anonymous) return setMfa(null);
+    api.mfaState().then(setMfa, (e) => setErr(errMsg(e)));
+  }, [api, user]);
 
   if (!user || user.anonymous)
     return (
       <div className="su-gate">
         <GateHead />
-        <AdminSignIn method="password" title="Super admin" redirectTo={absUrl({ r: "super" })} note="Only for the people who run this Ant Arena service. Company admins sign in on their own company's page." />
+        <SandboxSignInNote back="#/super" />
+        <AdminSignIn method="password" passwordOnly title="Super admin" redirectTo={absUrl({ r: "super" })} note="Only for the people who run this Ant Arena service. Company admins sign in on their own company's page." />
         {isDemo(api) && (
           <p className="banner blue">
-            Demo: sign in as <b>{DEMO_SUPER}</b> with password <b>{DEMO_PASSWORD}</b>, then enter the code <b>Sandeepa</b>.
+            Demo: sign in as <b>{DEMO_SUPER}</b> with password <b>{DEMO_PASSWORD}</b>, then scan the authenticator code shown and enter the code <b>Sandeepa</b>.
           </p>
         )}
         <a className="link su-center" href="#/">Back to home</a>
@@ -89,6 +96,15 @@ export function SuperApp({ tab }: { tab?: string }) {
           <button className="btn primary" onClick={() => void api.signOut()}>Sign out</button>
           <a className="link" href="#/">Back to home</a>
         </div>
+      </div>
+    );
+  if (!mfa) return <Loading text="Checking access…" />;
+  if (!mfa.verified)
+    return (
+      <div className="su-gate">
+        <GateHead />
+        <MfaGate enrolled={mfa.enrolled} onDone={() => api.mfaState().then(setMfa, (e) => setErr(errMsg(e)))} />
+        <button className="link su-center" onClick={() => void api.signOut()}>Sign out</button>
       </div>
     );
   if (st.unlockedUntil <= Date.now()) return <CodeScreen email={user.email || ""} onDone={recheck} />;

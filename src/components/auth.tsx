@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useApi, errMsg } from "../app/ApiCtx";
 import { isDemo } from "../api/demo/guard";
 import { Icon } from "./ui";
+import { HAS_LIVE_BACKEND, exitSandbox } from "../app/sandbox";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -41,7 +42,8 @@ export function DemoOutbox() {
 type Method = "password" | "magic" | "both";
 
 /** Email + password and/or magic link, with "first time? set a password". */
-export function AdminSignIn({ method, redirectTo, title = "Admin sign-in", note }: { method: Method; redirectTo: string; title?: string; note?: string }) {
+/** `passwordOnly`: no "set a password" or email reset links (accounts are created by the operator). */
+export function AdminSignIn({ method, redirectTo, title = "Admin sign-in", note, passwordOnly }: { method: Method; redirectTo: string; title?: string; note?: string; passwordOnly?: boolean }) {
   const { api } = useApi();
   const [tab, setTab] = useState<"password" | "magic">(method === "magic" ? "magic" : "password");
   const [mode, setMode] = useState<"in" | "up" | "reset">("in");
@@ -107,7 +109,7 @@ export function AdminSignIn({ method, redirectTo, title = "Admin sign-in", note 
       <button className="btn primary block" disabled={busy}>
         {busy ? "Please wait…" : tab === "magic" ? "Email me a sign-in link" : mode === "up" ? "Create password" : mode === "reset" ? "Send reset link" : "Sign in"}
       </button>
-      {tab === "password" && (
+      {tab === "password" && !passwordOnly && (
         <div className="row" style={{ justifyContent: "space-between" }}>
           {mode === "in" ? (
             <>
@@ -245,5 +247,20 @@ export function MfaGate({ enrolled, onDone }: { enrolled: boolean; onDone: () =>
       {err && <p className="err" role="alert">{err}</p>}
       <button className="btn primary block" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify"}</button>
     </form>
+  );
+}
+
+/**
+ * On a live site, a browser that entered the demo keeps using the in-browser demo until it exits,
+ * so real accounts get "Email or password is wrong" there. Say so, with a one-click way out.
+ */
+export function SandboxSignInNote({ back }: { back: string }) {
+  const { api } = useApi();
+  if (!HAS_LIVE_BACKEND || !isDemo(api)) return null;
+  return (
+    <p className="banner" role="note">
+      <b>You're in the demo sandbox</b>, so only the demo accounts below work here. Signing in with your real account?{" "}
+      <button type="button" className="link" onClick={() => exitSandbox(back)}>Exit the demo</button>
+    </p>
   );
 }
