@@ -42,7 +42,8 @@ export function DemoOutbox() {
 type Method = "password" | "magic" | "both";
 
 /** Email + password and/or magic link, with "first time? set a password". */
-export function AdminSignIn({ method, redirectTo, title = "Admin sign-in", note }: { method: Method; redirectTo: string; title?: string; note?: string }) {
+/** `passwordOnly`: no "set a password" or email reset links (accounts are created by the operator). */
+export function AdminSignIn({ method, redirectTo, title = "Admin sign-in", note, passwordOnly }: { method: Method; redirectTo: string; title?: string; note?: string; passwordOnly?: boolean }) {
   const { api } = useApi();
   const [tab, setTab] = useState<"password" | "magic">(method === "magic" ? "magic" : "password");
   const [mode, setMode] = useState<"in" | "up" | "reset">("in");
@@ -108,7 +109,7 @@ export function AdminSignIn({ method, redirectTo, title = "Admin sign-in", note 
       <button className="btn primary block" disabled={busy}>
         {busy ? "Please wait…" : tab === "magic" ? "Email me a sign-in link" : mode === "up" ? "Create password" : mode === "reset" ? "Send reset link" : "Sign in"}
       </button>
-      {tab === "password" && (
+      {tab === "password" && !passwordOnly && (
         <div className="row" style={{ justifyContent: "space-between" }}>
           {mode === "in" ? (
             <>

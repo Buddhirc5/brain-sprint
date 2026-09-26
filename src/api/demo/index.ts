@@ -1361,6 +1361,7 @@ class DemoApi implements Api {
     const u = this.need();
     const db0 = store.read();
     if (!u.email || !db0.sup.emails.includes(u.email) || u.anonymous) throw err("forbidden", "This account isn't a super admin.");
+    if (this.sess?.aal !== 2) throw err("forbidden", "Verify with your authenticator app first.");
     const f = db0.sup.fails[u.id];
     if (f && f.until > Date.now()) throw err("rate_limited", `Too many wrong codes. Try again in ${Math.ceil((f.until - Date.now()) / 60000)} min.`, f.until - Date.now());
     const c = db0.sup.code;
