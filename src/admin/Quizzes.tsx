@@ -3,7 +3,7 @@ import { useApp } from "../app/ctx";
 import { useApi } from "../app/ApiCtx";
 import { Icon, Modal, Seg } from "../components/ui";
 import { blankDraft, draftProblem, sealQuestion, TYPE_NAME, unseal, type DraftQ } from "../lib/answers";
-import { COLOR_HEX, COLORS, DARK_CARDS, MINUTE_OPTS, sortGames, statusOf } from "../lib/games";
+import { COLOR_HEX, COLORS, MINUTE_OPTS, sortGames, statusOf } from "../lib/games";
 
 const CERT_MINUTES = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180]; // exams: 1–180 min (server clamps the same)
 import { limitMs, runCorrect } from "../lib/scoring";
@@ -98,7 +98,7 @@ export function Quizzes() {
             const acc = pct(plays.reduce((s, x) => s + runCorrect(x), 0), n);
             const passed = plays.filter((x) => x.passed).length;
             const st = statusOf(g);
-            const dark = DARK_CARDS.includes(g.color);
+            const dark = g.color === "ink";
             const hasKey = !!d.keys[g.id];
             const own = g.editedBy === me;
             const off = !features[KIND[k].feature];

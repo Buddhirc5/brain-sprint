@@ -971,7 +971,7 @@ class DemoApi implements Api {
   private pubLive(l: DB["live"][string]): LiveSession {
     // _qs holds every question with its explanation — never send it to anyone
     const { canon: _c, lastRevealQ: _r, _qs: _q, ...rest } = l as typeof l & { _qs?: unknown };
-    return structuredClone(rest);
+    return { ...structuredClone(rest), players: Object.keys(store.read().lp[l.id] || {}).length };
   }
   async liveCreate(tid: string, gid: string, opts: { guests: boolean }) {
     return store.tx((db) => {

@@ -11,10 +11,11 @@ import { qrDataUrl } from "../lib/qr";
 import { toCSV } from "../lib/security";
 import { isDemo } from "../api/demo/guard";
 import { Chibi, Sprinty } from "../components/Chibi";
+import { LogoMark } from "../components/Logo";
 import { CountUp, Icon, Modal, confetti } from "../components/ui";
 import { Loading } from "../App";
 import type { LiveBoardRow, LiveHostView, Role, TenantPublic } from "../types";
-import { Shape, TILES, choiceIndex, fmtPts, optionsOf, ordinal, remainingMs, tileOf, useNow } from "./common";
+import { Shape, TILES, choiceIndex, fmtPts, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
 import { sound } from "./sound";
 import "../styles/live.css";
 
@@ -225,7 +226,7 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
   );
   const brand = (
     <div className="lv-brand">
-      {pub.branding.logo && <img src={pub.branding.logo} alt="" />}
+      {pub.branding.logo ? <img src={pub.branding.logo} alt="" /> : <LogoMark size={44} />}
       <span>{pub.branding.productName}</span>
     </div>
   );
@@ -319,13 +320,16 @@ function SoundIcon({ on }: { on: boolean }) {
   );
 }
 
-/** Floating shapes behind everything — the arcade feel, in the company's colours. */
+/** Arena backdrop: glowing spotlights, a halftone floor and drifting brand doodles. */
 function Backdrop() {
   return (
     <div className="lv-bg" aria-hidden="true">
-      {Array.from({ length: 10 }, (_, i) => (
-        <span key={i} className={`b${i % 4}`} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${-i * 2.3}s`, animationDuration: `${16 + (i % 5) * 3}s` }}>
-          <Shape i={i} size={40 + (i % 3) * 30} />
+      <i className="lv-spot a" />
+      <i className="lv-spot b" />
+      <i className="lv-dots" />
+      {Array.from({ length: 12 }, (_, i) => (
+        <span key={i} style={{ left: `${(i * 37 + 5) % 100}%`, color: TILES[i % 4].color, animationDelay: `${-i * 2.3}s`, animationDuration: `${18 + (i % 5) * 3}s` }}>
+          {i % 5 === 4 ? <b className="lv-qmark">?</b> : <Shape i={i % 4} size={30 + (i % 3) * 22} />}
         </span>
       ))}
     </div>
@@ -350,7 +354,7 @@ function Lobby({ v, pub, onKick }: { v: LiveHostView; pub: TenantPublic; onKick:
   };
   return (
     <div className="lv-lobby">
-      <section className="lv-joinbox">
+      <section className="lv-joinbox lv-ticket">
         <div className="lv-joinhow">
           <div className="lv-jcol">
             <span className="lv-step">Join at</span>
@@ -368,7 +372,11 @@ function Lobby({ v, pub, onKick }: { v: LiveHostView; pub: TenantPublic; onKick:
             </b>
           </div>
         </div>
-        <img className="lv-qr" src={qr} alt="QR code to join this game" />
+        <span className="lv-perf" aria-hidden="true" />
+        <div className="lv-qrwrap">
+          <img className="lv-qr" src={qr} alt="QR code to join this game" />
+          <span>Scan to play</span>
+        </div>
       </section>
 
       <section className="lv-crowd" aria-live="polite">
@@ -420,72 +428,87 @@ function QuestionView({ v, left }: { v: LiveHostView; left: number }) {
   const reveal = s.state === "reveal" ? s.reveal : undefined;
   const canonIdx = reveal ? choiceIndex(q, reveal.canon) : -1;
   const counts = reveal?.counts ?? v.counts;
-  const max = Math.max(1, ...counts);
+  const votes = Math.max(1, counts.reduce((a, b) => a + (b || 0), 0));
   const total = s.qSeconds * 1000;
   const frac = total ? left / total : 0;
   const secs = Math.ceil(left / 1000);
+  const n = v.players.length;
+  const right = reveal ? counts[canonIdx] ?? 0 : 0;
+  const pct = n ? Math.round((right / n) * 100) : 0;
   return (
-    <div className={`lv-qv ${reveal ? "revealed" : ""}`} key={s.qIndex}>
-      <h1 className="lv-qtext">{q?.q}</h1>
+    <div className={`lv-qv ${reveal ? "revealed" : ""} ${!reveal && secs <= 5 ? "hurry" : ""}`} key={s.qIndex}>
+      <div className="lv-qcard">
+        <span className="lv-qtag">Question {s.qIndex + 1}</span>
+        <h1 className="lv-qtext">{q?.q}</h1>
+        {!reveal && (
+          <span className="lv-energy" aria-hidden="true">
+            <i style={{ transform: `scaleX(${frac})` }} />
+          </span>
+        )}
+      </div>
       <div className="lv-mid">
         {!reveal ? (
-          <>
-            <div className={`lv-ring ${secs <= 5 ? "hurry" : ""}`} role="timer" aria-label={`${secs} seconds left`}>
-              <svg viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="52" className="trk" />
-                <circle cx="60" cy="60" r="52" className="val" style={{ strokeDashoffset: `${(1 - frac) * 326.7}` }} />
-              </svg>
-              <b className="num">{secs}</b>
-            </div>
-            {q?.img ? <img className="lv-qimg" src={q.img} alt="" /> : <Sprinty mood="think" size={170} className="lv-mascot" />}
-            <div className="lv-answered">
-              <b className="num">{v.answered}</b>
-              <span>of {v.players.length} answered</span>
-            </div>
-          </>
+          <div className="lv-watch" role="timer" aria-label={`${secs} seconds left`}>
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" className="face" />
+              <circle cx="60" cy="60" r="50" className="ticks" />
+              <circle cx="60" cy="60" r="50" className="val" style={{ strokeDashoffset: `${(1 - frac) * 314.2}` }} />
+            </svg>
+            <span className="lv-watch-cap" />
+            <b className="num" key={secs}>{secs}</b>
+          </div>
         ) : (
-          <div className="lv-chart" aria-label="Answers per option">
-            {opts.map((o, i) => {
-              const t = tileOf(q, i);
-              return (
-                <div key={o.choice} className={`lv-col ${i === canonIdx ? "ok" : "no"}`}>
-                  <span className="n num">{counts[i] ?? 0}</span>
-                  <span className="bar" style={{ background: TILES[t].color, height: `${8 + ((counts[i] ?? 0) / max) * 92}%` }}>
-                    <Shape i={t} size={26} />
-                  </span>
-                  {i === canonIdx && (
-                    <span className="tick" aria-label="Correct answer">
-                      <Icon.check />
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+          <div className="lv-meter" style={{ ["--p" as string]: pct }} aria-label={`${right} of ${n} got it right`}>
+            <b className="num">{pct}%</b>
+            <span>got it right</span>
           </div>
         )}
+        {q?.img ? (
+          <img className="lv-qimg" src={q.img} alt="" />
+        ) : (
+          <Sprinty mood={reveal ? (pct >= 50 ? "cheer" : "sad") : "think"} size={170} className="lv-mascot" />
+        )}
+        <div className="lv-answered">
+          <b className="num">{reveal ? `${right}/${n}` : v.answered}</b>
+          <span>{reveal ? "correct" : `of ${n} answered`}</span>
+          {!reveal && n > 0 && (
+            <span className="lv-dotrow" aria-hidden="true">
+              {Array.from({ length: Math.min(n, 30) }, (_, k) => (
+                <i key={k} className={k < Math.round((v.answered / n) * Math.min(n, 30)) ? "on" : ""} />
+              ))}
+            </span>
+          )}
+        </div>
       </div>
       <div className={`lv-tiles n${opts.length}`}>
         {opts.map((o, i) => {
           const t = tileOf(q, i);
+          const c = counts[i] ?? 0;
+          const ok = i === canonIdx;
           return (
-            <div key={o.choice} className={`lv-tile ${reveal ? (i === canonIdx ? "ok" : "no") : ""}`} style={{ background: TILES[t].color, animationDelay: `${i * 70}ms` }}>
-              <Shape i={t} size={44} />
+            <div key={o.choice} className={`lv-tile ${reveal ? (ok ? "ok" : "no") : ""}`} style={tileVars(t, i)}>
+              {reveal && <span className="lv-fill" style={{ transform: `scaleX(${c / votes})` }} aria-hidden="true" />}
+              <span className="lv-badge">
+                <Shape i={t} size={40} />
+                <em>{TILES[t].letter}</em>
+              </span>
               <span className="tx">{o.label}</span>
-              {reveal && i === canonIdx && (
-                <span className="ck" aria-label="Correct">
-                  <Icon.check />
+              {reveal && <span className="lv-votes num" aria-label={`${c} votes`}>{c}</span>}
+              {reveal && ok && (
+                <span className="lv-stamp" aria-label="Correct answer">
+                  <Icon.check /> Correct
                 </span>
               )}
             </div>
           );
         })}
       </div>
-      {reveal?.explain && <p className="lv-explain">{reveal.explain}</p>}
+      {reveal?.explain && <p className="lv-explain"><b>Why?</b> {reveal.explain}</p>}
     </div>
   );
 }
 
-/* ---------------- scoreboard ---------------- */
+/* ---------------- scoreboard: a race to the finish line ---------------- */
 function Board({ v }: { v: LiveHostView }) {
   const s = v.session;
   // where each player stood on the previous scoreboard, so rows can slide to their new place
@@ -497,28 +520,41 @@ function Board({ v }: { v: LiveHostView }) {
   }
   const from = prev.current.from;
   const top = v.players.slice(0, 5);
+  const lead = Math.max(1, top[0]?.score || 1);
   const hot = v.players.filter((p) => p.streak >= 3).sort((a, b) => b.streak - a.streak)[0];
+  const medal = ["gold", "silver", "bronze"];
   return (
     <div className="lv-board">
-      <h1 className="lv-h1">Scoreboard</h1>
+      <h1 className="lv-h1">
+        The <span>race</span> is on
+      </h1>
       <ol className="lv-rows">
         {top.map((p, i) => {
           const was = from[p.id];
           const moveFrom = was == null ? 6 - i : Math.min(6, was) - i;
           const up = was != null && was > i;
+          const pos = Math.max(0.08, p.score / lead);
+          const pos0 = Math.max(0.04, (p.score - p.lastPts) / lead);
           return (
-            <li key={p.id} className={`lv-row ${i === 0 ? "first" : ""}`} style={{ "--from": moveFrom, animationDelay: `${i * 60}ms` } as CSSProperties}>
-              <span className="rk num">{i + 1}</span>
-              <Chibi look={p.look} size={58} mood={p.lastOk ? "happy" : "idle"} />
-              <span className="nm">
-                {p.nick}
-                {up && <span className="up" aria-label="moved up">▲</span>}
-              </span>
-              {p.streak >= 2 && (
-                <span className="lv-streak" title={`${p.streak} right in a row`}>
-                  <Icon.fire /> {p.streak}
+            <li key={p.id} className={`lv-row ${i === 0 ? "first" : ""}`} style={{ "--from": moveFrom, "--pos": pos, "--pos0": pos0, animationDelay: `${i * 70}ms` } as CSSProperties}>
+              <span className={`rk num ${medal[i] || ""}`}>{i + 1}</span>
+              <span className="lv-lane">
+                <span className="lv-track" aria-hidden="true">
+                  <i className="lv-trail" />
+                  <span className="lv-racer">
+                    <Chibi look={p.look} size={54} mood={p.lastOk ? "happy" : "idle"} />
+                  </span>
                 </span>
-              )}
+                <span className="nm">
+                  {p.nick}
+                  {up && <span className="up" aria-label="moved up">▲</span>}
+                  {p.streak >= 2 && (
+                    <span className="lv-streak sm" title={`${p.streak} right in a row`}>
+                      <Icon.fire /> {p.streak}
+                    </span>
+                  )}
+                </span>
+              </span>
               {p.lastPts > 0 && <span className="lv-delta num">+{fmtPts(p.lastPts)}</span>}
               <CountUp className="sc num" from={p.score - p.lastPts} to={p.score} ms={1100} />
             </li>
@@ -527,7 +563,7 @@ function Board({ v }: { v: LiveHostView }) {
       </ol>
       {hot && (
         <p className="lv-hot">
-          <Icon.fire /> {hot.nick} is on a {hot.streak}-answer streak!
+          <Icon.fire /> {hot.nick} is on fire — {hot.streak} in a row!
         </p>
       )}
     </div>
@@ -571,8 +607,10 @@ function Podium({ v, pub, who }: { v: LiveHostView; pub: TenantPublic; who: stri
   const places = [1, 0, 2]; // 2nd, 1st, 3rd
   return (
     <div className="lv-final">
-      <h1 className="lv-h1">{step >= 3 ? "Champions!" : "And the winners are…"}</h1>
-      <div className="lv-podium">
+      <h1 className="lv-h1">{step >= 3 ? <>Champion<span>s!</span></> : "And the winners are…"}</h1>
+      <div className={`lv-podium ${step >= 3 ? "lit" : ""}`}>
+        <i className="lv-beam l" aria-hidden="true" />
+        <i className="lv-beam r" aria-hidden="true" />
         {places.map((idx) => {
           const p: LiveBoardRow | undefined = ps[idx];
           const shown = step >= 3 - idx;
@@ -581,6 +619,14 @@ function Podium({ v, pub, who }: { v: LiveHostView; pub: TenantPublic; who: stri
               <div className="lv-winner">
                 {p && shown && (
                   <>
+                    {idx === 0 && (
+                      <svg className="lv-crown" viewBox="0 0 64 40" aria-hidden="true">
+                        <path d="M4 36 L8 10 L22 22 L32 4 L42 22 L56 10 L60 36 Z" fill="#FFD84D" stroke="#161512" strokeWidth="3" strokeLinejoin="round" />
+                        <circle cx="32" cy="26" r="4" fill="#FF5A1F" />
+                        <circle cx="16" cy="29" r="3" fill="#3D7BFF" />
+                        <circle cx="48" cy="29" r="3" fill="#FF7EB6" />
+                      </svg>
+                    )}
                     <Chibi look={p.look} variant="full" size={idx === 0 ? 190 : 150} mood="cheer" />
                     <b className="nm">{p.nick}</b>
                     <span className="sc num">{fmtPts(p.score)}</span>

@@ -253,6 +253,7 @@ export interface LiveSession {
   endedAt?: number;
   guests: boolean;
   music?: boolean;
+  players?: number; // how many joined (admin lists)
 }
 export interface LivePlayer {
   id: string; // live player id

@@ -91,7 +91,7 @@ function Hero() {
           <li><Icon.check /> Bank-grade security</li>
         </ul>
         <p className="h-player-links">
-          Playing, not buying? <a href="#/join">Join a live game</a> · <a href="#/vote">Vote in a poll</a> · <a href="#/signin">Company sign-in</a>
+          Here to play? <a href="#/join">Join a live game</a> · <a href="#/vote">Vote in a poll</a>
         </p>
       </div>
       <div className="h-stage" aria-hidden="true">

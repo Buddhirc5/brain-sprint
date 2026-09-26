@@ -83,7 +83,7 @@ function CodeEntry({ initial, qs, pub, error }: { initial?: string; qs: string; 
         </button>
       </form>
       <p className="fine pv-links">
-        <a className="link" href="#/">Home</a> · <a className="link" href="#/join">Join a live game</a> · <a className="link" href="#/signin">Company sign-in</a>
+        <a className="link" href="#/">Home</a> · <a className="link" href="#/join">Join a live game</a>
       </p>
       <Anon />
     </div>

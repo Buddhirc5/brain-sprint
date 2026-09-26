@@ -182,9 +182,8 @@ function NotFound() {
         <p className="fine">That link doesn't lead anywhere. Here are some places that do:</p>
         <a className="btn primary block" href="#/">Home</a>
         <div className="row" style={{ justifyContent: "center" }}>
-          <a className="btn ghost small" href="#/experience">Try the demo</a>
-          <a className="btn ghost small" href="#/signin">Sign in</a>
           <a className="btn ghost small" href="#/join">Join a game</a>
+          <a className="btn ghost small" href="#/vote">Vote in a poll</a>
         </div>
       </div>
     </div>

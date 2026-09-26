@@ -11,7 +11,7 @@
 .adm-tabs { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
 .adm-tabs button { padding: 9px 14px; border-radius: 999px; font-weight: 800; font-size: 14px; white-space: nowrap; color: #D9D7CF; }
 .adm-tabs button.on { background: var(--lime); color: var(--ink); }
-.adm-tabs button .cnt { background: var(--orange); color: #fff; border-radius: 999px; font-size: 11px; padding: 1px 6px; margin-left: 4px; }
+.adm-tabs button .cnt { background: var(--orange); color: var(--on-orange); border-radius: 999px; font-size: 11px; padding: 1px 6px; margin-left: 4px; }
 .adm-nav .icon-btn { background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
 .sess { font-size: 12px; color: #BDBBB3; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .sess .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); }

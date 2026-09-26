@@ -1,5 +1,5 @@
 /* White-label theming: a tenant's brand colours become the CSS variables the whole UI uses.
-   --lime* = primary (light, dark text on it), --orange* = accent (dark enough for white text). */
+   --lime* = primary (light, dark text on it), --orange* = accent (text on it: --on-orange, white or ink, whichever reads better). */
 import type { Branding } from "../types";
 import { DEFAULT_BRANDING } from "../api/engine";
 import { mix } from "../lib/util";
@@ -15,6 +15,18 @@ export const contrast = (a: string, b: string) => {
   const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m);
   return (x + 0.05) / (y + 0.05);
 };
+
+/** Whichever of white or the ink colour reads better on a background. */
+export const onColor = (bg: string, ink = "#161512") => (contrast(bg, ink) >= contrast(bg, "#FFFFFF") ? ink : "#FFFFFF");
+
+/** The accent, darkened just enough to stay readable as big headline text on each background. */
+function headlineOn(accent: string, bgs: string[]) {
+  for (let f = 0; f <= 0.6; f += 0.05) {
+    const c = mix(accent, "#000000", f);
+    if (bgs.every((bg) => contrast(c, bg) >= 3)) return c;
+  }
+  return mix(accent, "#000000", 0.6);
+}
 
 /** Problems with a brand palette (null = fine). Keeps text readable whatever colours a client picks. */
 export function brandProblems(b: Branding): string | null {
@@ -38,6 +50,8 @@ export function applyBranding(b: Partial<Branding> | undefined) {
   r.setProperty("--orange", v.accent);
   r.setProperty("--orange-soft", mix(v.accent, "#FFFFFF", 0.82));
   r.setProperty("--orange-deep", mix(v.accent, "#000000", 0.25));
+  r.setProperty("--on-orange", onColor(v.accent, v.ink));
+  r.setProperty("--orange-text", headlineOn(v.accent, [v.primary, v.paper]));
   r.setProperty("--ink", v.ink);
   r.setProperty("--ink-2", mix(v.ink, "#FFFFFF", 0.18));
   r.setProperty("--paper", v.paper);

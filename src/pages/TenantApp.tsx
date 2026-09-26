@@ -23,10 +23,7 @@ export function Gone({ title, text }: { title: string; text: string }) {
         <Sprinty mood="sad" size={110} />
         <h2>{title}</h2>
         <p className="fine">{text}</p>
-        <div className="row" style={{ justifyContent: "center" }}>
-          <a className="btn primary small" href="#/signin">Find your company</a>
-          <a className="btn ghost small" href="#/">Home</a>
-        </div>
+        <a className="btn ghost small" href="#/">Home</a>
       </div>
     </div>
   );
@@ -46,7 +43,7 @@ export function TenantApp({ slug }: { slug: string }) {
 }
 
 function PlayerShell() {
-  const { d, me, view, go, pub, slug } = useApp();
+  const { d, me, view, pub } = useApp();
   const { api } = useApi();
   let screen: JSX.Element;
   if (!me) {
@@ -90,7 +87,7 @@ function PlayerShell() {
         <div className="phone" style={{ marginBottom: 12 }}>
           <div className="banner blue">
             <b>Demo</b> — everything is saved in this browser only. {me ? "" : "Try Employee ID DEMO-101."}{" "}
-            <a className="link" href={`#/t/${slug}/admin`}>Admin portal</a> · <a className="link" href="#/">Home</a>
+            <a className="link" href="#/experience">Demo tour</a>
           </div>
         </div>
       )}
@@ -98,10 +95,7 @@ function PlayerShell() {
       {view.v !== "play" && (
         <div className="phone" style={{ marginTop: 24, justifyItems: "center" }}>
           <p className="fine" style={{ textAlign: "center" }}>
-            {pub.name} · <span className="powered"><LogoMark size={18} still /> powered by Brain Sprint</span> ·{" "}
-            <a className="link" href={`#/t/${slug}/admin`} onClick={() => go({ v: "lobby" })}>
-              Admin
-            </a>
+            {pub.name} · <span className="powered"><LogoMark size={18} still /> powered by Brain Sprint</span>
           </p>
         </div>
       )}
