@@ -94,76 +94,20 @@ function Hero() {
           Here to play? <a href="#/join">Join a live game</a> · <a href="#/vote">Vote in a poll</a>
         </p>
       </div>
-      <div className="h-stage" aria-hidden="true">
-        <ArenaScene />
-        <div className="h-lineup">
-          <Chibi look={1} variant="full" mood="happy" size={132} />
-          <Mascot mood="cheer" size={150} />
-          <Chibi look={8} variant="full" mood="idle" size={132} />
-        </div>
+      <div className="h-stage">
+        <img
+          className="h-scene-img"
+          src="/hero-scene-1600.webp"
+          srcSet="/hero-scene-900.webp 900w, /hero-scene-1600.webp 1600w"
+          sizes="(min-width: 900px) 640px, 100vw"
+          width={1705}
+          height={922}
+          alt="A cartoon explorer and a fluffy bunny share a treasure chest of gold coins on a forest path leading to an arena gate"
+          fetchPriority="high"
+          decoding="async"
+        />
       </div>
     </section>
-  );
-}
-
-/** The hero's backdrop: a cartoon arena at sunrise — sky, rays, hills, a stadium with flags and fireflies. */
-function ArenaScene() {
-  return (
-    <svg className="h-scene" viewBox="0 0 600 520" preserveAspectRatio="xMidYMax slice">
-      <defs>
-        <linearGradient id="hs-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#3D7BFF" />
-          <stop offset=".55" stopColor="#8EC5FF" />
-          <stop offset="1" stopColor="#FFE9A8" />
-        </linearGradient>
-        <radialGradient id="hs-sun" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stopColor="#FFF6C9" />
-          <stop offset=".35" stopColor="#FFD84D" stopOpacity=".9" />
-          <stop offset="1" stopColor="#FFD84D" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect width="600" height="520" fill="url(#hs-sky)" />
-      <g className="hs-rays" fill="#FFFFFF">
-        {[-58, -34, -12, 10, 32, 56].map((a) => (
-          <path key={a} d="M300 300 L284 -40 L316 -40 Z" transform={`rotate(${a} 300 300)`} />
-        ))}
-      </g>
-      <circle cx="300" cy="300" r="120" fill="url(#hs-sun)" />
-      <g className="hs-cloud a" fill="#fff"><ellipse cx="110" cy="90" rx="46" ry="18" /><ellipse cx="140" cy="78" rx="30" ry="20" /></g>
-      <g className="hs-cloud b" fill="#fff"><ellipse cx="470" cy="130" rx="54" ry="18" /><ellipse cx="500" cy="116" rx="30" ry="18" /></g>
-      {/* far mountains */}
-      <path d="M0 300 L70 230 L120 262 L190 190 L260 262 L330 214 L400 270 L470 200 L540 250 L600 222 V520 H0Z" fill="#7C9BD6" opacity=".7" />
-      {/* stadium */}
-      <g className="hs-arena" stroke="#161512" strokeWidth="4" strokeLinejoin="round">
-        <path d="M150 330 Q150 270 300 262 Q450 270 450 330 Z" fill="#FF5A1F" />
-        <path d="M150 330 L160 380 H440 L450 330 Z" fill="#161512" />
-        <path d="M185 300 Q300 282 415 300" fill="none" stroke="#FFD84D" strokeWidth="5" strokeDasharray="10 12" />
-        <rect x="262" y="228" width="76" height="30" rx="6" fill="#161512" />
-        {[190, 300, 410].map((x, i) => (
-          <g key={x}>
-            <line x1={x} y1={i === 1 ? 226 : 270} x2={x} y2={i === 1 ? 188 : 226} />
-            <path className="hs-flag" d={`M${x} ${i === 1 ? 190 : 228} l30 8 -30 8z`} fill={i === 1 ? "#C6F432" : "#FF7EB6"} />
-          </g>
-        ))}
-      </g>
-      <text x="300" y="249" textAnchor="middle" className="hs-sign">ARENA</text>
-      {/* spotlights */}
-      <g className="hs-beams" fill="#FFF6C9">
-        <path d="M170 330 L90 120 L130 112 Z" />
-        <path d="M430 330 L510 112 L470 120 Z" />
-      </g>
-      {/* hills */}
-      <path d="M0 360 Q120 318 240 350 T480 340 T600 330 V520 H0Z" fill="#8FBF12" stroke="#161512" strokeWidth="4" />
-      <path d="M-10 420 Q150 372 300 404 T610 392 V530 H-10Z" fill="#C6F432" stroke="#161512" strokeWidth="4" />
-      {/* foreground foliage frame */}
-      <path d="M-10 530 L-10 430 Q20 460 30 420 Q48 470 70 440 Q80 490 110 470 L130 530Z" fill="#161512" />
-      <path d="M610 530 L610 420 Q580 452 572 414 Q552 466 532 438 Q520 488 492 468 L470 530Z" fill="#161512" />
-      <g className="hs-fly" fill="#F4FF9E">
-        {[[80, 300], [520, 290], [150, 250], [460, 240], [60, 380], [545, 370], [240, 200], [370, 180]].map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={i % 3 ? 2.6 : 3.6} style={{ animationDelay: `${i * 0.45}s` }} />
-        ))}
-      </g>
-    </svg>
   );
 }
 

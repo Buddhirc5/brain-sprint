@@ -36,7 +36,8 @@
 
 /* hero */
 .h-hero {
-  position: relative; background: var(--lime); border-radius: var(--r-xl); overflow: hidden;
+  position: relative; border-radius: var(--r-xl); overflow: hidden;
+  background: radial-gradient(120% 70% at 85% 0%, #FFF4C2 0%, rgba(255,244,194,0) 55%), linear-gradient(180deg, #BFE0FF 0%, #E4F3FF 45%, #F3FAE6 100%);
   display: grid; gap: 8px; padding: 26px 22px 0; isolation: isolate;
 }
 .h-hero::before { /* halftone dots */
@@ -53,35 +54,21 @@
 .h-mega .ink { color: var(--ink); display: block; }
 .h-sub { font-weight: 600; font-size: 16px; max-width: 46ch; color: var(--ink); }
 .h-hero-cta { display: flex; flex-wrap: wrap; gap: 10px; }
-.h-stage {
-  position: relative; min-height: 320px; display: grid; align-items: end; justify-items: center; margin: 8px -4px 0;
-  border: 4px solid var(--ink); border-bottom: 0; border-radius: 28px 28px 0 0; overflow: hidden; isolation: isolate;
-}
-.h-scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; display: block; }
-.hs-rays path { opacity: .16; }
-.hs-rays { transform-origin: 300px 300px; animation: hs-rays 14s ease-in-out infinite alternate; }
-.hs-beams path { opacity: .22; animation: hs-beam 4s ease-in-out infinite alternate; }
-.hs-beams path + path { animation-delay: -2s; }
-.hs-cloud { animation: hs-drift 22s ease-in-out infinite alternate; }
-.hs-cloud.b { animation-duration: 28s; animation-direction: alternate-reverse; }
-.hs-flag { transform-box: fill-box; transform-origin: left center; animation: hs-flag 1.6s ease-in-out infinite alternate; }
-.hs-sign { font-family: var(--display); font-size: 20px; letter-spacing: .08em; fill: var(--lime); }
-.hs-fly circle { animation: hs-fly 3.2s ease-in-out infinite; }
-@keyframes hs-rays { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
-@keyframes hs-beam { from { opacity: .1; } to { opacity: .3; } }
-@keyframes hs-drift { from { transform: translateX(-18px); } to { transform: translateX(18px); } }
-@keyframes hs-flag { from { transform: scaleX(1); } to { transform: scaleX(.7) skewY(4deg); } }
-@keyframes hs-fly { 0%, 100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-8px); } }
+.h-stage { position: relative; display: grid; align-items: end; justify-items: center; margin: 4px -10px 0; }
+.h-scene-img { display: block; width: 100%; height: auto; filter: drop-shadow(0 18px 24px rgba(22,40,20,.22)); animation: h-scene-in 1s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes h-scene-in { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
 .h-lineup { display: flex; align-items: flex-end; justify-content: center; position: relative; z-index: 1; margin-bottom: -6px; }
 .h-lineup > * { margin-inline: -16px; }
 .h-lineup > :nth-child(2) { z-index: 2; }
 .h-scribble { position: absolute; top: 8px; right: 4px; font-family: var(--hand); font-size: 26px; transform: rotate(-7deg); color: var(--ink); z-index: 3; }
 
 @media (min-width: 900px) {
-  .h-hero { grid-template-columns: 1.15fr 1fr; padding: 48px 48px 0; gap: 24px; min-height: 540px; }
+  .h-hero { grid-template-columns: minmax(0, 500px) 1fr; padding: 48px 48px 0; gap: 12px; min-height: 620px; }
   .h-hero-copy { padding-bottom: 48px; align-self: center; }
   .h-sub { font-size: 18px; }
-  .h-stage { min-height: 520px; margin: 0; align-self: stretch; }
+  .h-stage { position: absolute; right: -22px; bottom: -6px; width: 60%; margin: 0; z-index: -1; }
+  .h-hero-copy { position: relative; max-width: 440px; }
+  .h-sub { max-width: 36ch; }
   .h-lineup .chibi:not(.mascot) { width: 170px; height: auto; }
   .h-lineup .mascot { width: 190px; height: auto; }
 }
@@ -202,7 +189,6 @@
   .h-feat.c-lime p { max-width: 44ch; }
 }
 @media (max-width: 899px) {
-  .h-stage { min-height: 300px; }
   .h-lineup .chibi:not(.mascot) { width: 112px; height: auto; }
   .h-lineup .mascot { width: 124px; height: auto; }
 }
@@ -359,7 +345,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .h-ticker-track { animation: none; }
-  .h-hero-copy > *, .h-lineup > *, .h-scene * { animation: none !important; }
+  .h-hero-copy > *, .h-lineup > *, .h-scene-img { animation: none !important; }
 }
 
 /* ================= navigation & links ================= */

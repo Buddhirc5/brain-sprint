@@ -27,3 +27,25 @@
 .chibi .arm-r { transform-origin: 82px 97px; }
 .mascot .arm-l { transform-origin: 26px 74px; }
 .mascot .arm-r { transform-origin: 94px 74px; }
+
+/* Special characters (components/Specials.tsx) */
+.special .sp-cloak { transform-box: view-box; transform-origin: 60px 60px; animation: sp-sway 3.4s ease-in-out infinite; }
+.special .sp-coin { transform-box: fill-box; transform-origin: center; animation: sp-coin 1.8s ease-in-out infinite; }
+.special .sp-spark { transform-box: fill-box; transform-origin: center; animation: sp-spark 1.6s ease-in-out infinite; }
+.special .sp-lift { transform-box: view-box; transform-origin: 86px 104px; animation: sp-lift .6s ease-in-out infinite alternate; }
+.special .sp-ear-l { transform-box: view-box; transform-origin: 46px 68px; animation: sp-ear-l 2.4s ease-in-out infinite; }
+.special .sp-ear-r { transform-box: view-box; transform-origin: 74px 68px; animation: sp-ear-r 2.4s ease-in-out infinite; }
+.special.sp-puff.m-idle .body { transform-origin: 50% 94%; animation: sp-squish 2.2s ease-in-out infinite; }
+.special .sp-coins { animation: sp-shine 1.4s ease-in-out infinite alternate; }
+.special .sp-lid { transform-box: view-box; transform-origin: 46px 118px; animation: sp-lid 2.2s ease-in-out infinite; }
+@keyframes sp-sway { 0%, 100% { transform: rotate(-1.2deg); } 50% { transform: rotate(1.2deg); } }
+@keyframes sp-coin { 0%, 100% { transform: translateY(0) scaleX(1); } 25% { transform: translateY(-4px) scaleX(.15); } 50% { transform: translateY(-6px) scaleX(1); } 75% { transform: translateY(-3px) scaleX(.15); } }
+@keyframes sp-spark { 0%, 100% { opacity: 0; transform: scale(.3); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@keyframes sp-lift { from { transform: rotate(0); } to { transform: rotate(-10deg); } }
+@keyframes sp-ear-l { 0%, 70%, 100% { transform: rotate(0); } 80% { transform: rotate(-10deg); } 90% { transform: rotate(4deg); } }
+@keyframes sp-ear-r { 0%, 60%, 100% { transform: rotate(0); } 72% { transform: rotate(10deg); } 84% { transform: rotate(-4deg); } }
+@keyframes sp-squish { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, .97); } }
+@keyframes sp-shine { from { filter: brightness(1); } to { filter: brightness(1.25); } }
+@keyframes sp-lid { 0%, 80%, 100% { transform: rotate(0); } 88% { transform: rotate(-8deg); } }
+.chibi.still.special * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .chibi.special * { animation: none !important; } }

@@ -4,6 +4,7 @@
    portrait for lists). Moods drive the face and the body animation.
    ===================================================================== */
 import { useId, type CSSProperties } from "react";
+import { SPECIALS, SpecialChar, type SpecialKey } from "./Specials";
 import type { Equipped } from "../types";
 import { BG_FILL } from "../lib/catalog";
 
@@ -45,7 +46,12 @@ export const LOOKS: Look[] = [
   { g: "m", skin: "#F0C4A2", hair: "#9A958C", h: "side", top: K.lime, trim: K.pink, pants: K.ink, shoe: K.blue, eye: "#3A2418", bg: K.blueS, beard: true },
   { g: "m", skin: "#7A4A2E", hair: "#141414", h: "spiky", tips: "#C6F432", top: K.blue, trim: K.lime, pants: K.ink, shoe: K.orange, eye: "#24150E", bg: K.pinkS },
 ];
-export const lookCount = LOOKS.length;
+/** Looks after the regular ones are the special characters (Wren the explorer, Puff the bunny). */
+export const lookCount = LOOKS.length + SPECIALS.length; // keep in step with LOOK_COUNT (api/engine.ts) and the database limit
+export const specialOf = (look: number): SpecialKey | null => {
+  const i = (look | 0) - LOOKS.length;
+  return i >= 0 && i < SPECIALS.length ? SPECIALS[i].key : null;
+};
 export const lookOf = (i: number) => LOOKS[((i | 0) % LOOKS.length + LOOKS.length) % LOOKS.length];
 
 function shade(hex: string, amt: number) {
@@ -80,6 +86,8 @@ export interface ChibiProps {
 
 export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", size, still, className = "", style, title }: ChibiProps) {
   const uid = useId().replace(/:/g, "");
+  const sp = specialOf(look);
+  if (sp) return <SpecialChar kind={sp} uid={uid} mood={mood} variant={variant} still={still} size={size} className={className} style={style} title={title} />;
   const L = lookOf(look);
   const H = L.hair;
   const hairFill = L.tips ? `url(#${uid}h)` : H;
