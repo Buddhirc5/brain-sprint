@@ -385,7 +385,15 @@ function Console({ tab, st, recheck }: { tab?: string; st: Status; recheck: () =
             <button className="btn white small" onClick={() => setChanging(true)}>Change code</button>
           </div>
         )}
-        {body}
+        {st.codeIsDefault && !isDemo(api) ? (
+          <div className="card stack su-center-text">
+            <h2>Set your own super admin code first</h2>
+            <p className="fine">The console stays closed until the starting code is replaced. Choose a code only your super admins know.</p>
+            <button className="btn primary" onClick={() => setChanging(true)}>Change code</button>
+          </div>
+        ) : (
+          body
+        )}
         <p className="fine su-foot">
           Signed in as <b>{user?.email}</b> · auto-locks after 15 minutes idle · every action here is logged in <a className="link" href="#/super/audit">Audit</a>
         </p>

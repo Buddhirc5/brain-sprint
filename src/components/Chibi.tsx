@@ -410,70 +410,11 @@ export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", si
 }
 
 /* =====================================================================
-   The Ant Arena mascot (an original character):
-   a lime brain-bean with an orange sweatband and running shoes.
+   The Ant Arena mascots: Wren the explorer and Puff the bunny (components/Specials.tsx).
+   Cheerful moments show Wren, thinking/sad/quiet ones show Puff; pass `who` to choose.
    ===================================================================== */
-export function Mascot({ mood = "idle", size = 120, className = "", still }: { mood?: Mood; size?: number; className?: string; still?: boolean }) {
+export function Mascot({ mood = "idle", size = 120, className = "", still, who }: { mood?: Mood; size?: number; className?: string; still?: boolean; who?: SpecialKey }) {
   const uid = useId().replace(/:/g, "");
-  const closed = mood === "cheer";
-  const eye = (cx: number) =>
-    closed ? (
-      <path d={`M${cx - 6} 60 Q${cx} 53 ${cx + 6} 60`} stroke={K.ink} strokeWidth="3" fill="none" strokeLinecap="round" />
-    ) : (
-      <g className="eye">
-        <ellipse cx={cx} cy="60" rx="6.5" ry="8" fill={K.ink} />
-        <circle cx={cx - 2.2} cy="56.6" r="2.5" fill={K.white} />
-        <circle cx={cx + 2.3} cy="63.4" r="1.1" fill={K.white} />
-      </g>
-    );
-  const mouth =
-    mood === "sad" ? (
-      <path d="M53 78 Q60 73 67 78" stroke={K.ink} strokeWidth="2.6" fill="none" strokeLinecap="round" />
-    ) : mood === "think" ? (
-      <ellipse cx="63" cy="76" rx="2.6" ry="3" fill={K.ink} />
-    ) : mood === "happy" || mood === "cheer" ? (
-      <g>
-        <path d="M51 71 Q60 86 69 71 Z" fill="#7A2E1A" />
-        <ellipse cx="60" cy="79" rx="4" ry="2.2" fill="#FF8A93" />
-      </g>
-    ) : (
-      <path d="M53 73 Q60 79 67 73" stroke={K.ink} strokeWidth="2.6" fill="none" strokeLinecap="round" />
-    );
-  const armUp = mood === "cheer" || mood === "happy";
-  return (
-    <svg viewBox="0 0 120 130" width={size} height={Math.round((size * 130) / 120)} className={`chibi mascot m-${mood} ${still ? "still" : ""} ${className}`} aria-hidden="true">
-      <defs>
-        <radialGradient id={`${uid}g`} cx="38%" cy="30%" r="75%">
-          <stop offset="0" stopColor="#E9FF8F" />
-          <stop offset=".6" stopColor="#C6F432" />
-          <stop offset="1" stopColor="#8FBF12" />
-        </radialGradient>
-      </defs>
-      <ellipse cx="60" cy="125" rx="28" ry="4" fill="#000" opacity=".12" className="shadow" />
-      <g className="body">
-        <ellipse cx="46" cy="116" rx="11" ry="6" fill={K.orange} />
-        <ellipse cx="74" cy="116" rx="11" ry="6" fill={K.orange} />
-        <path d="M37 118 L55 118 M65 118 L83 118" stroke={K.white} strokeWidth="1.8" />
-        <g className="arm arm-l" style={{ transform: armUp ? "rotate(130deg)" : "rotate(20deg)" }}>
-          <rect x="21" y="72" width="10" height="24" rx="5" fill="#A8D81E" />
-        </g>
-        <g className="arm arm-r" style={{ transform: armUp ? "rotate(-130deg)" : mood === "think" ? "rotate(-140deg)" : "rotate(-20deg)" }}>
-          <rect x="89" y="72" width="10" height="24" rx="5" fill="#A8D81E" />
-        </g>
-        <path d="M60 14 C86 14 100 34 100 64 C100 94 84 112 60 112 C36 112 20 94 20 64 C20 34 34 14 60 14 Z" fill={`url(#${uid}g)`} stroke="#8FBF12" strokeWidth="2" />
-        <g stroke="#9ACB18" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity=".9">
-          <path d="M38 30 q6 -6 12 0 q6 6 12 0 q6 -6 12 0" />
-          <path d="M60 18 L60 30" />
-        </g>
-        <rect x="22" y="36" width="76" height="11" rx="5.5" fill={K.orange} />
-        <rect x="22" y="40" width="76" height="3" fill={K.white} opacity=".85" />
-        {eye(47)}
-        {eye(73)}
-        <ellipse cx="37" cy="72" rx="6" ry="3.4" fill="#FF7A8A" opacity=".5" />
-        <ellipse cx="83" cy="72" rx="6" ry="3.4" fill="#FF7A8A" opacity=".5" />
-        {mouth}
-        <path d="M63 88 L54 100 L60 100 L56 110 L68 96 L62 96 L66 88 Z" fill={K.yellow} stroke="#C99A12" strokeWidth="1" strokeLinejoin="round" />
-      </g>
-    </svg>
-  );
+  const kind: SpecialKey = who ?? (mood === "cheer" || mood === "happy" ? "explorer" : "puff");
+  return <SpecialChar kind={kind} uid={uid} mood={mood} variant="full" still={still} size={size} className={`mascot ${className}`} />;
 }
