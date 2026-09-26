@@ -7,6 +7,7 @@ import { applyBranding, setTitle } from "./app/theme";
 import { Sprinty } from "./components/Chibi";
 import { Home } from "./pages/Home";
 import { TenantApp } from "./pages/TenantApp";
+import { HAS_LIVE_BACKEND, exitSandbox, sandboxOn } from "./app/sandbox";
 
 // Big screens load on demand so a player's phone only downloads what it needs.
 const AdminApp = lazy(() => import("./pages/AdminApp").then((m) => ({ default: m.AdminApp })));
@@ -15,13 +16,16 @@ const JoinPage = lazy(() => import("./live/JoinPage").then((m) => ({ default: m.
 const Presenter = lazy(() => import("./polls/Presenter").then((m) => ({ default: m.Presenter })));
 const VotePage = lazy(() => import("./polls/VotePage").then((m) => ({ default: m.VotePage })));
 const CertificatePage = lazy(() => import("./cert/CertificatePage").then((m) => ({ default: m.CertificatePage })));
+const Experience = lazy(() => import("./pages/Experience").then((m) => ({ default: m.Experience })));
+const SignIn = lazy(() => import("./pages/SignIn").then((m) => ({ default: m.SignIn })));
+const WorldPage = lazy(() => import("./world/WorldPage").then((m) => ({ default: m.WorldPage })));
 const SuperApp = lazy(() => import("./super/SuperApp").then((m) => ({ default: m.SuperApp })));
 
 export default function App() {
   const [api, setApi] = useState<Api | null>(null);
   const [fail, setFail] = useState("");
   useEffect(() => {
-    createApi().then(setApi, (e) => setFail(String(e?.message || e)));
+    createApi(HAS_LIVE_BACKEND && sandboxOn()).then(setApi, (e) => setFail(String(e?.message || e)));
   }, []);
   if (fail)
     return (
@@ -37,6 +41,7 @@ export default function App() {
   return (
     <ApiProvider api={api}>
       <Router />
+      {HAS_LIVE_BACKEND && api.mode === "demo" && <SandboxBar />}
     </ApiProvider>
   );
 }
@@ -50,19 +55,49 @@ export function Loading({ text }: { text: string }) {
   );
 }
 
+/** Always visible while a visitor is in the demo sandbox on a live site. */
+function SandboxBar() {
+  return (
+    <div className="sandbox-bar" role="status">
+      <span className="sandbox-dot" aria-hidden="true" />
+      <span>
+        <b>Demo sandbox</b> <span className="sandbox-sub">· saved in this browser only</span>
+      </span>
+      <button type="button" onClick={() => exitSandbox()}>Exit demo</button>
+    </div>
+  );
+}
+
+const SITE_PAGES = new Set(["home", "experience", "signin", "world", "super", "notfound"]);
+
 function Router() {
   const route = useRoute();
   // pages outside a company use the default Brain Sprint look
   useEffect(() => {
-    if (route.r === "home" || route.r === "super" || route.r === "notfound") {
+    if (SITE_PAGES.has(route.r)) {
       applyBranding(undefined);
-      setTitle(route.r === "super" ? "Brain Sprint · Super admin" : "Brain Sprint");
+      setTitle(
+        route.r === "super" ? "Brain Sprint · Super admin"
+        : route.r === "experience" ? "Brain Sprint · Experience"
+        : route.r === "signin" ? "Brain Sprint · Sign in"
+        : route.r === "world" ? "Brain Sprint · Knowledge World"
+        : "Brain Sprint · Learning your team actually plays",
+      );
     }
   }, [route.r]);
   let el: JSX.Element;
   switch (route.r) {
     case "home":
       el = <Home />;
+      break;
+    case "experience":
+      el = <Experience />;
+      break;
+    case "signin":
+      el = <SignIn />;
+      break;
+    case "world":
+      el = <WorldPage />;
       break;
     case "join":
       el = <JoinPage pin={route.pin} />;

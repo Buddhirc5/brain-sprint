@@ -65,7 +65,7 @@ export function PollsTab() {
         )}
       </div>
       <p className="fine">
-        Mentimeter-style polls: word clouds, multiple choice, scales, rankings, open text and Q&A. The audience joins on their phones at{" "}
+        Interactive polls: word clouds, multiple choice, scales, rankings, open text and Q&A. The audience joins on their phones at{" "}
         <b>#/vote</b> with the poll's 6-digit code — no account needed, answers are anonymous.
         {!can("editor") && " Your role (Host) can present and open/close polls, but not edit them."}
       </p>

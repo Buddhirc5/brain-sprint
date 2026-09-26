@@ -300,3 +300,18 @@
 .review li.no span:first-of-type { color: var(--bad); font-weight: 700; }
 .phone a.btn { text-decoration: none; }
 .cert-res .unit { max-width: 64%; }
+
+/* question image */
+.qimg { display: block; width: 100%; max-height: min(34vh, 280px); object-fit: contain; border-radius: var(--r-md); background: #fff; margin: 4px 0 2px; }
+.review .qimg { max-height: 140px; width: auto; max-width: 100%; }
+
+/* Knowledge World entry card */
+.world-cta {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border-radius: var(--r-lg); padding: 10px 14px 10px 8px;
+  background: linear-gradient(135deg, #0F2A3D 0%, #1D4C6B 100%); color: #fff; box-shadow: var(--shadow); overflow: hidden;
+}
+.world-cta .grow { flex: 1; min-width: 0; display: grid; }
+.world-cta b { font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1; text-transform: uppercase; color: var(--lime); }
+.world-cta small { color: rgba(255,255,255,.8); font-weight: 600; font-size: 13px; }
+.world-cta .world-cta-k { font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #9ED8FF; }
+.world-cta-art { width: 64px; height: 74px; display: grid; place-items: end center; flex: none; margin-bottom: -12px; }

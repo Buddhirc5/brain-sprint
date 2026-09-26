@@ -1,67 +1,38 @@
 /* =====================================================================
-   The public front door (#/): join a live game, vote in a poll, or go to
-   your company's page — plus what Brain Sprint is, and (demo only) a
-   guided tour of the demo companies.
+   The public landing page (#/): what Brain Sprint is and why a company
+   should buy it. Trying it lives on #/experience; joining a game, voting
+   and company sign-in live on #/signin (both in the top bar).
    ===================================================================== */
-import { useEffect, useState, type ReactNode } from "react";
-import "../styles/home.css";
-import { useApi } from "../app/ApiCtx";
-import { nav } from "../app/router";
+import { useState, type ReactNode } from "react";
 import { Chibi, Sprinty } from "../components/Chibi";
 import { Icon } from "../components/ui";
-import type { TenantPublic } from "../types";
-import { DEMO_ADMINS, DEMO_PASSWORD, DEMO_SUPER } from "./demoHints";
-
-const SLUG_OK = /^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])$/;
-
-/** Accepts "acme-bank", "/t/acme-bank" or a full pasted link. */
-function slugFrom(s: string): string {
-  const v = s.trim().toLowerCase();
-  const m = v.match(/#\/t\/([a-z0-9-]+)/) || v.match(/(?:^|\/)t\/([a-z0-9-]+)/);
-  return (m ? m[1] : v).replace(/[^a-z0-9-]/g, "");
-}
-
-/** In-page scroll (plain #anchors would be taken by the hash router). */
-function jump(id: string, focus?: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  if (focus) setTimeout(() => document.getElementById(focus)?.focus({ preventScroll: true }), 350);
-}
+import { CONTACT_EMAIL, SiteFooter, SiteHeader, jump } from "./site";
+import { WorldTeaser } from "./WorldTeaser";
 
 export function Home() {
-  const { api } = useApi();
-  const demo = api.mode === "demo";
   return (
     <div className="home">
-      <header className="h-top">
-        <a className="h-logo" href="#/" aria-label="Brain Sprint home">
-          <Sprinty size={40} still />
-          <span>Brain Sprint</span>
-        </a>
-        <nav className="h-topnav" aria-label="Quick links">
-          <button type="button" onClick={() => jump("join-box")}>Join a game</button>
-          <button type="button" onClick={() => jump("company-box")}>Company sign-in</button>
-          {demo && <button type="button" className="h-demo-pill" onClick={() => jump("demo")}>Try the demo</button>}
-        </nav>
-      </header>
-
+      <SiteHeader />
       <Hero />
-      <Actions />
+      <Proof />
+      <BeforeAfter />
       <Features />
+      <UseCases />
+      <WorldTeaser />
       <HowItWorks />
-      {demo && <DemoPanel />}
-
-      <footer className="h-foot">
-        <span className="h-foot-brand">
-          <Sprinty size={28} still /> Brain Sprint
-        </span>
-        <span>Learning your team actually plays.</span>
-        <span className="h-foot-links">
-          <a href="#/join">Join a game</a>
-          <a href="#/vote">Vote</a>
-          <a className="h-super" href="#/super">Super admin</a>
-        </span>
-      </footer>
+      <Security />
+      <Faq />
+      <FinalCta />
+      <SiteFooter />
     </div>
+  );
+}
+
+function SalesCta({ className = "btn white" }: { className?: string }) {
+  return CONTACT_EMAIL ? (
+    <a className={className} href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Brain Sprint demo")}`}>Book a demo</a>
+  ) : (
+    <button type="button" className={className} onClick={() => jump("features")}>See the features</button>
   );
 }
 
@@ -70,17 +41,23 @@ function Hero() {
   return (
     <section className="h-hero">
       <div className="h-hero-copy">
-        <span className="h-tag">Daily sprints · Live games · Polls</span>
+        <span className="h-tag">The employee learning game</span>
         <h1 className="h-mega">
           Learning your team <span className="ink">actually plays.</span>
         </h1>
         <p className="h-sub">
-          Two-minute daily quizzes, Kahoot-style live games and instant polls — under your company's own name and colours. Staff compete for coins and streaks; you see exactly where the knowledge gaps are.
+          Two-minute daily quizzes, big-screen live games, instant polls and certification — under your own brand. Your people compete for coins and streaks. You see
+          exactly where the knowledge gaps are, by team, week by week.
         </p>
         <div className="h-hero-cta">
-          <button type="button" className="btn primary" onClick={() => jump("join-box", "h-pin")}>Join a game</button>
-          <button type="button" className="btn white" onClick={() => jump("company-box", "h-co")}>Go to your company</button>
+          <a className="btn primary" href="#/experience">Try it free — no sign-up</a>
+          <SalesCta />
         </div>
+        <ul className="h-trust">
+          <li><Icon.check /> No app to install</li>
+          <li><Icon.check /> Your logo &amp; colours</li>
+          <li><Icon.check /> Bank-grade security</li>
+        </ul>
       </div>
       <div className="h-stage" aria-hidden="true">
         <span className="h-scribble">no boring e-learning!</span>
@@ -114,117 +91,55 @@ function Hero() {
   );
 }
 
-/* ---------------- three big actions ---------------- */
-function Actions() {
-  const [pin, setPin] = useState("");
-  const [code, setCode] = useState("");
-  const [co, setCo] = useState("");
-  const [coErr, setCoErr] = useState("");
-  const slug = slugFrom(co);
-  const goCo = (admin: boolean) => {
-    if (!SLUG_OK.test(slug)) return setCoErr("Type your company's web address, like acme-bank.");
-    setCoErr("");
-    nav(admin ? { r: "admin", slug } : { r: "tenant", slug });
-  };
+/* ---------------- proof strip (product facts) ---------------- */
+function Proof() {
+  const facts: [string, string][] = [
+    ["2 min", "a day is all it takes"],
+    ["4-in-1", "sprints, live games, polls & exams"],
+    ["0", "answer keys ever sent to phones"],
+    ["100%", "your brand on every screen"],
+  ];
   return (
-    <section className="h-actions" aria-label="Get started">
-      <form
-        id="join-box"
-        className="h-act h-act-join"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (pin.length === 6) nav({ r: "join", pin });
-        }}
-      >
-        <ActHead n="1" title="Join a live game" sub="Got a game PIN on the big screen? Type it here." />
-        <label className="sr" htmlFor="h-pin">Game PIN</label>
-        <input
-          id="h-pin"
-          className="h-pin num"
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="000000"
-          maxLength={6}
-          value={pin}
-          onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-        />
-        <button className="btn lime block" disabled={pin.length !== 6}>Enter game</button>
-      </form>
-
-      <form
-        className="h-act h-act-vote"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (code.length === 6) nav({ r: "vote", code });
-        }}
-      >
-        <ActHead n="2" title="Vote in a poll" sub="Town hall or training? Enter the poll code to have your say." />
-        <label className="sr" htmlFor="h-code">Poll code</label>
-        <input
-          id="h-code"
-          className="h-pin num"
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="000000"
-          maxLength={6}
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-        />
-        <button className="btn white block" disabled={code.length !== 6}>Vote now</button>
-      </form>
-
-      <form
-        id="company-box"
-        className="h-act h-act-co"
-        onSubmit={(e) => {
-          e.preventDefault();
-          goCo(false);
-        }}
-        noValidate
-      >
-        <ActHead n="3" title="Go to your company" sub="Play today's sprint, see your leaderboard, or manage your team." />
-        <label className="h-co-lbl" htmlFor="h-co">Company web address</label>
-        <div className="h-co">
-          <span>/t/</span>
-          <input
-            id="h-co"
-            autoCapitalize="off"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="your-company"
-            value={co}
-            onChange={(e) => {
-              setCo(e.target.value);
-              setCoErr("");
-            }}
-          />
+    <section className="h-proof" aria-label="At a glance">
+      {facts.map(([n, t]) => (
+        <div key={t}>
+          <b>{n}</b>
+          <span>{t}</span>
         </div>
-        {coErr && <p className="err" role="alert">{coErr}</p>}
-        <div className="h-co-btns">
-          <button className="btn primary">Open</button>
-          <button type="button" className="btn ghost" onClick={() => goCo(true)}>
-            <Icon.lock /> Admin sign-in
-          </button>
-        </div>
-      </form>
+      ))}
     </section>
   );
 }
 
-function ActHead({ n, title, sub }: { n: string; title: string; sub: string }) {
+/* ---------------- before / after ---------------- */
+function BeforeAfter() {
+  const before = ["Hour-long modules nobody finishes", "Click-through slides, no idea what stuck", "Annual refreshers, forgotten by Friday", "Reports that only show completion"];
+  const after = ["Two-minute sprints people look forward to", "Every answer tagged to a topic and a team", "Little and often — with streaks that stick", "A live map of knowledge gaps, closing week by week"];
   return (
-    <div className="h-act-h">
-      <span className="h-act-n">{n}</span>
-      <h2>{title}</h2>
-      <p>{sub}</p>
-    </div>
+    <section className="h-sec" aria-labelledby="h-ba">
+      <div className="h-sec-h">
+        <span className="h-kicker">Why teams switch</span>
+        <h2 id="h-ba">Training people skip vs. a game they play</h2>
+      </div>
+      <div className="h-ba">
+        <div className="h-ba-col h-ba-before">
+          <h3>Typical e-learning</h3>
+          <ul>{before.map((x) => <li key={x}><Icon.close /> {x}</li>)}</ul>
+        </div>
+        <div className="h-ba-col h-ba-after">
+          <h3>With Brain Sprint</h3>
+          <ul>{after.map((x) => <li key={x}><Icon.check /> {x}</li>)}</ul>
+          <Sprinty mood="cheer" size={96} />
+        </div>
+      </div>
+    </section>
   );
 }
 
 /* ---------------- features ---------------- */
 const FEATURES: { k: string; t: string; d: string; c: string; art: ReactNode }[] = [
-  { k: "sprint", t: "Daily Sprint", d: "Bite-size quizzes with coins, streaks, levels and a cartoon character everyone wants to dress up.", c: "lime", art: <ArtSprint /> },
-  { k: "live", t: "Live Quiz", d: "Host a game on the big screen; everyone joins with a PIN on their phone. Fastest right answer wins.", c: "ink", art: <ArtLive /> },
+  { k: "sprint", t: "Daily Sprint", d: "Bite-size quizzes with coins, streaks, levels and a cartoon character everyone wants to dress up. Add images to any question.", c: "lime", art: <ArtSprint /> },
+  { k: "live", t: "Live Quiz", d: "Host a game-show on the big screen; everyone joins with a PIN on their phone. Fastest right answer wins.", c: "ink", art: <ArtLive /> },
   { k: "polls", t: "Live Polls", d: "Word clouds, ratings, rankings and Q&A for town halls and trainings — results appear as people vote.", c: "orange", art: <ArtPoll /> },
   { k: "cert", t: "Certification", d: "Timed exams with a pass mark, limited attempts and a printable certificate with expiry.", c: "blue", art: <ArtCert /> },
   { k: "gap", t: "Analytics & gap trend", d: "See weak topics by branch and department, and whether each gap is closing week by week.", c: "paper", art: <ArtTrend /> },
@@ -234,8 +149,9 @@ const FEATURES: { k: string; t: string; d: string; c: string; art: ReactNode }[]
 
 function Features() {
   return (
-    <section className="h-sec" aria-labelledby="h-feat">
+    <section className="h-sec" aria-labelledby="h-feat" id="features">
       <div className="h-sec-h">
+        <span className="h-kicker">The platform</span>
         <h2 id="h-feat">Everything your team needs to learn</h2>
         <p>One app for daily practice, big-room energy and proof of competence.</p>
       </div>
@@ -252,6 +168,35 @@ function Features() {
   );
 }
 
+/* ---------------- use cases ---------------- */
+function UseCases() {
+  const cases: [string, string, number][] = [
+    ["HR & Learning", "Onboarding, product knowledge and culture — in two minutes a day instead of a lost afternoon.", 5],
+    ["Compliance & Risk", "AML, cyber security and policy refreshers with certificates, expiry dates and an audit trail.", 9],
+    ["Sales & Service", "Keep every branch sharp on new products. Team battles turn knowledge into friendly rivalry.", 2],
+    ["Leaders & Comms", "Town hall polls, anonymous Q&A and live games that get the whole room talking.", 11],
+  ];
+  return (
+    <section className="h-sec" aria-labelledby="h-uc">
+      <div className="h-sec-h">
+        <span className="h-kicker">Who it's for</span>
+        <h2 id="h-uc">Built for the whole company</h2>
+      </div>
+      <div className="h-cases">
+        {cases.map(([t, d, look]) => (
+          <article key={t} className="h-case">
+            <Chibi look={look} mood="happy" size={64} />
+            <div>
+              <h3>{t}</h3>
+              <p>{d}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function HowItWorks() {
   const steps: [string, string, ReactNode][] = [
     ["Your company gets its own address", "Branded with your name, logo and colours. Add your branches or locations and departments.", <Chibi key="a" look={4} mood="happy" size={72} />],
@@ -261,6 +206,7 @@ function HowItWorks() {
   return (
     <section className="h-sec" aria-labelledby="h-how">
       <div className="h-sec-h">
+        <span className="h-kicker">Up and running in a day</span>
         <h2 id="h-how">How it works</h2>
       </div>
       <ol className="h-steps">
@@ -279,113 +225,82 @@ function HowItWorks() {
   );
 }
 
-/* ---------------- demo tour ---------------- */
-function DemoPanel() {
-  const { api } = useApi();
-  const [pubs, setPubs] = useState<Record<string, TenantPublic | null>>({});
-  const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    Promise.all(["harbor", "northwind"].map((s) => api.tenantBySlug(s).then((p) => [s, p] as const, () => [s, null] as const))).then((xs) => setPubs(Object.fromEntries(xs)));
-  }, [api]);
-  const reset = async () => {
-    if (!confirm("Reset the demo? Everything you changed in this browser is wiped and the demo companies are restored.")) return;
-    setBusy(true);
-    const { resetDemo } = await import("../api/demo");
-    await resetDemo();
-    location.hash = "#/";
-    location.reload();
-  };
-  const hb = pubs.harbor;
-  const nw = pubs.northwind;
+/* ---------------- security ---------------- */
+function Security() {
+  const items: [string, string][] = [
+    ["Tenant isolation", "Every company's data is walled off at the database level (row-level security)."],
+    ["Server-side scoring", "Answer keys never leave the server, so nobody can cheat from the browser."],
+    ["Admin controls", "Five roles, authenticator-app sign-in, maker-checker approvals and idle sign-out."],
+    ["Full audit trail", "Every admin action is logged per company, with exportable reports."],
+  ];
   return (
-    <section className="h-sec h-demo" id="demo" aria-labelledby="h-demo-t">
-      <div className="h-sec-h">
-        <h2 id="h-demo-t">Try the demo</h2>
-        <p>Everything runs in this browser — nothing is sent anywhere. Open a player tab and an admin tab side by side to see it live.</p>
+    <section className="h-secband" aria-labelledby="h-sec-t">
+      <div className="h-secband-h">
+        <span className="h-dcard-ic"><Icon.shield /></span>
+        <div>
+          <span className="h-kicker">Security first</span>
+          <h2 id="h-sec-t">Ready for banks. Fine for everyone else.</h2>
+        </div>
       </div>
-      <div className="h-demo-grid">
-        <DemoCard
-          name={hb?.name.replace(" (demo)", "") || "Harbor Bank"}
-          product={hb?.branding.productName || "Harbor Academy"}
-          kind="Bank template"
-          colors={hb ? [hb.branding.primary, hb.branding.accent, hb.branding.ink] : ["#5EEAD4", "#EA580C", "#0B1B2B"]}
-          missing={hb === null}
-        >
-          <DemoLink href="#/t/harbor" t="Player app" d={<>Sign in with Employee ID <b>DEMO-101</b></>} />
-          <DemoLink href="#/t/harbor/admin" t="Admin portal" d={<><b>{DEMO_ADMINS.harbor}</b> · {DEMO_PASSWORD}</>} />
-          <DemoLink href="#/vote/482913" t="Vote in the town hall poll" d={<>Poll code <b className="num">482913</b></>} />
-          <div className="h-howto">
-            <b>Run a live game</b>
-            <ol>
-              <li>Open the admin portal → <b>Live</b> → start a game.</li>
-              <li>In another tab, open <a className="link" href="#/join" target="_blank" rel="noopener">Join a game</a> and type the PIN.</li>
-              <li>Press <b>Start</b> on the host screen and play.</li>
-            </ol>
+      <div className="h-secgrid">
+        {items.map(([t, d]) => (
+          <div key={t}>
+            <b>{t}</b>
+            <p>{d}</p>
           </div>
-        </DemoCard>
-        <DemoCard
-          name={nw?.name.replace(" (demo)", "") || "Northwind Traders"}
-          product={nw?.branding.productName || "Brain Sprint"}
-          kind="Generic template"
-          colors={nw ? [nw.branding.primary, nw.branding.accent, nw.branding.ink] : ["#C6F432", "#FF5A1F", "#161512"]}
-          missing={nw === null}
-        >
-          <DemoLink href="#/t/northwind" t="Player app" d="Pick a character and play today's sprint" />
-          <DemoLink href="#/t/northwind/admin" t="Admin portal" d={<><b>{DEMO_ADMINS.northwind}</b> · {DEMO_PASSWORD}</>} />
-        </DemoCard>
-        <article className="h-dcard h-dcard-super">
-          <div className="h-dcard-h">
-            <span className="h-dcard-ic"><Icon.shield /></span>
-            <div>
-              <b>Super admin console</b>
-              <span>Create companies, brand them, manage the starter library</span>
-            </div>
-          </div>
-          <dl className="h-creds">
-            <dt>Email</dt><dd>{DEMO_SUPER}</dd>
-            <dt>Password</dt><dd>{DEMO_PASSWORD}</dd>
-            <dt>Super code</dt><dd>Sandeepa</dd>
-          </dl>
-          <a className="btn lime block" href="#/super">Open the console</a>
-          <p className="fine">You'll be asked to change the starting code — in the demo you can skip that.</p>
-        </article>
-      </div>
-      <div className="h-reset">
-        <span>Made a mess? Start over with fresh demo data.</span>
-        <button className="btn ghost small" onClick={reset} disabled={busy}>
-          {busy ? "Resetting…" : "Reset demo data"}
-        </button>
+        ))}
       </div>
     </section>
   );
 }
 
-function DemoCard({ name, product, kind, colors, missing, children }: { name: string; product: string; kind: string; colors: string[]; missing?: boolean; children: ReactNode }) {
+/* ---------------- FAQ ---------------- */
+function Faq() {
+  const qs: [string, string][] = [
+    ["Do employees need to install an app?", "No. Brain Sprint runs in any modern browser on phones, tablets and computers. Share a link or a QR code and they're in."],
+    ["Can we use our own questions?", "Yes. Build quizzes in the admin portal — multiple choice, true/false, matching and ordering, with images — or start from the built-in library."],
+    ["How do people sign in?", "With an Employee ID, a 6-digit email code or Microsoft sign-in. Admins can require an authenticator app."],
+    ["Does it look like our brand?", "Completely. Your product name, logo and colours appear on every screen, including big screens and certificates."],
+    ["What is Knowledge World?", "An optional 3D mini game — explore a city, drive cars, race checkpoints and pop trivia bubbles. Admins switch it on per company."],
+    ["Can I try it before talking to anyone?", "Yes. The Experience page opens a private demo that runs entirely in your browser — nothing is saved to our servers."],
+  ];
+  const [open, setOpen] = useState(0);
   return (
-    <article className="h-dcard">
-      <div className="h-dcard-h">
-        <span className="h-sw" aria-hidden="true">
-          {colors.map((c) => <i key={c} style={{ background: c }} />)}
-        </span>
-        <div>
-          <b>{name}</b>
-          <span>{product} · {kind}</span>
-        </div>
+    <section className="h-sec" aria-labelledby="h-faq">
+      <div className="h-sec-h">
+        <span className="h-kicker">FAQ</span>
+        <h2 id="h-faq">Questions, answered</h2>
       </div>
-      {missing ? <p className="fine">This demo company was deleted. Reset the demo to bring it back.</p> : <div className="h-dlinks">{children}</div>}
-    </article>
+      <div className="h-faq">
+        {qs.map(([q, a], i) => (
+          <div key={q} className={`h-faq-i ${open === i ? "on" : ""}`}>
+            <button type="button" aria-expanded={open === i} onClick={() => setOpen(open === i ? -1 : i)}>
+              <span>{q}</span>
+              <span className="h-faq-x" aria-hidden="true">+</span>
+            </button>
+            {open === i && <p>{a}</p>}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
-function DemoLink({ href, t, d }: { href: string; t: string; d: ReactNode }) {
+function FinalCta() {
   return (
-    <a className="h-dlink" href={href}>
-      <span>
-        <b>{t}</b>
-        <small>{d}</small>
-      </span>
-      <span className="h-arrow" aria-hidden="true">→</span>
-    </a>
+    <section className="h-final">
+      <div>
+        <h2>Make learning the best two minutes of the day.</h2>
+        <p>Try the full product in your browser right now — no sign-up, no credit card.</p>
+      </div>
+      <div className="h-hero-cta">
+        <a className="btn lime" href="#/experience">Try it free</a>
+        <SalesCta className="btn ghost h-final-ghost" />
+      </div>
+      <div className="h-final-art" aria-hidden="true">
+        <Chibi look={6} variant="full" mood="cheer" size={120} />
+      </div>
+    </section>
   );
 }
 

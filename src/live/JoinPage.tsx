@@ -457,6 +457,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
             <span style={{ transform: `scaleX(${s.qSeconds ? left / (s.qSeconds * 1000) : 0})` }} />
           </div>
           <p className="lv-pqtext">{q?.q}</p>
+          {q?.img && <img className="lv-pqimg" src={q.img} alt="" />}
           <div className={`lv-pads n${opts.length}`}>
             {opts.map((o, i) => {
               const t = tileOf(q, i);

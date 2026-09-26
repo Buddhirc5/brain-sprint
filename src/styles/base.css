@@ -132,3 +132,15 @@ textarea.inp { resize: vertical; line-height: 1.4; }
 @keyframes rise { 0% { transform: translateY(10px); opacity: 0; } 100% { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 .seg.narrow { max-width: 320px; }
+
+/* ---------- demo sandbox bar (live sites only) ---------- */
+.sandbox-bar {
+  position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 90;
+  display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: 999px;
+  background: var(--ink); color: #fff; font-size: 13px; box-shadow: 0 12px 28px -14px rgba(0,0,0,.6); max-width: calc(100% - 24px);
+}
+.sandbox-bar b { color: var(--lime); }
+.sandbox-bar button { background: var(--lime); color: var(--ink); font-weight: 900; font-size: 13px; border-radius: 999px; padding: 7px 12px; white-space: nowrap; }
+.sandbox-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 4px rgba(198,244,50,.25); flex: none; }
+@media (max-width: 480px) { .sandbox-sub { display: none; } }
+@media print { .sandbox-bar { display: none; } }

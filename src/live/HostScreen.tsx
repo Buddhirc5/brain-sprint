@@ -436,7 +436,7 @@ function QuestionView({ v, left }: { v: LiveHostView; left: number }) {
               </svg>
               <b className="num">{secs}</b>
             </div>
-            <Sprinty mood="think" size={170} className="lv-mascot" />
+            {q?.img ? <img className="lv-qimg" src={q.img} alt="" /> : <Sprinty mood="think" size={170} className="lv-mascot" />}
             <div className="lv-answered">
               <b className="num">{v.answered}</b>
               <span>of {v.players.length} answered</span>

@@ -47,7 +47,7 @@ export function LiveTab() {
         )}
       </div>
       <p className="fine" style={{ maxWidth: "70ch" }}>
-        Host a Kahoot-style game on a big screen. Players join on their phones at <b>{absUrl({ r: "join" }).replace(/^https?:\/\//, "")}</b> with the game PIN, answer against the clock, and
+        Host a game-show style quiz on a big screen. Players join on their phones at <b>{absUrl({ r: "join" }).replace(/^https?:\/\//, "")}</b> with the game PIN, answer against the clock, and
         climb the scoreboard. Faster right answers score more (500–1,000) plus a streak bonus.
       </p>
 

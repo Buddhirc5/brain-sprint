@@ -227,3 +227,8 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .tbl.drill td { white-space: normal; }
 .tbl.drill td.wrap { min-width: 120px; }
 @media (min-width: 900px) { .adm-tabs { flex-wrap: wrap; overflow: visible; } }
+
+/* question image */
+.qimg-drop { display: grid; gap: 10px; justify-items: start; border: 2px dashed var(--line); border-radius: var(--r-md); padding: 12px; background: rgba(255,255,255,.6); }
+.qimg-drop.has { border-style: solid; }
+.qimg-drop img { max-width: min(100%, 360px); max-height: 220px; border-radius: var(--r-sm); object-fit: contain; background: #fff; box-shadow: var(--shadow); }

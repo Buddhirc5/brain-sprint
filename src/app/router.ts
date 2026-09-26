@@ -1,6 +1,9 @@
 /* Tiny hash router. Hash URLs work on Vercel, any static host and straight from disk.
    Routes:
-     #/                         home (join a game, vote, company sign-in)
+     #/                         product landing page
+     #/experience               try it: guided demo sandbox, Knowledge World preview
+     #/signin                   join a game, vote, company & admin sign-in
+     #/world                    Knowledge World (3D mini game) — free roam preview
      #/join[/:pin]              live quiz — players
      #/vote[/:code]             live poll — audience
      #/t/:slug                  company player app
@@ -13,6 +16,9 @@ import { useEffect, useState } from "react";
 
 export type Route =
   | { r: "home" }
+  | { r: "experience" }
+  | { r: "signin" }
+  | { r: "world" }
   | { r: "join"; pin?: string }
   | { r: "vote"; code?: string }
   | { r: "tenant"; slug: string }
@@ -27,6 +33,9 @@ export function parse(hash: string): Route {
   const [path] = hash.replace(/^#/, "").split("?");
   const p = path.split("/").filter(Boolean).map(decodeURIComponent);
   if (!p.length) return { r: "home" };
+  if (p[0] === "experience") return { r: "experience" };
+  if (p[0] === "signin") return { r: "signin" };
+  if (p[0] === "world") return { r: "world" };
   if (p[0] === "join") return { r: "join", pin: p[1] };
   if (p[0] === "vote") return { r: "vote", code: p[1] };
   if (p[0] === "super") return { r: "super", tab: p[1] };
@@ -44,6 +53,9 @@ export function parse(hash: string): Route {
 export function href(r: Route): string {
   switch (r.r) {
     case "home": return "#/";
+    case "experience": return "#/experience";
+    case "signin": return "#/signin";
+    case "world": return "#/world";
     case "join": return "#/join" + (r.pin ? "/" + r.pin : "");
     case "vote": return "#/vote" + (r.code ? "/" + r.code : "");
     case "tenant": return `#/t/${r.slug}`;

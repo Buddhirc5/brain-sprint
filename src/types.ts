@@ -33,8 +33,9 @@ export interface Labels {
 
 export interface Features {
   sprint: boolean; // daily self-paced quizzes
-  live: boolean; // Kahoot-style live quiz
-  polls: boolean; // Mentimeter-style live polls
+  live: boolean; // game-show style live quiz
+  polls: boolean; // interactive live polls
+  world: boolean; // Knowledge World — 3D explore-and-race mini game (off by default)
   cert: boolean; // certification exams
   coins: boolean;
   store: boolean;
@@ -101,6 +102,7 @@ export interface Question {
   right?: string[]; // match: meanings, stored shuffled
   items?: string[]; // order: steps, stored shuffled
   seconds?: number; // live quiz: time for this question (default 20)
+  img?: string; // optional picture: data: URL (PNG/JPEG/WebP/GIF, ≤ 350k chars), compressed in the browser
 }
 
 export interface CertSettings {
@@ -232,7 +234,7 @@ export interface AdminMember {
   mfa?: boolean;
 }
 
-/* ---------------- live quiz (Kahoot-style) ---------------- */
+/* ---------------- live quiz (game-show style) ---------------- */
 export type LiveState = "lobby" | "question" | "reveal" | "board" | "ended";
 export interface LiveSession {
   id: string;
@@ -290,7 +292,7 @@ export interface LiveHostView {
   counts: number[]; // per option for the current question (host only)
 }
 
-/* ---------------- live polls (Mentimeter-style) ---------------- */
+/* ---------------- live polls (interactive) ---------------- */
 export type SlideType = "mc" | "word" | "scale" | "open" | "qa" | "rank";
 export interface Slide {
   id: string;
