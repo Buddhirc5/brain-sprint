@@ -207,7 +207,7 @@ class SupabaseApi implements Api {
     const totp = (fs.data?.all || []).filter((f) => f.factor_type === "totp");
     const verified = totp.find((f) => f.status === "verified");
     const pending = totp.filter((f) => f.status !== "verified").sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-    return { enrolled: !!verified, verified: aal.data?.currentLevel === "aal2", factorId: (verified || pending)?.id };
+    return { enrolled: !!verified, verified: aal.data?.currentLevel === "aal2", factorId: (verified || pending)?.id, canReset: emailLinkRecent(this.session.access_token) };
   }
   async mfaEnroll() {
     const s = this.needSession();
@@ -223,6 +223,19 @@ class SupabaseApi implements Api {
     this.needSession();
     const { error } = await this.sb.auth.mfa.challengeAndVerify({ factorId, code: code.replace(/\s/g, "") });
     if (error) throw authError(error);
+    await this.sb.auth.refreshSession().catch(() => undefined);
+  }
+
+  async mfaResetSend(redirectTo: string) {
+    const s = this.needSession();
+    const e = s.user.email;
+    if (!e || s.user.is_anonymous) throw new ApiError("forbidden", "Sign in first.");
+    const { error } = await this.sb.auth.signInWithOtp({ email: e, options: { emailRedirectTo: redirectTo, shouldCreateUser: false } });
+    if (error) throw authError(error);
+  }
+  async mfaReset() {
+    this.needSession();
+    await this.rpc("mfa_reset_self");
     await this.sb.auth.refreshSession().catch(() => undefined);
   }
 
@@ -594,5 +607,16 @@ class SupabaseApi implements Api {
   }
   async superSaveLibrary(items: LibraryItem[]) {
     await this.rpc<void>("super_save_library", { p_items: items });
+  }
+}
+
+/** Was this session opened from an emailed link (magic link / email code) in the last 10 minutes? Read from the JWT's amr claim; the server re-checks. */
+function emailLinkRecent(token: string): boolean {
+  try {
+    const p = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))) as { amr?: { method: string; timestamp: number }[] };
+    const now = Date.now() / 1000;
+    return (p.amr || []).some((a) => ["otp", "magiclink", "email"].includes(a.method) && now - a.timestamp < 600);
+  } catch {
+    return false;
   }
 }

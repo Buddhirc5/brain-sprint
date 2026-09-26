@@ -40,6 +40,7 @@ export interface AuthUser {
 export interface MfaState {
   enrolled: boolean;
   verified: boolean; // this session passed MFA (aal2)
+  canReset?: boolean; // signed in from an emailed link in the last 10 minutes: may remove a lost authenticator
   factorId?: string;
 }
 
@@ -124,6 +125,10 @@ export interface Api {
   mfaState(): Promise<MfaState>;
   mfaEnroll(): Promise<{ factorId: string; qr: string; secret: string }>; // qr = SVG markup or data URL
   mfaVerify(factorId: string, code: string): Promise<void>;
+  /** Lost authenticator: email this account a sign-in link (opened on this device, it allows mfaReset for 10 minutes). */
+  mfaResetSend(redirectTo: string): Promise<void>;
+  /** Remove this account's authenticator(s) — only from a session opened by that emailed link. Audited. */
+  mfaReset(): Promise<void>;
   /** demo only: the last email "sent" (codes/links), so the demo can show it on screen */
   demoOutbox?(): { to: string; body: string; at: number; code?: string; link?: string } | null;
 

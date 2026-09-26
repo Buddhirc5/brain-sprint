@@ -1,6 +1,6 @@
 # Ant Arena — security controls
 
-Built for regulated clients such as banks. The production controls are enforced in Postgres (`supabase/migrations`), never only in the browser. The in-browser demo mirrors the same rules.
+Built for companies with strict security needs. The production controls are enforced in Postgres (`supabase/migrations`), never only in the browser. The in-browser demo mirrors the same rules.
 
 ## Tenant isolation
 - Every table carries `tenant_id` and has **Row Level Security** on. Players and admins can only reach their own company's rows.
@@ -10,9 +10,15 @@ Built for regulated clients such as banks. The production controls are enforced 
 ## Identity & roles
 | Who | How they sign in |
 |---|---|
-| Super admin | Email + password, then a **super admin code** (bcrypt-hashed, starts as `Sandeepa`, change it straight away). 5 wrong codes → locked for 1 min, doubling up to 15 min. Unlock lasts 30 min and the console locks after 15 min idle. Every attempt is audited. |
+| Super admin | Email + password (no self sign-up or email reset on this page), then an **authenticator app (TOTP)** — enforced by the database (`super_unlock` needs `aal2`) — then a **super admin code** (bcrypt-hashed, starts as `Sandeepa`; the live console stays closed until it is changed). 5 wrong codes → locked for 1 min, doubling up to 15 min. Unlock lasts 30 min and the console locks after 15 min idle. Every attempt is audited. |
 | Company admins | Password and/or magic link (each company chooses). An **authenticator app (TOTP)** can be required (on by default for the bank template): until the admin passes it (`aal2`), the database gives them no admin rights. Roles: Viewer < Host < Editor < Admin < Owner, and at least one Owner is always kept. Idle sign-out (5–30 min). Admin rights only count for **confirmed** emails, and never for anonymous users. |
 | Players | Employee ID + "Is this you?" (no password), a 6-digit email code, or Microsoft Entra ID (optional). One device at a time for Employee ID: signing in elsewhere signs the old device out. Admins can lock a card or sign it out of all devices. |
+
+## Lost authenticator
+- On the two-step screen: **Lost your phone or authenticator app?** emails a one-time sign-in link to the account's own address.
+- Opened on the same device within **10 minutes**, that session may remove the old authenticator (`mfa_reset_self`). The database checks the session's `amr` claim (set by Supabase Auth) for a recent email sign-in, so a password-only session can never do it.
+- The admin then scans a new QR code. Each reset is written to the company audit log (and the super admin log for super admins) as a warning.
+- Needs working email (custom SMTP). If email is down, remove the factor in Supabase → Authentication → Users.
 
 ## Fair play
 - **Server-side scoring:** questions reach players without answers. The server checks each answer, times it from its own clock (with a 1.5 s grace), and returns the right answer and explanation only after the player has answered.
@@ -39,11 +45,15 @@ Built for regulated clients such as banks. The production controls are enforced 
 ## Platform
 - **No third parties:** fonts, characters and QR codes are bundled; there are no CDNs or analytics.
 - **Escaping:** React escapes all text (no `dangerouslySetInnerHTML`). Inputs are validated server-side and control characters are stripped.
-- **HTTP headers:** `vercel.json` sets a strict CSP (only self plus `*.supabase.co`), HSTS, nosniff, no-referrer, a Permissions-Policy, and frame-ancestors limited to self and Microsoft Teams.
+- **HTTP headers:** `vercel.json` sets a strict CSP (only self plus `*.supabase.co`, `upgrade-insecure-requests`, no plugins, locked `base-uri`/`form-action`), HSTS with preload, nosniff, no-referrer, a Permissions-Policy, Cross-Origin-Opener/Resource-Policy, and frame-ancestors limited to self and Microsoft Teams.
+- **SQL injection:** the browser never sends SQL. Every call is a fixed, parameterised Postgres function (`SECURITY DEFINER`, `search_path = ''`); the only dynamic SQL is one `format('%I')` over a fixed table list in setup. Tables are unreachable without RLS.
+- **Dependencies:** `npm audit` reports 0 known vulnerabilities in runtime packages.
 - **Secrets:** the browser only ever has the Supabase **anon** key. Never put the service-role key in the app or in Vercel env vars starting with `VITE_`.
 
 ## Before go-live checklist
-- [ ] Change the super admin code from `Sandeepa`.
+- [ ] Change the super admin code from `Sandeepa` (the live console requires it).
+- [ ] Supabase Auth: enable **leaked password protection**, set minimum password length 10, turn on **CAPTCHA** (hCaptcha/Turnstile) for sign-in/sign-up if you see abuse.
+- [ ] Vercel: turn on **Firewall → Bot protection / Attack challenge mode** when needed.
 - [ ] Custom SMTP set up; Confirm email ON; OTP length 6; MFA TOTP ON.
 - [ ] Raise the anonymous sign-in rate limit, since an office behind one NAT shares one IP.
 - [ ] Redirect URLs limited to your domains.

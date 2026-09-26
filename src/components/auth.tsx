@@ -197,28 +197,73 @@ export function MfaGate({ enrolled, onDone }: { enrolled: boolean; onDone: () =>
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [demoCode, setDemoCode] = useState<string | null>(null);
+  // lost authenticator: "ask" → email link sent → (link opened on this device) canReset
+  const [lost, setLost] = useState<"no" | "ask" | "sent">("no");
+  const [canReset, setCanReset] = useState(false);
   useEffect(() => {
     if (!enrolled) api.mfaEnroll().then(setF, (e) => setErr(errMsg(e)));
+    else api.mfaState().then((st) => setCanReset(!!st.canReset), () => undefined);
   }, [api, enrolled]);
   useEffect(() => {
     if (!isDemo(api)) return;
     const t = setInterval(() => api.demoMfaCode().then(setDemoCode), 1000);
     return () => clearInterval(t);
   }, [api]);
-  const verify = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const run = async (fn: () => Promise<void>) => {
     setBusy(true);
     setErr("");
     try {
-      const st = await api.mfaState();
-      await api.mfaVerify(f?.factorId || st.factorId || "", code);
-      onDone();
+      await fn();
     } catch (e2) {
       setErr(errMsg(e2));
     } finally {
       setBusy(false);
     }
   };
+  const verify = (e: React.FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      const st = await api.mfaState();
+      await api.mfaVerify(f?.factorId || st.factorId || "", code);
+      onDone();
+    });
+  };
+
+  if (enrolled && canReset)
+    return (
+      <div className="card stack auth-card">
+        <span className="lock-badge"><Icon.shield /></span>
+        <h2 style={{ fontSize: 24, fontWeight: 900 }}>Replace your authenticator</h2>
+        <p className="fine">You opened the reset link from your email. Remove the old authenticator, then scan a new QR code with your new phone or app. This is recorded in the audit log.</p>
+        {err && <p className="err" role="alert">{err}</p>}
+        <button className="btn primary block" disabled={busy} onClick={() => void run(async () => { await api.mfaReset(); onDone(); })}>
+          {busy ? "Please wait…" : "Remove old authenticator and set up a new one"}
+        </button>
+        <button type="button" className="link" onClick={() => setCanReset(false)}>I found my authenticator — cancel</button>
+      </div>
+    );
+
+  if (enrolled && lost !== "no")
+    return (
+      <div className="card stack auth-card">
+        <span className="lock-badge"><Icon.shield /></span>
+        <h2 style={{ fontSize: 24, fontWeight: 900 }}>Lost your authenticator?</h2>
+        {lost === "ask" ? (
+          <>
+            <p className="fine">We'll email a one-time sign-in link to your account's address. Open it <b>on this device within 10 minutes</b> and you can remove the old authenticator and set up a new one.</p>
+            {err && <p className="err" role="alert">{err}</p>}
+            <button className="btn primary block" disabled={busy} onClick={() => void run(async () => { await api.mfaResetSend(hereUrl()); setLost("sent"); })}>
+              {busy ? "Sending…" : "Email me a reset link"}
+            </button>
+          </>
+        ) : (
+          <p className="banner">Check your inbox (and spam) for the link, then open it on this device. It works for 10 minutes.</p>
+        )}
+        <DemoOutbox />
+        <button type="button" className="link" onClick={() => setLost("no")}>Back to the code</button>
+      </div>
+    );
+
   return (
     <form className="card stack auth-card" onSubmit={verify}>
       <span className="lock-badge">
@@ -246,6 +291,7 @@ export function MfaGate({ enrolled, onDone }: { enrolled: boolean; onDone: () =>
       {demoCode && <p className="banner blue">Demo: the current code is <b className="num">{demoCode}</b></p>}
       {err && <p className="err" role="alert">{err}</p>}
       <button className="btn primary block" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify"}</button>
+      {enrolled && <button type="button" className="link" onClick={() => { setErr(""); setLost("ask"); }}>Lost your phone or authenticator app?</button>}
     </form>
   );
 }
@@ -263,4 +309,11 @@ export function SandboxSignInNote({ back }: { back: string }) {
       <button type="button" className="link" onClick={() => exitSandbox(back)}>Exit the demo</button>
     </p>
   );
+}
+
+/** This page's address for email links (same site address the rest of the app uses). */
+function hereUrl() {
+  const raw = ((import.meta.env.VITE_APP_URL as string | undefined) || location.href.split("#")[0]).replace(/\/+$/, "");
+  const base = location.protocol === "file:" ? raw : raw + "/";
+  return base + location.hash.replace(/[?&]demo_token=[a-f0-9]+/, "");
 }

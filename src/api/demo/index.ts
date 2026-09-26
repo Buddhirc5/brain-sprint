@@ -34,6 +34,7 @@ const DAY = 864e5;
 interface Sess {
   userId: string;
   aal: 1 | 2;
+  linkAt?: number; // opened from an emailed link (lets a lost authenticator be reset for 10 minutes)
 }
 
 const err = (code: ConstructorParameters<typeof ApiError>[0], msg: string, wait?: number) => new ApiError(code, msg, wait);
@@ -107,7 +108,7 @@ class DemoApi implements Api {
           delete db.links[tok];
           return this.userByEmail(db, link.email, true)!.id;
         });
-        this.setSess({ userId: uid, aal: 1 });
+        this.setSess({ userId: uid, aal: 1, linkAt: Date.now() });
       }
       history.replaceState(null, "", location.href.replace(/[?&]demo_token=[a-f0-9]+/, ""));
     }
@@ -270,7 +271,7 @@ class DemoApi implements Api {
   }
   async mfaState(): Promise<MfaState> {
     const u = this.sess && store.read().users[this.sess.userId];
-    return { enrolled: !!u?.mfa?.verified, verified: this.sess?.aal === 2, factorId: u?.mfa ? "totp" : undefined };
+    return { enrolled: !!u?.mfa?.verified, verified: this.sess?.aal === 2, factorId: u?.mfa ? "totp" : undefined, canReset: !!this.sess?.linkAt && Date.now() - this.sess.linkAt < 600_000 };
   }
   async mfaEnroll() {
     const u = this.need();
@@ -294,6 +295,22 @@ class DemoApi implements Api {
     rl.ok();
     store.tx((db) => void (db.users[u.id].mfa!.verified = true));
     this.setSess({ userId: u.id, aal: 2 });
+  }
+  async mfaResetSend(redirectTo: string) {
+    const u = this.need();
+    if (!u.email || u.anonymous) throw err("forbidden", "Sign in first.");
+    await this.sendMagicLink(u.email, redirectTo);
+  }
+  async mfaReset() {
+    const u = this.need();
+    if (!this.sess?.linkAt || Date.now() - this.sess.linkAt > 600_000) throw err("forbidden", "Open the reset link from your email first (it works for 10 minutes).");
+    store.tx((db) => {
+      delete db.users[u.id].mfa;
+      const detail = "Authenticator removed with an emailed reset link";
+      for (const [tid, t] of Object.entries(db.t)) if (t.members.some((a) => a.email === u.email || a.userId === u.id)) this.logT(db, tid, { action: "Authenticator reset", target: u.email, detail, sev: "warn" });
+      if (u.email && db.sup.emails.includes(u.email)) this.logS(db, { action: "Authenticator reset", target: u.email, detail, sev: "warn" });
+    });
+    this.setSess({ userId: u.id, aal: 1 });
   }
   /** demo helper: show the current authenticator code so testers don't need a phone */
   async demoMfaCode(): Promise<string | null> {
