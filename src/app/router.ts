@@ -3,7 +3,7 @@
      #/                         product landing page
      #/experience               try it: guided demo sandbox, Knowledge World preview
      #/signin                   join a game, vote, company & admin sign-in
-     #/world                    Knowledge World (3D mini game) — free roam preview
+     #/world                    Knowledge World (papercraft mini game) — free preview
      #/join[/:pin]              live quiz — players
      #/vote[/:code]             live poll — audience
      #/t/:slug                  company player app

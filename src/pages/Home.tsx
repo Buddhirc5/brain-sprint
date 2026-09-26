@@ -261,7 +261,7 @@ function Faq() {
     ["Can we use our own questions?", "Yes. Build quizzes in the admin portal — multiple choice, true/false, matching and ordering, with images — or start from the built-in library."],
     ["How do people sign in?", "With an Employee ID, a 6-digit email code or Microsoft sign-in. Admins can require an authenticator app."],
     ["Does it look like our brand?", "Completely. Your product name, logo and colours appear on every screen, including big screens and certificates."],
-    ["What is Knowledge World?", "An optional 3D mini game — explore a city, drive cars, race checkpoints and pop trivia bubbles. Admins switch it on per company."],
+    ["What is Knowledge World?", "An optional mini game in a hand-made papercraft city — run across rooftops, pick a car, race the mascot over the hills and pop trivia bubbles. Admins switch it on per company."],
     ["Can I try it before talking to anyone?", "Yes. The Experience page opens a private demo that runs entirely in your browser — nothing is saved to our servers."],
   ];
   const [open, setOpen] = useState(0);

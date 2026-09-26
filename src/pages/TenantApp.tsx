@@ -81,7 +81,7 @@ function PlayerShell() {
       case "world":
         screen = features.world ? (
           <Suspense fallback={<Loading text="Building the city…" />}>
-            <WorldView look={me.look} onExit={() => go({ v: "lobby" })} />
+            <WorldView look={me.look} equipped={me.equipped} onExit={() => go({ v: "lobby" })} />
           </Suspense>
         ) : (
           <Lobby />

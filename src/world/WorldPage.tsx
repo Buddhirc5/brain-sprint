@@ -36,12 +36,12 @@ export function WorldPage() {
             Take a <span className="ink" style={{ color: "var(--lime)" }}>break.</span>
           </h1>
           <p>
-            Pick a character and explore a bright little city. Jump in any parked car, race a lap through the orange rings, and pop the floating <b>?</b> bubbles for quick
-            trivia. Nothing here is saved to a server — it's just for fun.
+            Pick a character and step into a papercraft city. Run and jump across Downtown's rooftops, pick a car at the lot, race Sprinty over Hill Raceway and pop the
+            floating <b>?</b> bubbles for quick trivia. Nothing here is saved to a server — it's just for fun.
           </p>
           <ul className="h-world-list">
-            <li><b>Desktop:</b> arrow keys (or WASD) to move · Space to jump or drift · E to get in and out of cars</li>
-            <li><b>Phone:</b> thumb stick to move · big buttons to jump, drift and drive</li>
+            <li><b>Desktop:</b> ← → to move · Space to jump (hold for higher) or boost · E to get in and out · Esc to pause</li>
+            <li><b>Phone:</b> ◀ ▶ buttons to move · big buttons to jump, boost and drive — best held sideways</li>
           </ul>
           <div className="h-hero-cta">
             <button type="button" className="btn lime" onClick={() => setPlaying(true)}>Play now</button>

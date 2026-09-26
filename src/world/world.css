@@ -1,105 +1,179 @@
-/* ================= Knowledge World (full-screen 3D mini game) ================= */
+/* ================= Knowledge World (2D papercraft game) ================= */
 .kw {
-  position: fixed; inset: 0; z-index: 100; background: #9ED8FF; overflow: hidden; color: var(--ink);
+  position: fixed; inset: 0; z-index: 100; background: #63BDF6; overflow: hidden; color: var(--ink);
   touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; overscroll-behavior: none;
+  font-family: var(--body);
 }
-.kw-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
-.kw kbd {
-  display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 6px; margin-right: 2px;
-  background: #fff; color: var(--ink); font: 800 12px var(--body); box-shadow: 0 2px 0 rgba(0,0,0,.25);
-}
+.kw-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.kw .grow { flex: 1; }
+
+/* loading */
+.kw-loading { position: absolute; inset: 0; display: grid; place-items: center; background: #F4F1E8; }
+.kw-load-card { display: grid; gap: 10px; justify-items: center; background: var(--card); padding: 24px 30px; border-radius: 22px; box-shadow: 6px 6px 0 rgba(22,21,18,.16); transform: rotate(-1.5deg); }
+.kw-load-card b { font-family: var(--display); font-weight: 400; font-size: 28px; text-transform: uppercase; }
+.kw-load-bar { width: 200px; height: 10px; border-radius: 99px; background: var(--paper-2); overflow: hidden; }
+.kw-load-bar i { display: block; height: 100%; width: 40%; background: var(--lime); border-radius: 99px; animation: kw-load 1s ease-in-out infinite alternate; }
+@keyframes kw-load { from { transform: translateX(-60%); } to { transform: translateX(210%); } }
 
 /* top bar */
 .kw-top {
-  position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: flex-start; gap: 10px;
-  padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 0 calc(12px + env(safe-area-inset-left, 0px)); pointer-events: none;
+  position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 8px; pointer-events: none;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) 0 calc(12px + env(safe-area-inset-left, 0px));
 }
 .kw-top > * { pointer-events: auto; }
-.kw-btn { width: 44px; height: 44px; border-radius: 999px; background: var(--ink); color: var(--lime); display: grid; place-items: center; flex: none; box-shadow: 0 6px 16px -8px rgba(0,0,0,.6); }
+.kw-btn {
+  width: 44px; height: 44px; border-radius: 14px; background: var(--ink); color: var(--lime); display: grid; place-items: center; flex: none;
+  box-shadow: 4px 4px 0 rgba(22,21,18,.2);
+}
+.kw-btn.light { background: var(--card); color: var(--ink); }
 .kw-btn svg { width: 20px; height: 20px; }
-.kw-title { display: grid; gap: 6px; }
-.kw-title b { font-family: var(--display); font-weight: 400; font-size: 22px; line-height: 1; text-transform: uppercase; color: var(--ink); text-shadow: 0 2px 0 rgba(255,255,255,.6); }
-.kw-stats { display: flex; gap: 6px; }
-.kw-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.92); border-radius: 999px; padding: 5px 10px; font-weight: 900; font-size: 13px; box-shadow: 0 6px 14px -10px rgba(0,0,0,.5); }
-.kw-orb { background: var(--lime); }
-.kw-fs { margin-left: auto; margin-right: 170px; }
-@media (max-width: 640px) { .kw-fs { margin-right: 118px; } }
+.kw-pill {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--card); border-radius: 12px; padding: 9px 12px; font-weight: 900; font-size: 15px;
+  box-shadow: 4px 4px 0 rgba(22,21,18,.16); transform: rotate(-1deg);
+}
+.kw-orb { background: var(--lime); transform: rotate(1deg); }
+@media (max-width: 560px) { .kw-fs { display: none; } .kw-pill { padding: 7px 9px; font-size: 13px; } }
 
-/* minimap */
-.kw-map {
-  position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px));
-  width: 150px; height: 150px; border-radius: 22px; overflow: hidden; border: 4px solid var(--ink); background: #8BD450;
-  box-shadow: 0 10px 24px -12px rgba(0,0,0,.6);
+/* district banner */
+.kw-banner {
+  position: absolute; left: 50%; top: calc(74px + env(safe-area-inset-top, 0px)); transform: translateX(-50%) rotate(-2deg);
+  background: var(--card); border-radius: 16px; padding: 10px 22px 12px; display: grid; justify-items: center; pointer-events: none;
+  box-shadow: 6px 6px 0 rgba(22,21,18,.18); border-bottom: 6px solid var(--dc); animation: kw-banner 2.6s ease both;
 }
-.kw-map canvas { width: 100%; height: 100%; display: block; }
-.kw-speed {
-  position: absolute; left: 6px; bottom: 6px; background: var(--ink); color: var(--lime); border-radius: 10px; padding: 3px 8px;
-  font-family: var(--display); font-size: 20px; line-height: 1;
+.kw-banner b { font-family: var(--display); font-weight: 400; font-size: clamp(26px, 5vw, 40px); line-height: 1; text-transform: uppercase; }
+.kw-banner span { font-weight: 800; font-size: 13px; color: var(--ink-2); }
+@keyframes kw-banner {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-24px) rotate(-8deg); }
+  12% { opacity: 1; transform: translateX(-50%) translateY(0) rotate(-2deg); }
+  85% { opacity: 1; transform: translateX(-50%) translateY(0) rotate(-2deg); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-12px) rotate(-2deg); }
 }
-.kw-speed small { font: 800 10px var(--body); margin-left: 3px; color: #fff; }
-@media (max-width: 640px) { .kw-map { width: 104px; height: 104px; border-radius: 18px; border-width: 3px; } }
+
+/* route map */
+.kw-route {
+  position: absolute; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px)); display: grid; gap: 4px; justify-items: center; pointer-events: none;
+}
+.kw-route-bar { position: relative; width: 100%; height: 12px; border-radius: 99px; background: var(--card); box-shadow: 3px 3px 0 rgba(22,21,18,.18); overflow: visible; }
+.kw-route-bar > i { position: absolute; top: 3px; height: 6px; opacity: .85; }
+.kw-route-bar > i:first-child { border-radius: 99px 0 0 99px; }
+.kw-route-bar > i:nth-child(6) { border-radius: 0 99px 99px 0; }
+.kw-r-bub { position: absolute; top: 3px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--ink); }
+.kw-r-flag { position: absolute; top: -6px; width: 3px; height: 18px; margin-left: -1px; background: var(--ink); }
+.kw-r-flag.finish { background: repeating-linear-gradient(var(--ink) 0 3px, #fff 3px 6px); width: 4px; }
+.kw-r-dot { position: absolute; top: -5px; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; border: 3px solid var(--ink); transition: left .1s linear; }
+.kw-r-dot.me { background: var(--orange); }
+.kw-r-dot.rival { background: var(--lime); width: 16px; height: 16px; margin-left: -8px; top: -2px; }
+.kw-route-name { font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.kw.touch .kw-route { width: min(300px, calc(100% - 330px)); min-width: 160px; }
+
+/* car gauges */
+.kw-gauge {
+  position: absolute; right: calc(14px + env(safe-area-inset-right, 0px)); top: calc(66px + env(safe-area-inset-top, 0px));
+  display: grid; gap: 6px; justify-items: end; pointer-events: none;
+}
+.kw-speed { font-family: var(--display); font-size: 40px; line-height: 1; color: #fff; text-shadow: 3px 3px 0 rgba(22,21,18,.35); }
+.kw-speed small { font: 900 12px var(--body); margin-left: 4px; }
+.kw-boost { position: relative; width: 150px; height: 18px; border-radius: 8px; background: var(--card); overflow: hidden; box-shadow: 3px 3px 0 rgba(22,21,18,.18); }
+.kw-boost i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--orange), var(--yellow)); transition: width .1s linear; }
+.kw-boost small { position: relative; font-weight: 900; font-size: 10px; letter-spacing: .14em; padding-left: 8px; line-height: 18px; }
 
 /* race */
+.kw-count {
+  position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font-family: var(--display); font-size: clamp(90px, 18vw, 170px); line-height: 1;
+  color: var(--lime); -webkit-text-stroke: 4px var(--ink); text-shadow: 8px 8px 0 rgba(22,21,18,.25); animation: kw-count 1s ease-out both; pointer-events: none;
+}
+@keyframes kw-count { 0% { transform: translate(-50%, -50%) scale(1.8) rotate(-8deg); opacity: 0; } 25% { transform: translate(-50%, -50%) scale(1) rotate(-3deg); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(.9) rotate(-3deg); opacity: .85; } }
 .kw-race {
-  position: absolute; left: 50%; top: calc(70px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
-  background: var(--ink); color: #fff; border-radius: 18px; padding: 8px 18px; display: grid; justify-items: center; pointer-events: none;
+  position: absolute; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); transform: translateX(-50%) rotate(1deg);
+  background: var(--ink); color: #fff; border-radius: 14px; padding: 6px 16px 8px; display: grid; justify-items: center; pointer-events: none;
+  box-shadow: 5px 5px 0 rgba(22,21,18,.2);
 }
-.kw-race span { font-family: var(--display); font-size: 36px; line-height: 1; color: var(--lime); }
-.kw-race small { font-weight: 800; font-size: 12px; opacity: .85; }
-.kw-lap {
-  position: absolute; left: 50%; top: 32%; transform: translate(-50%, -50%); background: var(--lime); border-radius: 26px; padding: 18px 30px;
-  display: grid; justify-items: center; box-shadow: 0 20px 40px -18px rgba(0,0,0,.6); animation: pop .3s ease-out; pointer-events: none;
+.kw-race span { font-family: var(--display); font-size: 34px; line-height: 1; color: var(--lime); }
+.kw-race small { font-weight: 800; font-size: 12px; }
+.kw-race small.ahead { color: var(--lime); }
+.kw-race small.behind { color: #FFB199; }
+.kw-result {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) rotate(-1.5deg); background: var(--card); border-radius: 22px; padding: 18px 24px;
+  display: grid; gap: 8px; justify-items: center; box-shadow: 8px 8px 0 rgba(22,21,18,.2); animation: pop .3s ease-out; pointer-events: none; min-width: min(360px, calc(100% - 32px));
 }
-.kw-lap b { font-family: var(--display); font-weight: 400; font-size: 30px; text-transform: uppercase; }
-.kw-lap span { font-family: var(--display); font-size: 56px; line-height: 1; color: var(--orange); }
-.kw-lap small { font-weight: 900; }
+.kw-result.win { border-top: 8px solid var(--lime); }
+.kw-result.lose { border-top: 8px solid var(--orange); }
+.kw-result b { font-family: var(--display); font-weight: 400; font-size: 30px; text-transform: uppercase; line-height: 1; text-align: center; }
+.kw-result-row { display: flex; gap: 18px; }
+.kw-result-row span { display: grid; justify-items: center; }
+.kw-result-row small { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.kw-result-row strong { font-family: var(--display); font-weight: 400; font-size: 26px; }
+.kw-result em { font-style: normal; font-weight: 900; background: var(--yellow); padding: 3px 10px; border-radius: 8px; }
 
-/* hint + desktop keys */
+/* car card */
+.kw-carcard {
+  position: absolute; left: calc(14px + env(safe-area-inset-left, 0px)); top: calc(66px + env(safe-area-inset-top, 0px)); width: 210px;
+  background: var(--card); border-radius: 18px; padding: 12px 14px; display: grid; gap: 4px; pointer-events: none;
+  box-shadow: 6px 6px 0 rgba(22,21,18,.18); border-left: 10px solid var(--cc); transform: rotate(-1.5deg); animation: pop .2s ease-out;
+}
+.kw-carcard b { font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1; text-transform: uppercase; }
+.kw-tag { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.kw-stat { display: flex; align-items: center; justify-content: space-between; }
+.kw-stat small { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+.kw-stat > span { display: flex; gap: 3px; }
+.kw-stat i { width: 16px; height: 8px; border-radius: 3px; background: var(--paper-2); }
+.kw-stat i.on { background: var(--ink); }
+
+/* hints & toasts */
 .kw-hint {
-  position: absolute; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
-  max-width: min(560px, calc(100% - 32px)); text-align: center; background: rgba(22,21,18,.82); color: #fff; font-weight: 800; font-size: 14px;
-  padding: 9px 16px; border-radius: 16px; pointer-events: none;
+  position: absolute; left: 50%; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  max-width: min(620px, calc(100% - 32px)); text-align: center; background: var(--ink); color: #fff; font-weight: 800; font-size: 14px;
+  padding: 9px 16px; border-radius: 12px; pointer-events: none; box-shadow: 4px 4px 0 rgba(22,21,18,.2);
 }
-.kw-keys {
-  position: absolute; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; gap: 6px 14px;
-  background: rgba(22,21,18,.7); color: #fff; font-weight: 800; font-size: 12px; border-radius: 14px; padding: 8px 12px; pointer-events: none;
+.kw-toast {
+  position: absolute; left: 50%; top: 30%; transform: translateX(-50%) rotate(-1deg); background: var(--yellow); font-weight: 900; font-size: 15px;
+  padding: 10px 18px; border-radius: 12px; box-shadow: 5px 5px 0 rgba(22,21,18,.2); pointer-events: none; animation: pop .2s ease-out; text-align: center; max-width: calc(100% - 32px);
 }
-.kw-use-desk {
-  position: absolute; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--lime); color: var(--ink);
-  font-weight: 900; font-size: 16px; border-radius: 999px; padding: 12px 18px; box-shadow: 0 5px 0 var(--lime-deep); animation: pop .2s ease-out;
+.kw-rotate { display: none; }
+@media (orientation: portrait) {
+  .kw.touch .kw-rotate {
+    display: block; position: absolute; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); white-space: nowrap;
+    background: rgba(22,21,18,.75); color: #fff; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 10px; pointer-events: none;
+  }
+  .kw.touch .kw-banner, .kw.touch .kw-race, .kw.touch .kw-gauge, .kw.touch .kw-carcard { top: calc(100px + env(safe-area-inset-top, 0px)); }
 }
 
 /* touch controls */
-.kw.touch .kw-hint { bottom: calc(190px + env(safe-area-inset-bottom, 0px)); font-size: 13px; }
-.kw-stick {
-  position: absolute; left: calc(22px + env(safe-area-inset-left, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px));
-  width: 140px; height: 140px; border-radius: 50%; background: rgba(22,21,18,.28); border: 3px solid rgba(255,255,255,.55);
-  display: grid; place-items: center; touch-action: none;
+.kw.touch .kw-hint { bottom: calc(118px + env(safe-area-inset-bottom, 0px)); font-size: 13px; }
+.kw-dpad { position: absolute; left: calc(16px + env(safe-area-inset-left, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; }
+.kw-pads { position: absolute; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: flex-end; gap: 12px; }
+.kw-pad {
+  display: grid; place-items: center; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; touch-action: none;
+  border-radius: 22px; box-shadow: 0 6px 0 rgba(22,21,18,.35); transition: transform .06s;
 }
-.kw-knob { width: 62px; height: 62px; border-radius: 50%; background: rgba(255,255,255,.95); box-shadow: 0 6px 14px -6px rgba(0,0,0,.6); pointer-events: none; }
-.kw-pads {
-  position: absolute; right: calc(20px + env(safe-area-inset-right, 0px)); bottom: calc(28px + env(safe-area-inset-bottom, 0px));
-  display: flex; flex-direction: column; align-items: flex-end; gap: 14px;
-}
-.kw-pad { border-radius: 50%; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; touch-action: none; box-shadow: 0 6px 0 rgba(0,0,0,.25); }
-.kw-pad.jump { width: 92px; height: 92px; background: var(--orange); color: #fff; font-size: 15px; }
-.kw-pad.jump:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,.25); }
-.kw-pad.use { width: 76px; height: 76px; background: var(--lime); color: var(--ink); font-size: 13px; animation: pop .2s ease-out; }
-@media (orientation: landscape) and (max-height: 500px) {
-  .kw-stick { width: 118px; height: 118px; bottom: 16px; }
-  .kw-pad.jump { width: 78px; height: 78px; }
+.kw-pad:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(22,21,18,.35); }
+.kw-pad.arrow { width: 78px; height: 78px; background: rgba(255,254,250,.92); font-size: 28px; color: var(--ink); }
+.kw-pad.jump { width: 92px; height: 92px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 15px; }
+.kw-pad.use { width: 78px; height: 78px; border-radius: 50%; background: var(--lime); color: var(--ink); font-size: 13px; animation: pop .2s ease-out; }
+.kw-pad.use.go { background: var(--yellow); font-size: 20px; font-family: var(--display); font-weight: 400; }
+@media (orientation: landscape) and (max-height: 480px) {
+  .kw-pad.arrow { width: 66px; height: 66px; }
+  .kw-pad.jump { width: 80px; height: 80px; }
   .kw-pad.use { width: 66px; height: 66px; }
-  .kw.touch .kw-hint { bottom: 16px; max-width: 46%; }
+  .kw.touch .kw-hint { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 }
 
-/* trivia bubble */
-.kw-modal-bg { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(15,42,61,.45); backdrop-filter: blur(2px); }
-.kw-modal { width: min(480px, 100%); max-height: calc(100% - 24px); overflow: auto; background: var(--card); border-radius: 26px; padding: 22px; display: grid; gap: 14px; animation: pop .22s ease-out; box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); }
+/* modals: pause + trivia */
+.kw-modal-bg { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(15,26,58,.45); backdrop-filter: blur(3px); z-index: 5; }
+.kw-modal {
+  width: min(480px, 100%); max-height: calc(100% - 24px); overflow: auto; background: var(--card); border-radius: 22px; padding: 22px; display: grid; gap: 14px;
+  animation: pop .22s ease-out; box-shadow: 8px 8px 0 rgba(22,21,18,.22); transform: rotate(-.6deg);
+}
 .kw-kicker { font-weight: 900; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--orange); }
 .kw-modal h3 { font-size: 21px; font-weight: 900; line-height: 1.25; }
+.kw-modal-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.kw-help { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; margin: 0; font-size: 14px; }
+.kw-help dt { font-weight: 900; font-family: ui-monospace, Menlo, monospace; background: var(--paper); border-radius: 6px; padding: 2px 8px; justify-self: start; }
+.kw-help dd { margin: 0; font-weight: 600; color: var(--ink-2); align-self: center; }
 .kw-opts { display: grid; gap: 8px; }
-.kw-opt { display: flex; align-items: center; gap: 10px; text-align: left; padding: 12px 14px; border-radius: 16px; background: var(--paper); font-weight: 800; font-size: 15px; min-height: 52px; }
-.kw-opt span { width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; }
+.kw-opt { display: flex; align-items: center; gap: 10px; text-align: left; padding: 12px 14px; border-radius: 14px; background: var(--paper); font-weight: 800; font-size: 15px; min-height: 52px; }
+.kw-opt span { width: 28px; height: 28px; border-radius: 8px; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; }
 .kw-opt:not(:disabled):hover { background: var(--lime-soft); }
 .kw-opt.ok { background: #DDF3E3; }
 .kw-opt.ok span { background: var(--good); }
@@ -107,9 +181,29 @@
 .kw-opt.no span { background: var(--bad); }
 .kw-opt.dim { opacity: .5; }
 .kw-opt:disabled { cursor: default; color: var(--ink); }
-.kw-why { display: grid; gap: 8px; border-radius: 16px; padding: 14px; animation: rise .2s ease-out; }
+.kw-why { display: grid; gap: 8px; border-radius: 14px; padding: 14px; animation: rise .2s ease-out; }
 .kw-why.ok { background: var(--lime-soft); }
 .kw-why.no { background: var(--orange-soft); }
 .kw-why p { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 
 .kw-fail { position: absolute; inset: 0; display: grid; place-content: center; gap: 14px; text-align: center; padding: 24px; font-weight: 800; background: var(--paper); }
+
+/* compact HUD for short landscape phones */
+@media (max-height: 500px) {
+  .kw-btn { width: 38px; height: 38px; border-radius: 12px; }
+  .kw-pill { padding: 6px 9px; font-size: 13px; }
+  .kw-banner { top: calc(54px + env(safe-area-inset-top, 0px)); padding: 6px 16px 8px; }
+  .kw-banner b { font-size: 24px; }
+  .kw-banner span { font-size: 11px; }
+  .kw-carcard { top: calc(56px + env(safe-area-inset-top, 0px)); width: 170px; padding: 8px 10px; }
+  .kw-carcard b { font-size: 22px; }
+  .kw-gauge, .kw-race { top: calc(54px + env(safe-area-inset-top, 0px)); }
+  .kw-speed { font-size: 30px; }
+  .kw-boost { width: 120px; }
+  .kw.touch .kw-hint { bottom: auto; top: calc(56px + env(safe-area-inset-top, 0px)); }
+}
+/* portrait phones: route map goes to the top, controls keep the bottom */
+@media (orientation: portrait) {
+  .kw.touch .kw-route { bottom: auto; top: calc(142px + env(safe-area-inset-top, 0px)); width: calc(100% - 32px); min-width: 0; }
+  .kw.touch .kw-banner { top: calc(172px + env(safe-area-inset-top, 0px)); }
+}

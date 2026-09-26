@@ -447,7 +447,7 @@ const FEATURE_LABEL: [keyof Features, string, string][] = [
   ["avatars", "Cartoon avatars", "Players pick a character"],
   ["rewards", "Hall of Fame & gifts", "Weekly winners"],
   ["battle", "Team leaderboard", "Units compete"],
-  ["world", "Knowledge World", "3D explore-and-race mini game (add-on)"],
+  ["world", "Knowledge World", "Papercraft explore-and-race mini game (add-on)"],
 ];
 const SIGNIN_LABEL: [Exclude<keyof SignIn, "adminAuth">, string, string][] = [
   ["empId", "Employee ID", "Players type their ID, no password"],
