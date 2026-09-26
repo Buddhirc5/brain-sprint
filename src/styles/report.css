@@ -1,0 +1,111 @@
+/* Printable knowledge report (A4). On screen: a preview over the admin portal. In print: only the pages. */
+.rp-overlay { position: fixed; inset: 0; z-index: 90; background: #2a2925; overflow: auto; overscroll-behavior: contain; }
+body.rp-open { overflow: hidden; }
+.rp-bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; background: var(--ink); color: #fff; }
+.rp-bar b { font-size: 15px; }
+.rp-bar .fine { color: rgba(255,255,255,.75); flex: 1; min-width: 180px; }
+.rp-doc { display: grid; justify-content: center; gap: 22px; padding: 22px 12px 60px; }
+
+.rp-page {
+  width: 210mm; min-height: 297mm; box-sizing: border-box; padding: 12mm 12mm 10mm; background: var(--paper, #F4F3EE); color: var(--ink);
+  display: flex; flex-direction: column; gap: 5mm; box-shadow: 0 20px 50px -20px rgba(0,0,0,.6); border-radius: 6px; overflow: hidden;
+  font-family: var(--body); font-size: 11.5px; line-height: 1.4; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+@media (max-width: 860px) { .rp-page { width: calc(100vw - 24px); min-height: 0; padding: 16px; } }
+
+/* cover */
+.rp-cover { position: relative; background: var(--ink); color: #fff; border-radius: 18px; padding: 7mm 8mm 9mm; overflow: hidden; display: grid; gap: 7mm; }
+.rp-brand { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; }
+.rp-brand img { width: 46px; height: 46px; object-fit: contain; border-radius: 10px; background: #fff; padding: 3px; }
+.rp-brand div { display: grid; }
+.rp-brand b { font-size: 15px; }
+.rp-brand span { font-size: 11px; opacity: .75; font-weight: 700; }
+.rp-title { position: relative; z-index: 1; max-width: 70%; }
+.rp-kicker { display: inline-block; background: var(--lime); color: var(--ink); font-weight: 900; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+.rp-title h1 { font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: 46px; line-height: .9; margin: 10px 0 8px; color: var(--lime); }
+.rp-title p { font-weight: 700; opacity: .8; font-size: 11.5px; }
+.rp-blobs i { position: absolute; border-radius: 50%; }
+.rp-blobs i:nth-child(1) { width: 190px; height: 190px; right: -40px; top: -50px; background: var(--orange); }
+.rp-blobs i:nth-child(2) { width: 110px; height: 110px; right: 110px; bottom: -40px; background: var(--pink, #FF7EB6); }
+.rp-blobs i:nth-child(3) { width: 60px; height: 60px; right: 40px; bottom: 30px; background: var(--lime); }
+
+/* KPIs */
+.rp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); grid-auto-flow: column; gap: 3mm; }
+.rp-kpi { background: #fff; border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; border: 1.5px solid rgba(0,0,0,.08); }
+.rp-kpi.lime { background: var(--lime); border-color: transparent; }
+.rp-kpi b { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; }
+.rp-kpi span { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2, #3B3A36); }
+
+/* cards */
+.rp-row { display: flex; gap: 4mm; }
+.rp-grow { flex: 1; min-width: 0; }
+.rp-card { background: #fff; border-radius: 16px; padding: 10px 14px 12px; border: 1.5px solid rgba(0,0,0,.08); break-inside: avoid; }
+.rp-card h2 { font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: 18px; line-height: 1; margin-bottom: 8px; }
+.rp-card h2 small { font-family: var(--body); font-size: 10px; font-weight: 800; letter-spacing: .06em; color: var(--muted); margin-left: 6px; }
+.rp-empty { color: var(--muted); font-weight: 700; }
+
+.rp-acc { width: 48mm; display: grid; justify-items: center; align-content: start; gap: 4px; }
+.rp-ring { width: 104px; height: 104px; }
+.rp-ring-bg { fill: none; stroke: #eee; stroke-width: 12; }
+.rp-ring-fg { fill: none; stroke-width: 12; stroke-linecap: round; }
+.rp-ring text { font-family: var(--display); font-size: 24px; fill: var(--ink); }
+
+.rp-sev { font-size: 9.5px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; padding: 2px 8px; border-radius: 999px; background: #eee; color: var(--ink); white-space: nowrap; }
+.rp-sev.bad { background: #FBD9CE; color: #8A2408; }
+.rp-sev.warn { background: #FBEBC0; color: #6B4A00; }
+.rp-sev.good { background: #D2F0DA; color: #1B6332; }
+
+.rp-days { width: 100%; height: 34mm; display: block; }
+.rp-days rect { fill: var(--ink); }
+.rp-days rect.today { fill: var(--orange); }
+.rp-days line { stroke: rgba(0,0,0,.2); stroke-width: .3; }
+.rp-days-x { display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 800; color: var(--muted); }
+
+.rp-bars { display: grid; gap: 6px; }
+.rp-barrow { display: grid; grid-template-columns: 36mm 1fr 34px 58px; align-items: center; gap: 8px; }
+.rp-bar-l { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-track { height: 12px; border-radius: 999px; background: #F0EFEA; overflow: hidden; }
+.rp-track i { display: block; height: 100%; border-radius: 999px; }
+.rp-barrow > b { text-align: right; }
+
+.rp-tips { background: var(--lime); border-color: transparent; }
+.rp-tips ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-weight: 700; font-size: 12px; }
+
+/* leaderboard */
+.rp-leaders { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
+.rp-leaders li { display: grid; grid-template-columns: 22px 30px 1fr auto; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 12px; background: #F6F5F0; }
+.rp-leaders li.gold { background: #FFF1B8; } .rp-leaders li.silver { background: #ECECEC; } .rp-leaders li.bronze { background: #F8DCC8; }
+.rp-rank { font-family: var(--display); font-size: 18px; text-align: center; }
+.rp-av { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--lime); display: grid; place-items: center; font-weight: 900; font-size: 11px; }
+.rp-who, .rp-pts { display: grid; min-width: 0; }
+.rp-who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-who small, .rp-pts small { font-size: 9.5px; color: var(--muted); font-weight: 700; }
+.rp-pts { text-align: right; }
+
+.rp-tbl { width: 100%; border-collapse: collapse; }
+.rp-tbl th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 4px 6px; border-bottom: 1.5px solid rgba(0,0,0,.1); }
+.rp-tbl td { padding: 5px 6px; border-bottom: 1px solid rgba(0,0,0,.06); }
+.rp-mini { display: inline-block; width: 40px; height: 7px; border-radius: 999px; background: #F0EFEA; overflow: hidden; margin-right: 6px; vertical-align: middle; }
+.rp-mini i { display: block; height: 100%; }
+
+.rp-q { display: grid; align-content: start; gap: 6px; }
+.rp-qi { display: grid; grid-template-columns: 40px 1fr; gap: 8px; align-items: start; }
+.rp-qi > b { font-family: var(--display); font-weight: 400; font-size: 17px; border-radius: 8px; text-align: center; padding: 3px 0; }
+.rp-q.bad .rp-qi > b { background: #FBD9CE; color: #8A2408; }
+.rp-q.good .rp-qi > b { background: #D2F0DA; color: #1B6332; }
+.rp-qi p { font-weight: 700; }
+.rp-qi small { display: block; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+.rp-foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; min-width: 0 !important; }
+  body.rp-open > *:not(.rp-overlay) { display: none !important; }
+  body.rp-open { overflow: visible; }
+  .rp-overlay { position: static; background: none; overflow: visible; }
+  .rp-bar { display: none; }
+  .rp-doc { display: block; padding: 0; }
+  .rp-page { width: 210mm; height: 296mm; min-height: 0; margin: 0; border-radius: 0; box-shadow: none; page-break-after: always; break-after: page; }
+  .rp-page:last-child { page-break-after: auto; break-after: auto; }
+}

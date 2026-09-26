@@ -62,6 +62,7 @@ export interface TenantData {
 export interface Access {
   role: Role | null; // tenant admin role, or null
   isSuper: boolean; // super admin AND unlocked with the code right now
+  superUser?: boolean; // on the super admin list (unlocked or not): may approve their own quiz changes
 }
 
 export interface LookupCard {

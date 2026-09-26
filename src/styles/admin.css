@@ -60,13 +60,13 @@
 .qitem .w { font-size: 13px; color: var(--muted); margin-top: 4px; }
 .chart text { font-size: 11px; fill: var(--muted); font-family: var(--body); }
 .gcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
-.gcard { background: var(--card); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow); display: grid; }
-.gcard .top { padding: 16px; display: grid; gap: 8px; }
+.gcard { background: var(--card); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.gcard .top { padding: 16px; display: grid; gap: 8px; align-content: start; }
 .gcard .top h3 { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; text-transform: uppercase; }
-.gcard .body { padding: 14px 16px 16px; display: grid; gap: 12px; }
+.gcard .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
 .gcard .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 12px; color: var(--muted); font-weight: 700; }
 .gcard .nums b { display: block; font-size: 20px; color: var(--ink); }
-.gcard .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.gcard .acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; align-content: flex-start; margin-top: auto; }
 .st { font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.7); color: var(--ink); }
 .st.live { background: var(--ink); color: var(--lime); }
 .st.pending { background: var(--yellow); }

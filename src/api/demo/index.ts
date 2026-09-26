@@ -329,6 +329,11 @@ class DemoApi implements Api {
     const u = db.users[this.sess.userId];
     return !!u?.email && db.sup.emails.includes(u.email) && (db.sup.unlocked[u.id] || 0) > Date.now();
   }
+  /** On the super admin list, whether or not the console is unlocked. */
+  private isSuperUser(db: DB): boolean {
+    const u = this.sess ? db.users[this.sess.userId] : undefined;
+    return !!u?.email && db.sup.emails.includes(u.email);
+  }
   private req(db: DB, tid: string, min: Role): Role {
     if (this.isSuper(db)) return "owner";
     const r = this.roleIn(db, tid);
@@ -375,7 +380,7 @@ class DemoApi implements Api {
   }
   async access(tid: string): Promise<Access> {
     const db = store.read();
-    return { role: this.isSuper(db) ? "owner" : this.roleIn(db, tid), isSuper: this.isSuper(db) };
+    return { role: this.isSuper(db) ? "owner" : this.roleIn(db, tid), isSuper: this.isSuper(db), superUser: this.isSuperUser(db) };
   }
   async acceptInvites() {
     const u = this.need();
@@ -742,7 +747,7 @@ class DemoApi implements Api {
         if (!approve) next = "pending";
         else {
           if (RANK[role] < RANK.admin) throw err("forbidden", "Only an admin can approve.");
-          if (g.editedBy === this.actor(db) && !this.isSuper(db)) throw err("forbidden", "A different admin must approve your own changes.");
+          if (g.editedBy === this.actor(db) && !this.isSuperUser(db)) throw err("forbidden", "A different admin must approve your own changes.");
           g.approvedBy = this.actor(db);
         }
       }
