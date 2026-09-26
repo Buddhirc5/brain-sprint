@@ -23,10 +23,7 @@ export function Gone({ title, text }: { title: string; text: string }) {
         <Sprinty mood="sad" size={110} />
         <h2>{title}</h2>
         <p className="fine">{text}</p>
-        <div className="row" style={{ justifyContent: "center" }}>
-          <a className="btn primary small" href="#/signin">Find your company</a>
-          <a className="btn ghost small" href="#/">Home</a>
-        </div>
+        <a className="btn ghost small" href="#/">Home</a>
       </div>
     </div>
   );

@@ -7,14 +7,14 @@
 :root {
   color-scheme: light;
   --lime: #C6F432; --lime-2: #B2E01E; --lime-deep: #8FBF12; --lime-soft: #ECFBC2;
-  --orange: #FF5A1F; --orange-soft: #FFE2D4;
+  --orange: #FF5A1F; --orange-soft: #FFE2D4; --on-orange: #161512; --orange-text: #C23C0C;
   --pink: #FF7EB6; --pink-soft: #FFD6E8;
-  --blue: #3D7BFF; --blue-soft: #D3E2FF;
+  --blue: #3D7BFF; --blue-soft: #D3E2FF; --blue-deep: #2B64E0;
   --yellow: #FFD84D;
   --orange-deep: #C23C0C;
-  --ink: #161512; --ink-2: #3B3A36; --muted: #6B6960;
+  --ink: #161512; --ink-2: #3B3A36; --muted: #5E5C54;
   --paper: #E8E7E2; --paper-2: #DEDCD5; --card: #FFFEFA; --line: #D8D6CE;
-  --good: #2E9E4F; --warn: #C98A00; --bad: #E5431A;
+  --good: #2E9E4F; --warn: #C98A00; --bad: #C8390F;
   --r-xl: 34px; --r-lg: 24px; --r-md: 16px; --r-sm: 12px;
   --display: "Anton", "Impact", "Arial Narrow", sans-serif;
   --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -54,14 +54,14 @@ p { margin: 0; }
 .btn:disabled { opacity: .45; }
 .btn.primary { background: var(--ink); color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.18); }
 .btn.lime { background: var(--lime); color: var(--ink); box-shadow: 0 4px 0 var(--lime-deep); }
-.btn.orange { background: var(--orange); color: #fff; box-shadow: 0 4px 0 var(--orange-deep, #C23C0C); }
+.btn.orange { background: var(--orange); color: var(--on-orange); box-shadow: 0 4px 0 var(--orange-deep, #C23C0C); }
 .btn.ghost { background: transparent; box-shadow: inset 0 0 0 2px var(--ink); }
 .btn.white { background: #fff; color: var(--ink); box-shadow: 0 4px 0 rgba(0,0,0,.12); }
 .btn.small { min-height: 38px; padding: 0 16px; font-size: 14px; }
 .btn.tiny { min-height: 30px; padding: 0 12px; font-size: 13px; }
 .btn.block { width: 100%; }
 a.btn { text-decoration: none; color: var(--ink); }
-a.btn.primary, a.btn.orange { color: #fff; }
+a.btn.primary { color: #fff; } a.btn.orange { color: var(--on-orange); }
 .btn svg { width: 18px; height: 18px; }
 .link { font-weight: 800; text-decoration: underline; text-underline-offset: 3px; font-size: 14px; color: inherit; }
 .link.danger { color: var(--bad); }
@@ -101,7 +101,7 @@ textarea.inp { resize: vertical; line-height: 1.4; }
 
 /* ---------- modal & toast ---------- */
 .modal-bg { position: fixed; inset: 0; background: rgba(20,20,15,.55); display: grid; place-items: center; padding: 16px; z-index: 50; backdrop-filter: blur(3px); }
-.modal { background: var(--card); border-radius: var(--r-lg); padding: 24px; width: min(440px, 100%); max-height: calc(100% - 32px); overflow: auto; box-shadow: 0 30px 60px -20px rgba(0,0,0,.4); animation: pop .22s ease-out; display: grid; gap: 14px; }
+.modal { color: var(--ink); background: var(--card); border-radius: var(--r-lg); padding: 24px; width: min(440px, 100%); max-height: calc(100% - 32px); overflow: auto; box-shadow: 0 30px 60px -20px rgba(0,0,0,.4); animation: pop .22s ease-out; display: grid; gap: 14px; }
 .modal.wide { width: min(640px, 100%); }
 .modal h3 { font-size: 22px; font-weight: 900; }
 .lock-badge { width: 52px; height: 52px; border-radius: 16px; background: var(--lime); display: grid; place-items: center; }

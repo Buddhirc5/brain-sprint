@@ -99,7 +99,7 @@ export function GapTrend({ gid, kinds = ["sprint"] }: { gid: string; kinds?: Qui
         <p className="fine">Not enough answers yet to draw a trend. Each point needs at least 5 answers.</p>
       )}
 
-      <div className="chips-row" aria-label="Topics to compare (up to 3)">
+      <div className="chips-row" role="group" aria-label="Topics to compare (up to 3)">
         {topicKeys.map((k) => {
           const on = chosen.includes(k);
           const c = on ? SLOT[chosen.indexOf(k)] : undefined;

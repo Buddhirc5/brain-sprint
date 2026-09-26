@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../app/ctx";
-import { applyBranding, brandProblems, contrast, okHex } from "../app/theme";
+import { applyBranding, brandProblems, contrast, okHex, onColor } from "../app/theme";
 import { DEFAULT_BRANDING, LABELS } from "../api/engine";
 import { cleanText } from "../lib/security";
 import type { Branding, Labels } from "../types";
@@ -128,7 +128,7 @@ export function Brand() {
               <div><h2>Colours</h2><p>Checked for readability as you pick.</p></div>
               <button className="btn ghost small" onClick={() => set({ primary: DEFAULT_BRANDING.primary, accent: DEFAULT_BRANDING.accent, ink: DEFAULT_BRANDING.ink, paper: DEFAULT_BRANDING.paper })}>Reset to default</button>
             </div>
-            <div className="chips-row" aria-label="Ready-made palettes">
+            <div className="chips-row" role="group" aria-label="Ready-made palettes">
               {PRESETS.map((p) => (
                 <button key={p.name} className="chip-tg" onClick={() => set(p.c)}>
                   <span className="preset-dots" aria-hidden>{(["primary", "accent", "ink", "paper"] as const).map((k) => <i key={k} style={{ background: p.c[k] }} />)}</span>
@@ -218,7 +218,7 @@ function Preview({ b, l }: { b: Branding; l: Labels }) {
           <span className="bp-btn" style={{ background: ink, color: "#fff" }}>Play now</span>
         </div>
         <div className="bp-row">
-          <div className="bp-card" style={{ background: accent, color: "#fff" }}>
+          <div className="bp-card" style={{ background: accent, color: onColor(accent, ink) }}>
             <b>Live quiz</b>
             <span>Join with a PIN</span>
           </div>
@@ -228,7 +228,7 @@ function Preview({ b, l }: { b: Branding; l: Labels }) {
           </div>
         </div>
         <div className="bp-row">
-          <span className="bp-btn" style={{ background: accent, color: "#fff" }}>Accent button</span>
+          <span className="bp-btn" style={{ background: accent, color: onColor(accent, ink) }}>Accent button</span>
           <span className="bp-btn" style={{ background: primary, color: ink }}>Primary button</span>
         </div>
         <p className="bp-fine" style={{ color: ink }}>

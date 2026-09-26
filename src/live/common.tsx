@@ -7,11 +7,11 @@ import type { LiveSession, Question } from "../types";
  *  0–3 are the four multiple-choice cards, 4–5 are True / False. `ink` is the text colour on that card. */
 export const TILES = [
   { key: "bolt", color: "#C6F432", ink: "#161512", glyph: "bolt", letter: "A", name: "Lightning" },
-  { key: "star", color: "#FF5A1F", ink: "#FFFFFF", glyph: "star", letter: "B", name: "Star" },
-  { key: "heart", color: "#3D7BFF", ink: "#FFFFFF", glyph: "heart", letter: "C", name: "Heart" },
+  { key: "star", color: "#FF5A1F", ink: "#161512", glyph: "star", letter: "B", name: "Star" },
+  { key: "heart", color: "#3D7BFF", ink: "#161512", glyph: "heart", letter: "C", name: "Heart" },
   { key: "moon", color: "#FF7EB6", ink: "#161512", glyph: "moon", letter: "D", name: "Moon" },
   { key: "true", color: "#C6F432", ink: "#161512", glyph: "check", letter: "T", name: "True" },
-  { key: "false", color: "#FF5A1F", ink: "#FFFFFF", glyph: "cross", letter: "F", name: "False" },
+  { key: "false", color: "#FF5A1F", ink: "#161512", glyph: "cross", letter: "F", name: "False" },
 ] as const;
 
 const STAR = (() => {

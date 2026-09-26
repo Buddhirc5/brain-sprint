@@ -64,7 +64,7 @@ export function LiveTab() {
                   <b>{l.title}</b>
                   <span className="fine">
                     {STATE_LABEL[l.state]}
-                    {l.state !== "lobby" ? ` · question ${l.qIndex + 1} of ${l.total}` : ""} · {counts[l.id] ?? "…"} players
+                    {l.state !== "lobby" ? ` · question ${l.qIndex + 1} of ${l.total}` : ""} · {counts[l.id] ?? l.players ?? "…"} players
                   </span>
                 </div>
                 <span className="lv-pinchip num">PIN {l.pin}</span>
@@ -171,7 +171,7 @@ export function LiveTab() {
                     <td>
                       <span className={`sev ${l.state === "ended" ? "none" : "good"}`}>{STATE_LABEL[l.state]}</span>
                     </td>
-                    <td className="r num">{counts[l.id] ?? "–"}</td>
+                    <td className="r num">{counts[l.id] ?? l.players ?? "–"}</td>
                     <td className="r">
                       <a className="link" href={href({ r: "host", slug, id: l.id })}>
                         {l.state === "ended" ? "Results" : "Host screen"}
