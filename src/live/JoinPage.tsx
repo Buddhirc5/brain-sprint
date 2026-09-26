@@ -11,7 +11,7 @@ import { Chibi, Sprinty } from "../components/Chibi";
 import { CountUp, Icon, confetti } from "../components/ui";
 import { Loading } from "../App";
 import type { LivePlayer, LiveSession, Player, TenantPublic } from "../types";
-import { Shape, TILES, fmtPts, optionsOf, ordinal, remainingMs, tileOf, useNow } from "./common";
+import { Shape, TILES, fmtPts, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
 import "../styles/live.css";
 
 type Found = { sessionId: string; tenantId: string; slug: string; title: string; guests: boolean; pin: string };
@@ -432,14 +432,16 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
       body = (
         <div className="lv-pmsg">
           {pi >= 0 ? (
-            <span className="lv-mypick" style={{ background: TILES[tileOf(q, pi)].color }}>
-              <Shape i={tileOf(q, pi)} size={56} />
+            <span className="lv-mypick" style={tileVars(tileOf(q, pi))}>
+              <Shape i={tileOf(q, pi)} size={60} />
+              <em>{TILES[tileOf(q, pi)].letter}</em>
             </span>
           ) : (
             <Sprinty mood="think" size={120} />
           )}
-          <h1>Answer locked in</h1>
-          <p>Fingers crossed… wait for the big screen.</p>
+          <h1>Locked in!</h1>
+          <p>Fingers crossed… eyes on the big screen.</p>
+          <span className="lv-wait" aria-hidden="true"><i /><i /><i /></span>
         </div>
       );
     } else if (timeUp) {
@@ -462,8 +464,11 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
             {opts.map((o, i) => {
               const t = tileOf(q, i);
               return (
-                <button key={o.choice} type="button" className="lv-pad" style={{ background: TILES[t].color }} disabled={sending} onClick={() => void answer(o.choice)} aria-label={`${TILES[t].name}: ${o.label}`}>
-                  <Shape i={t} size={64} />
+                <button key={o.choice} type="button" className="lv-pad" style={tileVars(t, i)} disabled={sending} onClick={() => void answer(o.choice)} aria-label={`${TILES[t].letter}: ${o.label}`}>
+                  <span className="lv-badge">
+                    <Shape i={t} size={34} />
+                    <em>{TILES[t].letter}</em>
+                  </span>
                   <span className="tx">{o.label}</span>
                 </button>
               );
@@ -483,7 +488,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
       s.state === "reveal" ? (
         <div className="lv-pmsg lv-verdict">
           <span className="lv-vicon">{ok ? <Icon.check /> : <Icon.close />}</span>
-          <h1>{ok ? "Correct!" : answeredIt ? "Not this time" : "Time's up"}</h1>
+          <h1 className="lv-vstamp">{ok ? "Correct!" : answeredIt ? "Not this time" : "Time's up"}</h1>
           {ok ? (
             <>
               <b className="lv-pts num">

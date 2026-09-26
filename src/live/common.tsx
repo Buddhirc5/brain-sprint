@@ -1,27 +1,46 @@
-/* Shared bits of the live quiz: answer tiles (colour + shape, so colour is never the only cue),
+/* Shared bits of the live quiz ("Sprint Arena"): answer cards (colour + icon + letter),
    the question clock, and small formatting helpers. */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { LiveSession, Question } from "../types";
 
-/** Fixed, accessible tile palette — white text/shapes on every colour (≥ 4.5:1). */
+/** "Sprint Arena" answer cards: brand colours + a unique icon + a letter, so colour is never the only cue.
+ *  0–3 are the four multiple-choice cards, 4–5 are True / False. `ink` is the text colour on that card. */
 export const TILES = [
-  { key: "red", color: "#C8102E", shape: "tri", name: "Triangle" },
-  { key: "blue", color: "#1459C7", shape: "dia", name: "Diamond" },
-  { key: "gold", color: "#A15C00", shape: "cir", name: "Circle" },
-  { key: "green", color: "#17803A", shape: "sq", name: "Square" },
+  { key: "bolt", color: "#C6F432", ink: "#161512", glyph: "bolt", letter: "A", name: "Lightning" },
+  { key: "star", color: "#FF5A1F", ink: "#FFFFFF", glyph: "star", letter: "B", name: "Star" },
+  { key: "heart", color: "#3D7BFF", ink: "#FFFFFF", glyph: "heart", letter: "C", name: "Heart" },
+  { key: "moon", color: "#FF7EB6", ink: "#161512", glyph: "moon", letter: "D", name: "Moon" },
+  { key: "true", color: "#C6F432", ink: "#161512", glyph: "check", letter: "T", name: "True" },
+  { key: "false", color: "#FF5A1F", ink: "#FFFFFF", glyph: "cross", letter: "F", name: "False" },
 ] as const;
 
+const STAR = (() => {
+  let d = "";
+  for (let k = 0; k < 10; k++) {
+    const a = (Math.PI / 5) * k - Math.PI / 2;
+    const r = k % 2 ? 7.5 : 17;
+    d += `${k ? "L" : "M"}${(20 + Math.cos(a) * r).toFixed(1)} ${(21 + Math.sin(a) * r).toFixed(1)} `;
+  }
+  return d + "Z";
+})();
+
+/** The icon on an answer card. */
 export function Shape({ i, size = 28 }: { i: number; size?: number }) {
-  const s = TILES[i % 4].shape;
+  const g = TILES[((i % TILES.length) + TILES.length) % TILES.length].glyph;
   return (
     <svg className="lv-shape" viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
-      {s === "tri" && <path d="M20 4 L37 34 H3 Z" fill="currentColor" />}
-      {s === "dia" && <path d="M20 2 L37 20 L20 38 L3 20 Z" fill="currentColor" />}
-      {s === "cir" && <circle cx="20" cy="20" r="17" fill="currentColor" />}
-      {s === "sq" && <rect x="4" y="4" width="32" height="32" rx="3" fill="currentColor" />}
+      {g === "bolt" && <path d="M24 2 L7 23 H18.5 L15 38 L33 15 H21.5 Z" fill="currentColor" strokeLinejoin="round" />}
+      {g === "star" && <path d={STAR} fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />}
+      {g === "heart" && <path d="M20 35 C8 26.5 3 19.5 3 12.8 C3 7.6 7 4 11.6 4 C15.2 4 18.3 6.2 20 9.3 C21.7 6.2 24.8 4 28.4 4 C33 4 37 7.6 37 12.8 C37 19.5 32 26.5 20 35 Z" fill="currentColor" />}
+      {g === "moon" && <path d="M25 3.5 A17 17 0 1 0 37 27 A14 14 0 0 1 25 3.5 Z" fill="currentColor" />}
+      {g === "check" && <path d="M7 21 L16 30 L33 10" fill="none" stroke="currentColor" strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />}
+      {g === "cross" && <path d="M10 10 L30 30 M30 10 L10 30" fill="none" stroke="currentColor" strokeWidth="6.5" strokeLinecap="round" />}
     </svg>
   );
 }
+
+/** CSS variables for a card in that tile's colours. */
+export const tileVars = (t: number, i = 0) => ({ "--c": TILES[t].color, "--t": TILES[t].ink, "--i": i }) as CSSProperties;
 
 /** Answer options as the player sees them. True/false uses T/F choices on two tiles. */
 export function optionsOf(q: Question | undefined): { label: string; choice: string }[] {
@@ -29,8 +48,8 @@ export function optionsOf(q: Question | undefined): { label: string; choice: str
   if (q.type === "tf") return [{ label: "True", choice: "T" }, { label: "False", choice: "F" }];
   return (q.options || []).map((label, i) => ({ label, choice: String(i) }));
 }
-/** Tile index for a choice (tf: True = blue diamond, False = red triangle, like the classic). */
-export const tileOf = (q: Question | undefined, idx: number) => (q?.type === "tf" ? (idx === 0 ? 1 : 0) : idx);
+/** Card index for a choice (true/false get their own tick and cross cards). */
+export const tileOf = (q: Question | undefined, idx: number) => (q?.type === "tf" ? (idx === 0 ? 4 : 5) : idx);
 export const choiceIndex = (q: Question | undefined, c: string) => (q?.type === "tf" ? (c === "T" ? 0 : c === "F" ? 1 : -1) : Number(c));
 
 /** Re-render every `ms` while `on`. */
