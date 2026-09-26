@@ -14,6 +14,12 @@ Built for companies with strict security needs. The production controls are enfo
 | Company admins | Password and/or magic link (each company chooses). An **authenticator app (TOTP)** can be required (on by default for the bank template): until the admin passes it (`aal2`), the database gives them no admin rights. Roles: Viewer < Host < Editor < Admin < Owner, and at least one Owner is always kept. Idle sign-out (5–30 min). Admin rights only count for **confirmed** emails, and never for anonymous users. |
 | Players | Employee ID + "Is this you?" (no password), a 6-digit email code, or Microsoft Entra ID (optional). One device at a time for Employee ID: signing in elsewhere signs the old device out. Admins can lock a card or sign it out of all devices. |
 
+## Private invite links
+- Each company has a random 10-character **invite key** (about 50 bits, unambiguous characters). The player link is `#/t/<slug>/k/<KEY>`; the key is remembered on the device and removed from the address bar.
+- When required (default for new companies; a switch in Settings for existing ones), the database refuses Employee ID lookup, claim and registration until the sign-in has presented the key (`join_company`, rate limited per user and IP). Guessing a company address is not enough.
+- Players already signed in keep working. Admins can make a new link at any time; the old one stops working for new players. Changes are audited.
+- For the strongest control, combine it with the staff allowlist.
+
 ## Lost authenticator
 - On the two-step screen: **Lost your phone or authenticator app?** emails a one-time sign-in link to the account's own address.
 - Opened on the same device within **10 minutes**, that session may remove the old authenticator (`mfa_reset_self`). The database checks the session's `amr` claim (set by Supabase Auth) for a recent email sign-in, so a password-only session can never do it.

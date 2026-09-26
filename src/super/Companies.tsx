@@ -343,10 +343,15 @@ function StatusPanel({ t }: { t: TenantRow }) {
 }
 
 function LinksPanel({ t }: { t: TenantRow }) {
+  const { api } = useApi();
+  const [key, setKey] = useState<string | undefined>();
+  useEffect(() => {
+    api.joinKeyGet(t.id).then((k) => setKey(k.key), () => setKey(undefined));
+  }, [api, t.id]);
   return (
     <section className="panel">
       <PanelH icon={<SI.ext />} title="Links to share" sub="While the console is unlocked you can open this company's admin portal as an owner." />
-      <CopyField label="Player app" value={absUrl({ r: "tenant", slug: t.slug })} />
+      <CopyField label="Player invite link" value={absUrl({ r: "tenant", slug: t.slug, key })} />
       <CopyField label="Admin portal" value={absUrl({ r: "admin", slug: t.slug })} />
     </section>
   );

@@ -18,6 +18,7 @@ const Presenter = lazy(() => import("./polls/Presenter").then((m) => ({ default:
 const VotePage = lazy(() => import("./polls/VotePage").then((m) => ({ default: m.VotePage })));
 const CertificatePage = lazy(() => import("./cert/CertificatePage").then((m) => ({ default: m.CertificatePage })));
 const Experience = lazy(() => import("./pages/Experience").then((m) => ({ default: m.Experience })));
+const Contact = lazy(() => import("./pages/Contact").then((m) => ({ default: m.Contact })));
 const SignIn = lazy(() => import("./pages/SignIn").then((m) => ({ default: m.SignIn })));
 const SuperApp = lazy(() => import("./super/SuperApp").then((m) => ({ default: m.SuperApp })));
 
@@ -91,6 +92,7 @@ const SITE_TITLES: Partial<Record<Route["r"], string>> = {
   home: "Ant Arena — Gamified employee training: daily quizzes, live quiz games & polls",
   experience: "Try Ant Arena free — interactive demo",
   signin: "Sign in · Ant Arena",
+  contact: "Contact sales · Ant Arena",
   join: "Join a live quiz game · Ant Arena",
   super: "Super admin · Ant Arena",
   notfound: "Page not found · Ant Arena",
@@ -139,6 +141,9 @@ function Router({ route }: { route: Route }) {
     case "experience":
       el = <Experience />;
       break;
+    case "contact":
+      el = <Contact />;
+      break;
     case "signin":
       el = <SignIn />;
       break;
@@ -149,7 +154,7 @@ function Router({ route }: { route: Route }) {
       el = <VotePage code={route.code} />;
       break;
     case "tenant":
-      el = <TenantApp slug={route.slug} />;
+      el = <TenantApp slug={route.slug} joinKey={route.key} />;
       break;
     case "admin":
       el = <AdminApp slug={route.slug} tab={route.tab} />;

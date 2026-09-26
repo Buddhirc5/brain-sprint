@@ -120,7 +120,7 @@ export function SiteFooter() {
           {links.map(([h, l]) => (
             <a key={l} href={h}>{l}</a>
           ))}
-          {t === "Account" && CONTACT_EMAIL && <a href={`mailto:${CONTACT_EMAIL}`}>Contact sales</a>}
+          {t === "Account" && CONTACT_EMAIL && <a href="#/contact">Contact sales</a>}
         </nav>
       ))}
       <div className="h-foot-copy">

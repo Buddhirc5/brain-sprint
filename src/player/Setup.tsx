@@ -9,6 +9,7 @@ import { Seg } from "../components/ui";
 import { cleanName, normEmpId, validEmpId, validName } from "../lib/security";
 import type { UnitType } from "../types";
 import { firstName, TopBar, unitLabel } from "./common";
+import { cleanJoinKey, getJoinKey, joinIfNeeded, setJoinKey } from "../app/joinKey";
 
 /** Splits a product name over two lines for the hero: "Harbor / Academy", "Brain / Sprint". */
 function splitName(name: string): [string, string] {
@@ -28,6 +29,29 @@ export function Welcome() {
   const [linking, setLinking] = useState(false);
   const tried = useRef("");
   const emailUser = user && !user.anonymous && user.email ? user : null;
+  // private company: new players need the invite link (or its code) before they can sign in
+  const [hasKey, setHasKey] = useState(() => !!getJoinKey(pub.slug));
+  const [paste, setPaste] = useState("");
+  const [keyErr, setKeyErr] = useState("");
+  const [checking, setChecking] = useState(false);
+  const locked = !!pub.joinKeyRequired && !hasKey && !emailUser;
+  const useKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const key = cleanJoinKey(paste);
+    if (key.length < 8) return setKeyErr("Paste the whole invite link, or the code at its end.");
+    setChecking(true);
+    setKeyErr("");
+    try {
+      if (!api.user()) await api.signInAnonymous();
+      if (!(await api.joinCompany(tid, key))) return setKeyErr("That invite link isn't right. Check it with your company.");
+      setJoinKey(pub.slug, key);
+      setHasKey(true);
+    } catch (e2) {
+      setKeyErr(errMsg(e2));
+    } finally {
+      setChecking(false);
+    }
+  };
 
   // back from Microsoft (or signed in with email elsewhere): link to the player card with this email
   useEffect(() => {
@@ -101,7 +125,16 @@ export function Welcome() {
       )}
       {linking && <p className="fine" style={{ textAlign: "center" }}>Finding your player card…</p>}
 
-      {si.empId && (
+      {locked && (
+        <form className="card stack invite-card" onSubmit={useKey} noValidate>
+          <b style={{ fontSize: 18 }}>This is a private company space</b>
+          <p className="fine">Open the invite link or scan the QR code your company shared with you. Or paste the link (or its code) here:</p>
+          <input className="inp" aria-label="Invite link or code" placeholder="Paste invite link or code" value={paste} onChange={(e) => setPaste(e.target.value)} autoComplete="off" />
+          {keyErr && <p className="err" role="alert">{keyErr}</p>}
+          <button className="btn primary block" disabled={checking}>{checking ? "Checking…" : "Continue"}</button>
+        </form>
+      )}
+      {!locked && si.empId && (
         <>
           <button type="button" className="btn primary block" onClick={() => go({ v: "login" })}>
             I already play — sign in with my Employee ID
@@ -113,12 +146,12 @@ export function Welcome() {
           )}
         </>
       )}
-      {si.emailOtp && !emailUser && (
+      {!locked && si.emailOtp && !emailUser && (
         <button type="button" className={`btn ${si.empId ? "ghost" : "primary"} block`} onClick={() => go({ v: "email" })}>
           Sign in with my work email
         </button>
       )}
-      {si.sso && !emailUser && (
+      {!locked && si.sso && !emailUser && (
         <button type="button" className="btn ghost block ms-btn" onClick={microsoft}>
           <MsLogo /> Sign in with Microsoft
         </button>
@@ -194,6 +227,7 @@ export function Setup({ editing }: { editing?: boolean }) {
         toast("Player card updated");
       } else {
         if (!api.user()) await api.signInAnonymous();
+        await joinIfNeeded(api, tid, pub.slug);
         const p = await api.playerRegister(tid, { empId: id, name: nm, unitType, unit, look, email }, deviceLabel());
         setMe(p);
         toast(`Welcome, ${firstName(nm)}!`);

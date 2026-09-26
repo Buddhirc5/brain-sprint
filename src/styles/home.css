@@ -373,3 +373,17 @@
   .h-foot { grid-template-columns: 1.6fr 1fr 1fr 1fr; }
   .h-foot-about { grid-column: auto; }
 }
+
+/* contact sales page */
+.h-contact { display: grid; gap: 16px; background: var(--card); border-radius: var(--r-xl); padding: 26px 22px; box-shadow: var(--shadow); overflow: hidden; }
+.h-contact-copy { display: grid; gap: 14px; align-content: start; }
+.h-contact-copy .h-tag { justify-self: start; }
+.h-contact-card { display: grid; gap: 10px; background: var(--lime-soft); border-radius: var(--r-lg); padding: 16px 18px; }
+.h-contact-mail { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.h-contact-addr { font-size: clamp(18px, 4.6vw, 24px); font-weight: 900; word-break: break-all; user-select: all; }
+.h-contact-open { display: flex; flex-wrap: wrap; gap: 8px; }
+.h-contact-art { display: none; }
+@media (min-width: 900px) {
+  .h-contact { grid-template-columns: 1fr auto; padding: 44px 48px; align-items: center; }
+  .h-contact-art { display: flex; align-items: flex-end; gap: 6px; }
+}

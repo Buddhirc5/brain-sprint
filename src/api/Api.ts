@@ -148,6 +148,11 @@ export interface Api {
   myPlayer(tenantId: string): Promise<Player | null>; // null = not linked, or signed in elsewhere
   playerLookup(tenantId: string, empId: string): Promise<LookupCard | null>;
   playerClaim(tenantId: string, empId: string, device: string): Promise<Player>;
+  /** Present the private invite key; true = accepted (this sign-in may now look up, claim and register). Rate limited. */
+  joinCompany(tenantId: string, key: string): Promise<boolean>;
+  /** Admins: the company's invite key and whether it is required. */
+  joinKeyGet(tenantId: string): Promise<{ key: string; required: boolean; rotatedAt: number }>;
+  joinKeySet(tenantId: string, required: boolean, rotate?: boolean): Promise<{ key: string; required: boolean; rotatedAt: number }>;
   playerRegister(tenantId: string, input: RegisterInput, device: string): Promise<Player>;
   /** After email code / Microsoft sign-in: link to the card with this email, if any. */
   playerLinkEmail(tenantId: string, device: string): Promise<Player | null>;

@@ -232,3 +232,5 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .qimg-drop { display: grid; gap: 10px; justify-items: start; border: 2px dashed var(--line); border-radius: var(--r-md); padding: 12px; background: rgba(255,255,255,.6); }
 .qimg-drop.has { border-style: solid; }
 .qimg-drop img { max-width: min(100%, 360px); max-height: 220px; border-radius: var(--r-sm); object-fit: contain; background: #fff; box-shadow: var(--shadow); }
+.invite-qr { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.invite-qr img { background: #fff; border-radius: 12px; padding: 6px; box-shadow: inset 0 0 0 2px var(--line); image-rendering: pixelated; }

@@ -5,6 +5,8 @@ import { Seg } from "../components/ui";
 import { cleanText } from "../lib/security";
 import type { Features, OrgConfig, SignIn } from "../types";
 import { SwitchRow, useLiveTenant } from "./common";
+import { qrDataUrl } from "../lib/qr";
+import { errMsg } from "../app/ApiCtx";
 
 const lines = (s: string) => [...new Set(s.split(/\r?\n/).map((x) => cleanText(x, 60).trim()).filter(Boolean))];
 
@@ -38,7 +40,21 @@ export function Settings() {
   }, [base, d.cfg]);
   const setFeat = (k: keyof Features, v: boolean) => setF((c) => ({ ...c, features: { ...c.features, [k]: v, ...(k === "coins" && !v ? { store: false } : {}) } }));
   const setSI = (p: Partial<SignIn>) => setF((c) => ({ ...c, signIn: { ...c.signIn, ...p } }));
-  const playerLink = absUrl({ r: "tenant", slug });
+  // private invite link (#/t/<slug>/k/<KEY>) — saved straight away, separate from the form below
+  const [jk, setJk] = useState<{ key: string; required: boolean; rotatedAt: number } | null>(null);
+  useEffect(() => {
+    api.joinKeyGet(tid).then(setJk, () => setJk(null));
+  }, [api, tid]);
+  const setInvite = async (required: boolean, rotate = false) => {
+    try {
+      setJk(await api.joinKeySet(tid, required, rotate));
+      toast(rotate ? "New invite link made — old links stop working" : required ? "Invite link is now required" : "Invite link is now optional");
+    } catch (e) {
+      toast(errMsg(e));
+    }
+  };
+  const playerLink = jk ? absUrl({ r: "tenant", slug, key: jk.key }) : absUrl({ r: "tenant", slug });
+  const qr = useMemo(() => qrDataUrl(playerLink, 5, 2), [playerLink]);
   const adminLink = absUrl({ r: "admin", slug });
 
   const problem = (): string | null => {
@@ -105,11 +121,34 @@ export function Settings() {
             <SwitchRow title="Require an authenticator app" text="Every admin must enter a 6-digit code from an app like Microsoft or Google Authenticator. Strongly recommended." on={f.signIn.adminMfa} onChange={(v) => setSI({ adminMfa: v })} />
           </section>
           <section className="panel">
-            <div className="panel-h"><div><h2>Links to share</h2><p>Put the player link on your intranet or in a QR code.</p></div></div>
+            <div className="panel-h"><div><h2>Links to share</h2><p>Share the private invite link or its QR code with your staff only.</p></div></div>
             <div className="field">
-              <label htmlFor="pLink">Player app</label>
+              <label htmlFor="pLink">Player invite link</label>
               <div className="optrow"><input className="inp" id="pLink" readOnly value={playerLink} onFocus={(e) => e.target.select()} /><button className="btn ghost small" onClick={() => copy(playerLink)}>Copy</button></div>
             </div>
+            {jk && (
+              <>
+                <div className="invite-qr">
+                  <img src={qr} alt="QR code of the player invite link" width={132} height={132} />
+                  <a className="btn ghost small" href={qr} download={`${slug}-invite-qr.svg`}>Download QR</a>
+                </div>
+                <SwitchRow
+                  title="Require the invite link"
+                  text="New players can only join through this link or QR code, so guessing your company address isn't enough. Players already signed in keep playing."
+                  on={jk.required}
+                  onChange={(v) => void setInvite(v)}
+                />
+                <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                  <span className="fine">Link leaked? Make a new one — the old link stops working for new players.</span>
+                  <button
+                    className="btn ghost small"
+                    onClick={() => approve({ label: "Make a new invite link? The current link and QR code stop working for new players.", yes: "Make new link", run: () => setInvite(jk.required, true) })}
+                  >
+                    Make a new link
+                  </button>
+                </div>
+              </>
+            )}
             <div className="field">
               <label htmlFor="aLink">Admin portal</label>
               <div className="optrow"><input className="inp" id="aLink" readOnly value={adminLink} onFocus={(e) => e.target.select()} /><button className="btn ghost small" onClick={() => copy(adminLink)}>Copy</button></div>

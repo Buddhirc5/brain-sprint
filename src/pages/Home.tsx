@@ -62,7 +62,7 @@ export function Home({ section }: { section?: Section } = {}) {
 
 function SalesCta({ className = "btn white" }: { className?: string }) {
   return CONTACT_EMAIL ? (
-    <a className={className} href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Ant Arena demo")}`}>Book a demo</a>
+    <a className={className} href="#/contact">Book a demo</a>
   ) : (
     <a className={className} href="#/features">See the features</a>
   );
@@ -331,7 +331,7 @@ function Faq() {
       <div className="h-faq-more">
         <span>Still curious? The quickest answer is to try it.</span>
         <a className="btn lime small" href="#/experience">Try it free</a>
-        {CONTACT_EMAIL && <a className="btn ghost small" href={`mailto:${CONTACT_EMAIL}`}>Email us</a>}
+        {CONTACT_EMAIL && <a className="btn ghost small" href="#/contact">Contact sales</a>}
       </div>
     </section>
   );

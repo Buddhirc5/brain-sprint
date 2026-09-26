@@ -13,6 +13,7 @@ the same `Api` contract as the in-browser demo (`src/api/demo/`), with the same 
 | `migrations/0004_question_images.sql` | Allows an optional compressed image on each question |
 | `migrations/0005_live_player_count.sql` | Live games report how many players joined (admin Recent games) |
 | `migrations/0006_super_self_approve.sql` | Super admins can approve their own quiz changes under maker-checker |
+| `migrations/0011_private_invite_links.sql` | Private player invite links (#/t/<slug>/k/<KEY>): required for new companies, optional for existing ones, rotatable |
 | `migrations/0010_mfa_reset_by_email.sql` | Lost authenticator: reset with an emailed link (10-minute window, audited) |
 | `migrations/0009_super_requires_authenticator.sql` | Super admins must verify with an authenticator app before the code unlocks the console |
 | `migrations/0007_rename_ant_arena.sql` | Product renamed from Brain Sprint to Ant Arena (default name + existing companies) |
@@ -25,7 +26,7 @@ the same `Api` contract as the in-browser demo (`src/api/demo/`), with the same 
 ## 1. Create the database
 
 **Option A: dashboard (no tools).** Open your project → **SQL Editor** → paste and run, in order:
-`migrations/0001_schema.sql` → `0002_security.sql` → `0003_functions.sql` → `0004_question_images.sql` → `0005_live_player_count.sql` → `0006_super_self_approve.sql` → `0007_rename_ant_arena.sql` → `0008_special_characters.sql` → `0009_super_requires_authenticator.sql` → `0010_mfa_reset_by_email.sql` → `seed.sql`.
+`migrations/0001_schema.sql` → `0002_security.sql` → `0003_functions.sql` → `0004_question_images.sql` → `0005_live_player_count.sql` → `0006_super_self_approve.sql` → `0007_rename_ant_arena.sql` → `0008_special_characters.sql` → `0009_super_requires_authenticator.sql` → `0010_mfa_reset_by_email.sql` → `0011_private_invite_links.sql` → `seed.sql`.
 
 **Option B: CLI.**
 ```bash
