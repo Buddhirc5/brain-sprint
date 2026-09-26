@@ -342,3 +342,5 @@
 .pl-stage a, .pa-card a.btn, .pe-bar a.btn, .pv a.btn { text-decoration: none; color: inherit; }
 .pe-screen .pl-rank.compact .pl-rrow { font-size: 10px; }
 .pe-screen .pl-cloud.compact, .pe-screen .pl-cloud { height: 100%; }
+.pv-links { text-align: center; }
+.pv-head a { display: inline-flex; line-height: 0; }

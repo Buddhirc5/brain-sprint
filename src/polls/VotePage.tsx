@@ -1,6 +1,7 @@
 /* Audience page for live polls (mobile-first): enter the 6-digit code, then follow
    the presenter — answer the current slide, change the answer, see results when
    the presenter shares them, ask and upvote questions in Q&A. Anonymous. */
+import { LogoMark } from "../components/Logo";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useApi, errMsg } from "../app/ApiCtx";
 import { applyBranding, setTitle } from "../app/theme";
@@ -81,6 +82,9 @@ function CodeEntry({ initial, qs, pub, error }: { initial?: string; qs: string; 
           Join
         </button>
       </form>
+      <p className="fine pv-links">
+        <a className="link" href="#/">Home</a> · <a className="link" href="#/join">Join a live game</a> · <a className="link" href="#/signin">Company sign-in</a>
+      </p>
       <Anon />
     </div>
   );
@@ -88,9 +92,10 @@ function CodeEntry({ initial, qs, pub, error }: { initial?: string; qs: string; 
 
 function VoteHead({ pub, title }: { pub: TenantPublic | null; title?: string }) {
   const name = pub?.branding.productName || "Brain Sprint";
+  const mark = pub?.branding.logo ? <img src={pub.branding.logo} alt="" className="pv-logo" /> : pub ? <span className="pv-mark" aria-hidden="true">{name.slice(0, 1)}</span> : <LogoMark size={40} />;
   return (
     <header className="pv-head">
-      {pub?.branding.logo ? <img src={pub.branding.logo} alt="" className="pv-logo" /> : <span className="pv-mark" aria-hidden="true">{name.slice(0, 1)}</span>}
+      {pub ? mark : <a href="#/" aria-label="Brain Sprint home">{mark}</a>}
       <div className="pv-hname">
         <b>{name}</b>
         {title && <span>{title}</span>}

@@ -132,9 +132,9 @@ function PinEntry({ initial, err, busy, onSubmit }: { initial?: string; err: str
         </button>
         <p className="fine">The 6-digit PIN is on the host's screen.</p>
       </form>
-      <a className="link" href="#/">
-        Home
-      </a>
+      <p className="lv-enter-links">
+        <a className="link" href="#/">Home</a> · <a className="link" href="#/vote">Vote in a poll</a> · <a className="link" href="#/signin">Company sign-in</a>
+      </p>
     </div>
   );
 }

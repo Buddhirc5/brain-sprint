@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <script>if(/^#\/./.test(location.hash))document.documentElement.className+=" deep"</script>
+    <script>var h=location.hash,p=location.pathname;if((/^#\/./.test(h)&&!/^#\/(features|how-it-works|use-cases|security|faq)\/?$/i.test(h))||(p.length>1&&!/\/index\.html$/.test(p)))document.documentElement.className+=" deep"</script>
     <title>Brain Sprint — Gamified employee training: daily quizzes, live quiz games &amp; polls</title>
     <meta name="description" content="Brain Sprint is a white-label gamified microlearning platform: two-minute daily quiz sprints, live quiz games, polls and certification exams that employees love — with knowledge-gap analytics for managers." />
     <meta name="keywords" content="gamified employee training, microlearning platform, employee quiz app, live quiz game, compliance training, corporate training games, knowledge gap analytics, white-label learning platform" />

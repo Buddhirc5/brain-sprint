@@ -37,4 +37,3 @@ a:hover .bs-mark .bs-body, .bs-logo:hover .bs-mark .bs-body { animation: bs-hop 
 .su-pixel { margin-left: 2px; }
 .su-gate-head { display: grid; justify-items: center; gap: 6px; text-align: center; }
 .powered { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
-@media (max-width: 400px) { .h-logo .bs-tag { display: none; } }

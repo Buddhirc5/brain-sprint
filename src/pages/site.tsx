@@ -40,15 +40,26 @@ export function DemoHref({ href, className, children, newTab }: { href: string; 
 }
 
 const NAV: [string, string][] = [
-  ["#/", "Product"],
-  ["#/experience", "Experience"],
+  ["#/features", "Features"],
+  ["#/how-it-works", "How it works"],
+  ["#/experience", "Live demo"],
+  ["#/faq", "FAQ"],
 ];
 
 export function SiteHeader() {
   const route = useRoute();
   const [open, setOpen] = useState(false);
-  useEffect(() => setOpen(false), [route.r]);
-  const here = (h: string) => (h === "#/" ? route.r === "home" : h === "#/experience" ? route.r === "experience" : false);
+  useEffect(() => setOpen(false), [route]);
+  useEffect(() => {
+    if (!open) return;
+    const f = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", f);
+    return () => window.removeEventListener("keydown", f);
+  }, [open]);
+  const here = (h: string) => {
+    if (h === "#/experience") return route.r === "experience";
+    return route.r === "home" && route.section === h.replace("#/", "");
+  };
   return (
     <header className={`h-top ${open ? "open" : ""}`}>
       <a className="h-logo" href="#/">
@@ -62,19 +73,24 @@ export function SiteHeader() {
         ))}
       </nav>
       <div className="h-topcta">
-        <a className="h-signin" href="#/signin">Sign in</a>
+        <a className={`h-signin ${route.r === "signin" ? "on" : ""}`} href="#/signin">Sign in</a>
         <a className="btn lime small h-trybtn" href="#/experience">Try it free</a>
-        <button type="button" className="h-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button type="button" className="h-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="h-mobnav" onClick={() => setOpen(!open)}>
           <span />
           <span />
           <span />
         </button>
       </div>
       {open && (
-        <nav className="h-mobnav" aria-label="Menu">
+        <nav className="h-mobnav" id="h-mobnav" aria-label="Menu">
+          <a href="#/" onClick={() => setOpen(false)}>Home</a>
           {NAV.map(([h, l]) => (
             <a key={h} href={h} onClick={() => setOpen(false)}>{l}</a>
           ))}
+          <a href="#/security" onClick={() => setOpen(false)}>Security</a>
+          <span className="h-mobnav-sep" />
+          <a href="#/join" onClick={() => setOpen(false)}>Join a live game</a>
+          <a href="#/vote" onClick={() => setOpen(false)}>Vote in a poll</a>
           <a href="#/signin" onClick={() => setOpen(false)}>Sign in</a>
           <a className="btn lime block" href="#/experience" onClick={() => setOpen(false)}>Try it free</a>
         </nav>
@@ -84,24 +100,33 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const cols: [string, [string, string][]][] = [
+    ["Product", [["#/features", "Features"], ["#/how-it-works", "How it works"], ["#/use-cases", "Who it's for"], ["#/security", "Security"], ["#/faq", "FAQ"]]],
+    ["Try it", [["#/experience", "Live demo"], ["#/join", "Join a live game"], ["#/vote", "Vote in a poll"]]],
+    ["Account", [["#/signin", "Sign in"], ["#/signin", "Company admin sign-in"], ["#/super", "Super admin"]]],
+  ];
   return (
     <footer className="h-foot">
-      <div className="h-foot-col">
+      <div className="h-foot-col h-foot-about">
         <a className="h-foot-brand" href="#/">
           <Logo size={56} />
         </a>
-        <span>Learning your team actually plays.</span>
+        <span>Learning your team actually plays. Daily quiz sprints, live quiz games, polls and certification — under your own brand.</span>
+        <a className="btn lime small" href="#/experience">Try it free</a>
       </div>
-      <nav className="h-foot-links" aria-label="Footer">
-        <a href="#/">Product</a>
-        <a href="#/experience">Experience</a>
-        <a href="#/signin">Sign in</a>
-        <a href="#/join">Join a game</a>
-        <a href="#/vote">Vote</a>
-        {CONTACT_EMAIL && <a href={`mailto:${CONTACT_EMAIL}`}>Contact sales</a>}
-        <a className="h-super" href="#/super">Super admin</a>
-      </nav>
-      <span className="h-foot-copy">© {new Date().getFullYear()} Brain Sprint</span>
+      {cols.map(([t, links]) => (
+        <nav key={t} className="h-foot-links" aria-label={t}>
+          <b>{t}</b>
+          {links.map(([h, l]) => (
+            <a key={l} href={h}>{l}</a>
+          ))}
+          {t === "Account" && CONTACT_EMAIL && <a href={`mailto:${CONTACT_EMAIL}`}>Contact sales</a>}
+        </nav>
+      ))}
+      <div className="h-foot-copy">
+        <span>© {new Date().getFullYear()} Brain Sprint · Made for teams that like to play</span>
+        <button type="button" className="h-totop" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Back to top ↑</button>
+      </div>
     </footer>
   );
 }

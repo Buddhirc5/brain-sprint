@@ -6,7 +6,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Chibi, Sprinty } from "../components/Chibi";
 import { Icon } from "../components/ui";
-import { CONTACT_EMAIL, SiteFooter, SiteHeader, jump } from "./site";
+import { CONTACT_EMAIL, SiteFooter, SiteHeader } from "./site";
+import type { Section } from "../app/router";
 import { FAQ } from "./faq";
 
 /** Fades sections up as they scroll into view. Sections already on screen stay put (no flicker),
@@ -33,8 +34,14 @@ function useReveal() {
   }, []);
 }
 
-export function Home() {
+export function Home({ section }: { section?: Section } = {}) {
   useReveal();
+  // #/features, #/faq … open the landing page scrolled to that section
+  useEffect(() => {
+    if (!section) return;
+    const t = window.setTimeout(() => document.getElementById(section)?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+    return () => window.clearTimeout(t);
+  }, [section]);
   return (
     <div className="home">
       <SiteHeader />
@@ -57,7 +64,7 @@ function SalesCta({ className = "btn white" }: { className?: string }) {
   return CONTACT_EMAIL ? (
     <a className={className} href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Brain Sprint demo")}`}>Book a demo</a>
   ) : (
-    <button type="button" className={className} onClick={() => jump("features")}>See the features</button>
+    <a className={className} href="#/features">See the features</a>
   );
 }
 
@@ -83,6 +90,9 @@ function Hero() {
           <li><Icon.check /> Your logo &amp; colours</li>
           <li><Icon.check /> Bank-grade security</li>
         </ul>
+        <p className="h-player-links">
+          Playing, not buying? <a href="#/join">Join a live game</a> · <a href="#/vote">Vote in a poll</a> · <a href="#/signin">Company sign-in</a>
+        </p>
       </div>
       <div className="h-stage" aria-hidden="true">
         <span className="h-scribble">no boring e-learning!</span>
@@ -207,6 +217,10 @@ function Features() {
           </article>
         ))}
       </div>
+      <div className="h-sec-cta">
+        <a className="btn primary" href="#/experience">Try the live demo</a>
+        <a className="btn ghost" href="#/how-it-works">How it works →</a>
+      </div>
     </section>
   );
 }
@@ -220,7 +234,7 @@ function UseCases() {
     ["Leaders & Comms", "Town hall polls, anonymous Q&A and live games that get the whole room talking.", 11],
   ];
   return (
-    <section className="h-sec rv" aria-labelledby="h-uc">
+    <section className="h-sec rv" aria-labelledby="h-uc" id="use-cases">
       <div className="h-sec-h">
         <span className="h-kicker">Who it's for</span>
         <h2 id="h-uc">Built for the whole company</h2>
@@ -236,6 +250,9 @@ function UseCases() {
           </article>
         ))}
       </div>
+      <div className="h-sec-cta">
+        <a className="btn ghost" href="#/experience">See it with your own eyes →</a>
+      </div>
     </section>
   );
 }
@@ -247,7 +264,7 @@ function HowItWorks() {
     ["You close the gaps", "Spot weak topics by team, re-train with a live game, and watch the trend improve.", <Chibi key="c" look={5} mood="idle" size={72} />],
   ];
   return (
-    <section className="h-sec rv" aria-labelledby="h-how">
+    <section className="h-sec rv" aria-labelledby="h-how" id="how-it-works">
       <div className="h-sec-h">
         <span className="h-kicker">Up and running in a day</span>
         <h2 id="h-how">How it works</h2>
@@ -264,6 +281,10 @@ function HowItWorks() {
           </li>
         ))}
       </ol>
+      <div className="h-sec-cta">
+        <a className="btn primary" href="#/experience">Start the 5-minute tour</a>
+        <a className="btn ghost" href="#/signin">Sign in to your company</a>
+      </div>
     </section>
   );
 }
@@ -277,7 +298,7 @@ function Security() {
     ["Full audit trail", "Every admin action is logged per company, with exportable reports."],
   ];
   return (
-    <section className="h-secband rv" aria-labelledby="h-sec-t">
+    <section className="h-secband rv" aria-labelledby="h-sec-t" id="security">
       <div className="h-secband-h">
         <span className="h-dcard-ic"><Icon.shield /></span>
         <div>
@@ -293,6 +314,10 @@ function Security() {
           </div>
         ))}
       </div>
+      <div className="h-sec-cta">
+        <a className="btn primary" href="#/experience">Explore the admin portal in the demo</a>
+        <a className="btn ghost" href="#/faq">Read the FAQ</a>
+      </div>
     </section>
   );
 }
@@ -302,7 +327,7 @@ function Faq() {
   const qs = FAQ;
   const [open, setOpen] = useState(0);
   return (
-    <section className="h-sec rv" aria-labelledby="h-faq">
+    <section className="h-sec rv" aria-labelledby="h-faq" id="faq">
       <div className="h-sec-h">
         <span className="h-kicker">FAQ</span>
         <h2 id="h-faq">Questions, answered</h2>
@@ -317,6 +342,11 @@ function Faq() {
             {open === i && <p>{a}</p>}
           </div>
         ))}
+      </div>
+      <div className="h-faq-more">
+        <span>Still curious? The quickest answer is to try it.</span>
+        <a className="btn lime small" href="#/experience">Try it free</a>
+        {CONTACT_EMAIL && <a className="btn ghost small" href={`mailto:${CONTACT_EMAIL}`}>Email us</a>}
       </div>
     </section>
   );
