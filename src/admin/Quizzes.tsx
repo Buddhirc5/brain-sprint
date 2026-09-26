@@ -22,7 +22,7 @@ const DEFAULT_CERT: CertSettings = { passPct: 80, attempts: 3, certTitle: "", va
 
 /* ================= list ================= */
 export function Quizzes() {
-  const { d, players, approve, run, api, tid, can, features } = useApp();
+  const { d, players, approve, run, api, tid, can, features, superUser } = useApp();
   const { user } = useApi();
   const { setTab } = useAdmin();
   const [kind, setKind] = useState<"all" | QuizKind>("all");
@@ -87,7 +87,7 @@ export function Quizzes() {
       </div>
       <p className="fine">
         {kind === "live" ? "Live quizzes are hosted from the Live quiz tab — they don't appear in the player app on their own." : `Tip: daily sprints work best with ${d.cfg.minQ}–${Math.min(5, d.cfg.maxQ)} questions. Give one a date and players see it that morning.`}
-        {mc ? " Maker-checker is on: a second admin must approve sprints and exams before they go live." : ""}
+        {mc ? ` Maker-checker is on: a second admin must approve sprints and exams before they go live${superUser ? " (as a super admin you can approve your own)" : ""}.` : ""}
       </p>
       <div className="gcards">
         {gs.length ? (
@@ -100,7 +100,7 @@ export function Quizzes() {
             const st = statusOf(g);
             const dark = g.color === "ink";
             const hasKey = !!d.keys[g.id];
-            const own = g.editedBy === me;
+            const own = g.editedBy === me && !superUser; // super admins may approve their own changes
             const off = !features[KIND[k].feature];
             const liveSecs = g.questions.reduce((s, q) => s + (q.seconds || LIVE.defaultSeconds), 0);
             return (
@@ -112,7 +112,7 @@ export function Quizzes() {
                       <span className={`st ${st.key}`}>{k === "live" ? (g.status === "draft" ? "Draft" : "Ready") : st.label}</span>
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 700 }}>
-                      {k === "live" ? `${Math.round(liveSecs / 6) / 10} min of questions` : <>{g.date ? (g.date === t ? "Today" : fmtDate(g.date)) : "No date"} · {fmtMin(limitMs(g) / 60000)}</>}
+                      {k === "live" ? `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${liveSecs < 60 ? `${liveSecs}s` : `${Math.floor(liveSecs / 60)}:${String(liveSecs % 60).padStart(2, "0")} min`}` : <>{g.date ? (g.date === t ? "Today" : fmtDate(g.date)) : "No date"} · {fmtMin(limitMs(g) / 60000)}</>}
                     </span>
                   </div>
                   <h3>{g.title}</h3>

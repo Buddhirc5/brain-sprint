@@ -55,6 +55,7 @@ interface Ctx {
   /* identity */
   role: Role | null; // admin role in this company (admin portal only)
   can: (min: Role) => boolean;
+  superUser: boolean; // a super admin: can approve their own changes (maker-checker)
   area: "player" | "admin";
   setMe: (p: Player | null) => void;
   signOut: (msg?: string) => Promise<void>;
@@ -74,7 +75,7 @@ function emptyData(pub: TenantPublic): Data {
   };
 }
 
-export function TenantProvider({ pub, area, role, children }: { pub: TenantPublic; area: "player" | "admin"; role: Role | null; children: ReactNode }) {
+export function TenantProvider({ pub, area, role, superUser = false, children }: { pub: TenantPublic; area: "player" | "admin"; role: Role | null; superUser?: boolean; children: ReactNode }) {
   const { api, toast, run } = useApi();
   const [d, setD] = useState<Data>(() => emptyData(pub));
   const [meUid, setMeUid] = useState<string | null>(null);
@@ -165,7 +166,7 @@ export function TenantProvider({ pub, area, role, children }: { pub: TenantPubli
   );
   const value: Ctx = {
     api, pub: livePub, tid, slug: pub.slug, labels: livePub.labels, features: d.loaded ? d.cfg.features : pub.features, d, me, players, stats, view, go, toast, run, approve,
-    role, can, area, setMe, signOut, refresh, download,
+    role, can, superUser, area, setMe, signOut, refresh, download,
   };
   if (!checked) return null;
   return (

@@ -14,7 +14,7 @@ import { absUrl } from "../app/router";
 import { isDemo } from "../api/demo/guard";
 import { DEMO_HINT } from "./demoHints";
 
-type Gate = { s: "loading" } | { s: "signin" } | { s: "mfa"; enrolled: boolean } | { s: "denied"; email?: string } | { s: "ok"; role: Role };
+type Gate = { s: "loading" } | { s: "signin" } | { s: "mfa"; enrolled: boolean } | { s: "denied"; email?: string } | { s: "ok"; role: Role; superUser: boolean };
 
 export function AdminApp({ slug, tab }: { slug: string; tab?: string }) {
   const { api, user, toast } = useApi();
@@ -40,7 +40,7 @@ export function AdminApp({ slug, tab }: { slug: string; tab?: string }) {
       const m = await api.mfaState();
       if (m.enrolled && !m.verified && !a.isSuper) return setGate({ s: "mfa", enrolled: true });
       a = await api.access(pub.id);
-      setGate(a.role ? { s: "ok", role: a.role } : { s: "denied", email: user.email });
+      setGate(a.role ? { s: "ok", role: a.role, superUser: !!a.superUser } : { s: "denied", email: user.email });
     } catch (e) {
       toast(errMsg(e));
       setGate({ s: "denied", email: user.email });
@@ -87,7 +87,7 @@ export function AdminApp({ slug, tab }: { slug: string; tab?: string }) {
       </div>
     );
   return (
-    <TenantProvider pub={pub} area="admin" role={gate.role}>
+    <TenantProvider pub={pub} area="admin" role={gate.role} superUser={gate.superUser}>
       <Admin tab={tab} />
     </TenantProvider>
   );

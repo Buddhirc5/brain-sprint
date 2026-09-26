@@ -11,9 +11,13 @@ import { useAdmin } from "./Admin";
 import { slugify, unitWord, unitsWord, useLiveTenant } from "./common";
 import type { QuizKind } from "../types";
 import { GapTrend } from "./GapTrend";
+import { ReportView, type ReportData } from "./Report";
+import { useApi } from "../app/ApiCtx";
 
 export function Dashboard() {
-  const { d, players, stats, pub, can, features } = useApp();
+  const { d, players, stats, pub, can, features, api, tid, approve } = useApp();
+  const { user } = useApi();
+  const [rep, setRep] = useState<ReportData | null>(null);
   const { labels } = useLiveTenant();
   const { exportCSV, setTab } = useAdmin();
   const hasCert = Object.values(d.games).some((g) => g.kind === "cert");
@@ -58,9 +62,40 @@ export function Dashboard() {
   });
   const partMax = Math.max(1, ...urows.map((x) => Math.max(x.registered, x.players)));
   const pLabel = PERIODS.find((p) => p[0] === period)![1];
+  const openReport = () =>
+    approve({
+      label: `Open the PDF report. It contains staff names — keep it inside ${pub.name}.`,
+      yes: "Open report",
+      run: async () =>
+        setRep({
+          company: pub.name,
+          product: pub.branding.productName,
+          logo: pub.branding.logo,
+          period: pLabel,
+          quiz: gid === "all" ? (withCert ? "All sprints and certifications" : "All sprints") : d.games[gid]?.title || "Quiz",
+          by: user?.email || "admin",
+          unitWord: unitWord(labels, ut),
+          unitsWord: unitsWord(labels, ut),
+          kpi: { registered: regd, active: people, plays: done, acc: answers.length ? pct(ok, answers.length) : null, avgSec: avgMs / 1000, certPass, certPeople },
+          topics: an.topics,
+          units: urows,
+          leaders: lb.map((r) => ({ name: d.players[r.uid]?.name || "Player", unit: d.players[r.uid]?.unit || "", plays: r.runs, acc: r.acc, points: r.points })),
+          missed,
+          best,
+          days: days.map((k) => ({ k, n: perDay[k] || 0 })),
+        }),
+    });
+  const downloadReport = async () => {
+    const t = document.title;
+    document.title = `${slugify(pub.slug)}-knowledge-report-${dayKey(Date.now())}`;
+    await api.audit(tid, { action: "Exported data", target: "PDF knowledge report", detail: `${pLabel} · ${rep?.quiz}` }).catch(() => {});
+    window.print();
+    document.title = t;
+  };
 
   return (
     <>
+      {rep && <ReportView data={rep} onClose={() => setRep(null)} onDownload={() => void downloadReport()} />}
       <div className="toolbar">
         <h1>Knowledge pulse</h1>
         <Seg value={period} options={PERIODS} onChange={setPeriod} label="Period" />
@@ -76,6 +111,7 @@ export function Dashboard() {
         <button className="btn primary small" onClick={() => exportCSV(`${slugify(pub.slug)}-gap-report-${dayKey(Date.now())}.csv`, "full knowledge-gap report", fullReport({ players, games: d.games, dq: d.dq, cfg: d.cfg, stats, labels }, gid, period))}>
           Full report (CSV)
         </button>
+        <button className="btn lime small" onClick={openReport}>PDF report</button>
       </div>
       {demo && (
         <div className="banner">
