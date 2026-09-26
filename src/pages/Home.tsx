@@ -73,7 +73,7 @@ function Hero() {
   return (
     <section className="h-hero">
       <div className="h-hero-copy">
-        <span className="h-tag">Gamified employee training</span>
+        <span className="h-tag">Gamified training for global teams</span>
         <h1 className="h-mega">
           Learning your team <span className="ink">actually plays.</span>
         </h1>
@@ -88,34 +88,14 @@ function Hero() {
         <ul className="h-trust">
           <li><Icon.check /> No app to install</li>
           <li><Icon.check /> Your logo &amp; colours</li>
-          <li><Icon.check /> Bank-grade security</li>
+          <li><Icon.check /> Enterprise-grade security</li>
         </ul>
         <p className="h-player-links">
           Here to play? <a href="#/join">Join a live game</a> · <a href="#/vote">Vote in a poll</a>
         </p>
       </div>
       <div className="h-stage" aria-hidden="true">
-        <span className="h-scribble">no boring e-learning!</span>
-        <div className="h-float h-f1">
-          <b>+150</b> pts · speed bonus
-        </div>
-        <div className="h-float h-f2">
-          <Icon.fire /> 12-day streak
-        </div>
-        <div className="h-board">
-          <span className="h-board-h">Branch Battle</span>
-          {[
-            ["City", 92],
-            ["Harbour", 81],
-            ["Airport", 67],
-          ].map(([n, v], i) => (
-            <div key={n} className="h-board-r">
-              <span className="h-board-n">{i + 1}</span>
-              <span className="h-board-l">{n}</span>
-              <span className="h-board-t"><span style={{ width: `${v}%` }} /></span>
-            </div>
-          ))}
-        </div>
+        <ArenaScene />
         <div className="h-lineup">
           <Chibi look={1} variant="full" mood="happy" size={132} />
           <Mascot mood="cheer" size={150} />
@@ -123,6 +103,67 @@ function Hero() {
         </div>
       </div>
     </section>
+  );
+}
+
+/** The hero's backdrop: a cartoon arena at sunrise — sky, rays, hills, a stadium with flags and fireflies. */
+function ArenaScene() {
+  return (
+    <svg className="h-scene" viewBox="0 0 600 520" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="hs-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3D7BFF" />
+          <stop offset=".55" stopColor="#8EC5FF" />
+          <stop offset="1" stopColor="#FFE9A8" />
+        </linearGradient>
+        <radialGradient id="hs-sun" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stopColor="#FFF6C9" />
+          <stop offset=".35" stopColor="#FFD84D" stopOpacity=".9" />
+          <stop offset="1" stopColor="#FFD84D" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="600" height="520" fill="url(#hs-sky)" />
+      <g className="hs-rays" fill="#FFFFFF">
+        {[-58, -34, -12, 10, 32, 56].map((a) => (
+          <path key={a} d="M300 300 L284 -40 L316 -40 Z" transform={`rotate(${a} 300 300)`} />
+        ))}
+      </g>
+      <circle cx="300" cy="300" r="120" fill="url(#hs-sun)" />
+      <g className="hs-cloud a" fill="#fff"><ellipse cx="110" cy="90" rx="46" ry="18" /><ellipse cx="140" cy="78" rx="30" ry="20" /></g>
+      <g className="hs-cloud b" fill="#fff"><ellipse cx="470" cy="130" rx="54" ry="18" /><ellipse cx="500" cy="116" rx="30" ry="18" /></g>
+      {/* far mountains */}
+      <path d="M0 300 L70 230 L120 262 L190 190 L260 262 L330 214 L400 270 L470 200 L540 250 L600 222 V520 H0Z" fill="#7C9BD6" opacity=".7" />
+      {/* stadium */}
+      <g className="hs-arena" stroke="#161512" strokeWidth="4" strokeLinejoin="round">
+        <path d="M150 330 Q150 270 300 262 Q450 270 450 330 Z" fill="#FF5A1F" />
+        <path d="M150 330 L160 380 H440 L450 330 Z" fill="#161512" />
+        <path d="M185 300 Q300 282 415 300" fill="none" stroke="#FFD84D" strokeWidth="5" strokeDasharray="10 12" />
+        <rect x="262" y="228" width="76" height="30" rx="6" fill="#161512" />
+        {[190, 300, 410].map((x, i) => (
+          <g key={x}>
+            <line x1={x} y1={i === 1 ? 226 : 270} x2={x} y2={i === 1 ? 188 : 226} />
+            <path className="hs-flag" d={`M${x} ${i === 1 ? 190 : 228} l30 8 -30 8z`} fill={i === 1 ? "#C6F432" : "#FF7EB6"} />
+          </g>
+        ))}
+      </g>
+      <text x="300" y="249" textAnchor="middle" className="hs-sign">ARENA</text>
+      {/* spotlights */}
+      <g className="hs-beams" fill="#FFF6C9">
+        <path d="M170 330 L90 120 L130 112 Z" />
+        <path d="M430 330 L510 112 L470 120 Z" />
+      </g>
+      {/* hills */}
+      <path d="M0 360 Q120 318 240 350 T480 340 T600 330 V520 H0Z" fill="#8FBF12" stroke="#161512" strokeWidth="4" />
+      <path d="M-10 420 Q150 372 300 404 T610 392 V530 H-10Z" fill="#C6F432" stroke="#161512" strokeWidth="4" />
+      {/* foreground foliage frame */}
+      <path d="M-10 530 L-10 430 Q20 460 30 420 Q48 470 70 440 Q80 490 110 470 L130 530Z" fill="#161512" />
+      <path d="M610 530 L610 420 Q580 452 572 414 Q552 466 532 438 Q520 488 492 468 L470 530Z" fill="#161512" />
+      <g className="hs-fly" fill="#F4FF9E">
+        {[[80, 300], [520, 290], [150, 250], [460, 240], [60, 380], [545, 370], [240, 200], [370, 180]].map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r={i % 3 ? 2.6 : 3.6} style={{ animationDelay: `${i * 0.45}s` }} />
+        ))}
+      </g>
+    </svg>
   );
 }
 
@@ -195,8 +236,8 @@ const FEATURES: { k: string; t: string; d: string; c: string; art: ReactNode }[]
   { k: "live", t: "Live Quiz", d: "Host a game-show on the big screen; everyone joins with a PIN on their phone. Fastest right answer wins.", c: "ink", art: <ArtLive /> },
   { k: "polls", t: "Live Polls", d: "Word clouds, ratings, rankings and Q&A for town halls and trainings — results appear as people vote.", c: "orange", art: <ArtPoll /> },
   { k: "cert", t: "Certification", d: "Timed exams with a pass mark, limited attempts and a printable certificate with expiry.", c: "blue", art: <ArtCert /> },
-  { k: "gap", t: "Analytics & gap trend", d: "See weak topics by branch and department, and whether each gap is closing week by week.", c: "paper", art: <ArtTrend /> },
-  { k: "sec", t: "Bank-grade security", d: "Answers are scored on the server, never sent to phones. Roles, two-step sign-in, maker-checker and full audit logs.", c: "pink", art: <ArtShield /> },
+  { k: "gap", t: "Analytics & gap trend", d: "See weak topics by team, office and department, and whether each gap is closing week by week.", c: "paper", art: <ArtTrend /> },
+  { k: "sec", t: "Enterprise-grade security", d: "Answers are scored on the server, never sent to phones. Roles, two-step sign-in, maker-checker and full audit logs.", c: "pink", art: <ArtShield /> },
   { k: "wl", t: "White-label", d: "Your product name, logo and colours on every screen — players, admins, big screens and certificates.", c: "yellow", art: <ArtBrand /> },
 ];
 
@@ -228,10 +269,10 @@ function Features() {
 /* ---------------- use cases ---------------- */
 function UseCases() {
   const cases: [string, string, number][] = [
-    ["HR & Learning", "Onboarding, product knowledge and culture — in two minutes a day instead of a lost afternoon.", 5],
-    ["Compliance & Risk", "AML, cyber security and policy refreshers with certificates, expiry dates and an audit trail.", 9],
-    ["Sales & Service", "Keep every branch sharp on new products. Team battles turn knowledge into friendly rivalry.", 2],
-    ["Leaders & Comms", "Town hall polls, anonymous Q&A and live games that get the whole room talking.", 11],
+    ["HR & Onboarding", "Onboarding, product knowledge and company culture — in two minutes a day instead of a lost afternoon.", 5],
+    ["Compliance & Safety", "Data privacy, cyber security, health & safety and code-of-conduct refreshers — with certificates, expiry dates and an audit trail.", 9],
+    ["Sales & Customer teams", "Keep every office and region sharp on new products. Team battles turn knowledge into friendly rivalry.", 2],
+    ["Leaders & Internal comms", "All-hands polls, anonymous Q&A and live games that get every room — and every video call — talking.", 11],
   ];
   return (
     <section className="h-sec rv" aria-labelledby="h-uc" id="use-cases">
@@ -259,7 +300,7 @@ function UseCases() {
 
 function HowItWorks() {
   const steps: [string, string, ReactNode][] = [
-    ["Your company gets its own address", "Branded with your name, logo and colours. Add your branches or locations and departments.", <Chibi key="a" look={4} mood="happy" size={72} />],
+    ["Your company gets its own address", "Branded with your name, logo and colours. Add your offices, regions and departments.", <Chibi key="a" look={4} mood="happy" size={72} />],
     ["Staff play two minutes a day", "Employee ID, email code or Microsoft sign-in. No app to install — it runs in the browser.", <Chibi key="b" look={11} mood="cheer" size={72} />],
     ["You close the gaps", "Spot weak topics by team, re-train with a live game, and watch the trend improve.", <Chibi key="c" look={5} mood="idle" size={72} />],
   ];

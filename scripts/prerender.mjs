@@ -51,7 +51,7 @@ const ld = [
       "Live quiz games on a big screen with a game PIN",
       "Live polls: word clouds, ratings, rankings and Q&A",
       "Certification exams with printable certificates",
-      "Knowledge-gap analytics by branch and department",
+      "Knowledge-gap analytics by team, office and department",
       "White-label branding, roles, MFA and audit logs",
     ],
     ...(site ? { url: site + "/", image: site + "/og-image.png" } : {}),
