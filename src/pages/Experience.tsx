@@ -181,14 +181,14 @@ function Accounts() {
         <span className="h-kicker">Demo accounts</span>
         <h2 id="h-demo-t">Two companies, ready to go</h2>
         <p>
-          A bank and a trading company, each with its own brand, players and quizzes. Everything runs in this browser — nothing is sent to a server.
+          Two sample companies, each with its own brand, players and quizzes. Everything runs in this browser — nothing is sent to a server.
         </p>
       </div>
       <div className="h-demo-grid">
         <DemoCard
           name={hb?.name.replace(" (demo)", "") || "Harbor Bank"}
           product={hb?.branding.productName || "Harbor Academy"}
-          kind="Bank template"
+          kind="Financial services template"
           colors={hb ? [hb.branding.primary, hb.branding.accent, hb.branding.ink] : ["#5EEAD4", "#EA580C", "#0B1B2B"]}
           missing={hb === null}
         >
@@ -198,7 +198,7 @@ function Accounts() {
         </DemoCard>
         <DemoCard
           name={nw?.name.replace(" (demo)", "") || "Northwind Traders"}
-          product={nw?.branding.productName || "Brain Sprint"}
+          product={nw?.branding.productName || "Ant Arena"}
           kind="Generic template"
           colors={nw ? [nw.branding.primary, nw.branding.accent, nw.branding.ink] : ["#C6F432", "#FF5A1F", "#161512"]}
           missing={nw === null}

@@ -10,7 +10,7 @@ import { SiteFooter, SiteHeader, useInDemo } from "./site";
 
 const SLUG_OK = /^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])$/;
 
-/** Accepts "acme-bank", "/t/acme-bank" or a full pasted link. */
+/** Accepts "acme-corp", "/t/acme-corp" or a full pasted link. */
 function slugFrom(s: string): string {
   const v = s.trim().toLowerCase();
   const m = v.match(/#\/t\/([a-z0-9-]+)/) || v.match(/(?:^|\/)t\/([a-z0-9-]+)/);
@@ -51,7 +51,7 @@ function Actions() {
   const [coErr, setCoErr] = useState("");
   const slug = slugFrom(co);
   const goCo = (admin: boolean) => {
-    if (!SLUG_OK.test(slug)) return setCoErr("Type your company's web address, like acme-bank.");
+    if (!SLUG_OK.test(slug)) return setCoErr("Type your company's web address, like acme-corp.");
     setCoErr("");
     nav(admin ? { r: "admin", slug } : { r: "tenant", slug });
   };

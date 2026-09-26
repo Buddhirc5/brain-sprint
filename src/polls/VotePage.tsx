@@ -8,7 +8,7 @@ import { applyBranding, setTitle } from "../app/theme";
 import { isDemo } from "../api/demo/guard";
 import { pollValueProblem } from "../api/engine";
 import { Icon } from "../components/ui";
-import { Sprinty } from "../components/Chibi";
+import { Mascot } from "../components/Chibi";
 import { LS, clamp } from "../lib/util";
 import type { Poll, PollValue, Slide, TenantPublic } from "../types";
 import { Ico, Results, TYPE_META, TypeIcon, fmtCode, stageVars, useResults } from "./shared";
@@ -28,7 +28,7 @@ export function VotePage({ code }: { code?: string }) {
   // default look until we know whose poll this is
   useEffect(() => {
     applyBranding(undefined);
-    setTitle("Vote · Brain Sprint");
+    setTitle("Vote · Ant Arena");
   }, []);
 
   // a company link (?t=slug, used by the presenter's QR code) brands the page
@@ -59,7 +59,7 @@ function CodeEntry({ initial, qs, pub, error }: { initial?: string; qs: string; 
       <VoteHead pub={pub} />
       <form className="card pv-code stack" onSubmit={go}>
         <div className="pv-hero">
-          <Sprinty mood="happy" size={96} />
+          <Mascot mood="happy" size={96} />
           <div>
             <h1>Join a poll</h1>
             <p className="fine">Enter the code on the presenter's screen.</p>
@@ -91,11 +91,11 @@ function CodeEntry({ initial, qs, pub, error }: { initial?: string; qs: string; 
 }
 
 function VoteHead({ pub, title }: { pub: TenantPublic | null; title?: string }) {
-  const name = pub?.branding.productName || "Brain Sprint";
+  const name = pub?.branding.productName || "Ant Arena";
   const mark = pub?.branding.logo ? <img src={pub.branding.logo} alt="" className="pv-logo" /> : pub ? <span className="pv-mark" aria-hidden="true">{name.slice(0, 1)}</span> : <LogoMark size={40} />;
   return (
     <header className="pv-head">
-      {pub ? mark : <a href="#/" aria-label="Brain Sprint home">{mark}</a>}
+      {pub ? mark : <a href="#/" aria-label="Ant Arena home">{mark}</a>}
       <div className="pv-hname">
         <b>{name}</b>
         {title && <span>{title}</span>}
@@ -180,7 +180,7 @@ function VoteSession({ code, qs, pub, setPub, fresh }: { code: string; qs: strin
       <div className="phone pv">
         <VoteHead pub={brand} />
         <div className="card pv-center">
-          <Sprinty mood="think" size={96} />
+          <Mascot mood="think" size={96} />
           <b>Joining {fmtCode(code)}…</b>
         </div>
       </div>
@@ -192,7 +192,7 @@ function VoteSession({ code, qs, pub, setPub, fresh }: { code: string; qs: strin
       <VoteHead pub={brand} title={poll.title} />
       {poll.status !== "open" ? (
         <div className="card pv-center stack">
-          <Sprinty mood="cheer" size={110} />
+          <Mascot mood="cheer" size={110} />
           <h2>This poll has ended</h2>
           <p className="fine">Thanks for taking part!</p>
           <a className="btn ghost small" href={`#/vote${qs}`}>
@@ -201,7 +201,7 @@ function VoteSession({ code, qs, pub, setPub, fresh }: { code: string; qs: strin
         </div>
       ) : !slide ? (
         <div className="card pv-center">
-          <Sprinty mood="idle" size={96} />
+          <Mascot mood="idle" size={96} />
           <b>Waiting for the presenter…</b>
         </div>
       ) : (

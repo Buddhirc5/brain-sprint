@@ -6,7 +6,7 @@ import type { Branding, Features, Game, Labels, OrgConfig, Poll, PollResponse, S
 import { answerPoints, shareMs } from "../lib/scoring";
 
 export const DEFAULT_BRANDING: Branding = {
-  productName: "Brain Sprint",
+  productName: "Ant Arena",
   tagline: "Daily quizzes, live games and polls for your team",
   primary: "#C6F432",
   accent: "#FF5A1F",
@@ -147,3 +147,6 @@ export const blankPoll = (id: string, tenantId: string, code: string): Poll => (
   id, tenantId, code, title: "Untitled poll", slides: [{ id: "s1", type: "mc", prompt: "How are you feeling today?", options: ["Great", "Good", "Okay", "Tired"] }],
   current: 0, status: "draft", showResults: true, locked: false, createdAt: Date.now(), updatedAt: Date.now(),
 });
+
+/** Player characters: 16 regular looks + 2 special ones (components/Chibi.tsx, components/Specials.tsx). */
+export const LOOK_COUNT = 18;

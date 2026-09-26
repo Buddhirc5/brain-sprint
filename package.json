@@ -1,5 +1,5 @@
 {
-  "name": "brain-sprint",
+  "name": "ant-arena",
   "private": true,
   "version": "3.0.0",
   "type": "module",
@@ -30,5 +30,5 @@
     "vite": "5.4.11",
     "vite-plugin-singlefile": "2.0.3"
   },
-  "description": "Brain Sprint \u2014 white-label daily quizzes, live quiz games, live polls and certification for companies."
+  "description": "Ant Arena \u2014 white-label daily quizzes, live quiz games, live polls and certification for companies."
 }

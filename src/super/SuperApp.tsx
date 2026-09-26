@@ -15,7 +15,7 @@ import { absUrl, nav } from "../app/router";
 import { applyBranding } from "../app/theme";
 import { AdminSignIn } from "../components/auth";
 import { Icon, Modal } from "../components/ui";
-import { Sprinty } from "../components/Chibi";
+import { Mascot } from "../components/Chibi";
 import { Loading } from "../App";
 import { onIdle, codeProblems } from "../lib/security";
 import { fmtClock } from "../lib/util";
@@ -55,7 +55,7 @@ export function SuperApp({ tab }: { tab?: string }) {
     return (
       <div className="su-gate">
         <GateHead />
-        <AdminSignIn method="password" title="Super admin" redirectTo={absUrl({ r: "super" })} note="Only for the people who run this Brain Sprint service. Company admins sign in on their own company's page." />
+        <AdminSignIn method="password" title="Super admin" redirectTo={absUrl({ r: "super" })} note="Only for the people who run this Ant Arena service. Company admins sign in on their own company's page." />
         {isDemo(api) && (
           <p className="banner blue">
             Demo: sign in as <b>{DEMO_SUPER}</b> with password <b>{DEMO_PASSWORD}</b>, then enter the code <b>Sandeepa</b>.
@@ -81,7 +81,7 @@ export function SuperApp({ tab }: { tab?: string }) {
       <div className="su-gate">
         <GateHead />
         <div className="card stack su-center-text">
-          <Sprinty mood="sad" size={96} className="su-center" />
+          <Mascot mood="sad" size={96} className="su-center" />
           <h2>This account isn't a super admin</h2>
           <p className="fine">
             <b>{user.email}</b> can't open the super admin console. If you run a company's quizzes, use your company's admin page instead.

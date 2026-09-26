@@ -62,10 +62,17 @@ function notify() {
     listeners.forEach((f) => f());
   }, 0);
 }
+/** Parse a saved demo database, upgrading data saved by older versions. */
+function parse(raw: string): DB {
+  const db = JSON.parse(raw) as DB;
+  // the product was renamed from "Brain Sprint" to "Ant Arena"
+  for (const t of Object.values(db.tenants || {})) if (t.branding?.productName === "Brain Sprint") t.branding.productName = "Ant Arena";
+  return db;
+}
 function reload() {
   try {
     const raw = localStorage.getItem(KEY);
-    cache = raw ? (JSON.parse(raw) as DB) : cache;
+    cache = raw ? parse(raw) : cache;
   } catch {
     /* keep cache */
   }
@@ -90,7 +97,7 @@ export function read(): DB {
   if (!cache) {
     const raw = localStorage.getItem(KEY);
     if (!raw) throw new Error("demo db missing");
-    cache = JSON.parse(raw) as DB;
+    cache = parse(raw);
   }
   return cache;
 }
@@ -107,7 +114,7 @@ function persist() {
 export function tx<T>(fn: (db: DB) => T): T {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) cache = JSON.parse(raw) as DB;
+    if (raw) cache = parse(raw);
   } catch {
     /* use cache */
   }

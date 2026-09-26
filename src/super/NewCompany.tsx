@@ -6,7 +6,7 @@ import { absUrl } from "../app/router";
 import { brandProblems } from "../app/theme";
 import { DEFAULT_BRANDING, LABELS } from "../api/engine";
 import { Icon } from "../components/ui";
-import { Chibi, Sprinty } from "../components/Chibi";
+import { Chibi, Mascot } from "../components/Chibi";
 import { confetti } from "../components/ui";
 import { BrandPreview, ColorField, CoLogo, readLogo } from "./Companies";
 import { CopyField, EMAIL_RE, SI, Toggle, slugProblem, slugify, useSuper } from "./shared";
@@ -120,7 +120,7 @@ export function NewCompany() {
             </div>
             <div className="su-done-chars" aria-hidden="true">
               <Chibi look={2} mood="cheer" variant="full" size={96} />
-              <Sprinty mood="cheer" size={96} />
+              <Mascot mood="cheer" size={96} />
               <Chibi look={9} mood="cheer" variant="full" size={96} />
             </div>
           </div>
@@ -233,7 +233,7 @@ export function NewCompany() {
           {step === 3 && (
             <>
               <h2 className="su-wiz-h">Brand it <span className="su-opt">optional</span></h2>
-              <p className="fine">Keep the Brain Sprint look, or give it the company's own name, colours and logo. You can refine this later.</p>
+              <p className="fine">Keep the Ant Arena look, or give it the company's own name, colours and logo. You can refine this later.</p>
               <div className="row2">
                 <div className="field">
                   <label htmlFor="nc-pn">Product name</label>
@@ -268,7 +268,7 @@ export function NewCompany() {
                   />
                 </label>
                 {brand.logo && <button type="button" className="link danger" onClick={() => setBrand({ ...brand, logo: undefined })}>Remove</button>}
-                <button type="button" className="link" onClick={() => setBrand({ ...DEFAULT_BRANDING })}>Reset to Brain Sprint</button>
+                <button type="button" className="link" onClick={() => setBrand({ ...DEFAULT_BRANDING })}>Reset to Ant Arena</button>
               </div>
               {bp && <p className="err">{bp}</p>}
             </>

@@ -1,6 +1,6 @@
 # Supabase CLI config — used by `supabase start` (local stack) and `supabase link` / `supabase db push`.
 # Hosted projects take their auth settings from the dashboard (see README.md); the values here mirror them.
-project_id = "brain-sprint"
+project_id = "ant-arena"
 
 [api]
 enabled = true

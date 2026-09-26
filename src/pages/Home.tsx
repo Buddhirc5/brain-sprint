@@ -1,10 +1,10 @@
 /* =====================================================================
-   The public landing page (#/): what Brain Sprint is and why a company
+   The public landing page (#/): what Ant Arena is and why a company
    should buy it. Trying it lives on #/experience; joining a game, voting
    and company sign-in live on #/signin (both in the top bar).
    ===================================================================== */
 import { useEffect, useState, type ReactNode } from "react";
-import { Chibi, Sprinty } from "../components/Chibi";
+import { Chibi, Mascot } from "../components/Chibi";
 import { Icon } from "../components/ui";
 import { CONTACT_EMAIL, SiteFooter, SiteHeader } from "./site";
 import type { Section } from "../app/router";
@@ -62,7 +62,7 @@ export function Home({ section }: { section?: Section } = {}) {
 
 function SalesCta({ className = "btn white" }: { className?: string }) {
   return CONTACT_EMAIL ? (
-    <a className={className} href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Brain Sprint demo")}`}>Book a demo</a>
+    <a className={className} href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Ant Arena demo")}`}>Book a demo</a>
   ) : (
     <a className={className} href="#/features">See the features</a>
   );
@@ -73,7 +73,7 @@ function Hero() {
   return (
     <section className="h-hero">
       <div className="h-hero-copy">
-        <span className="h-tag">Gamified employee training</span>
+        <span className="h-tag">Gamified training for global teams</span>
         <h1 className="h-mega">
           Learning your team <span className="ink">actually plays.</span>
         </h1>
@@ -88,39 +88,24 @@ function Hero() {
         <ul className="h-trust">
           <li><Icon.check /> No app to install</li>
           <li><Icon.check /> Your logo &amp; colours</li>
-          <li><Icon.check /> Bank-grade security</li>
+          <li><Icon.check /> Enterprise-grade security</li>
         </ul>
         <p className="h-player-links">
           Here to play? <a href="#/join">Join a live game</a> · <a href="#/vote">Vote in a poll</a>
         </p>
       </div>
-      <div className="h-stage" aria-hidden="true">
-        <span className="h-scribble">no boring e-learning!</span>
-        <div className="h-float h-f1">
-          <b>+150</b> pts · speed bonus
-        </div>
-        <div className="h-float h-f2">
-          <Icon.fire /> 12-day streak
-        </div>
-        <div className="h-board">
-          <span className="h-board-h">Branch Battle</span>
-          {[
-            ["City", 92],
-            ["Harbour", 81],
-            ["Airport", 67],
-          ].map(([n, v], i) => (
-            <div key={n} className="h-board-r">
-              <span className="h-board-n">{i + 1}</span>
-              <span className="h-board-l">{n}</span>
-              <span className="h-board-t"><span style={{ width: `${v}%` }} /></span>
-            </div>
-          ))}
-        </div>
-        <div className="h-lineup">
-          <Chibi look={1} variant="full" mood="happy" size={132} />
-          <Sprinty mood="cheer" size={150} />
-          <Chibi look={8} variant="full" mood="idle" size={132} />
-        </div>
+      <div className="h-stage">
+        <img
+          className="h-scene-img"
+          src="/hero-scene-1600.webp"
+          srcSet="/hero-scene-900.webp 900w, /hero-scene-1600.webp 1600w"
+          sizes="(min-width: 900px) 640px, 100vw"
+          width={1705}
+          height={922}
+          alt="A cartoon explorer and a fluffy bunny share a treasure chest of gold coins on a forest path leading to an arena gate"
+          fetchPriority="high"
+          decoding="async"
+        />
       </div>
     </section>
   );
@@ -180,9 +165,9 @@ function BeforeAfter() {
           <ul>{before.map((x) => <li key={x}><Icon.close /> {x}</li>)}</ul>
         </div>
         <div className="h-ba-col h-ba-after">
-          <h3>With Brain Sprint</h3>
+          <h3>With Ant Arena</h3>
           <ul>{after.map((x) => <li key={x}><Icon.check /> {x}</li>)}</ul>
-          <Sprinty mood="cheer" size={96} />
+          <Mascot mood="cheer" size={96} />
         </div>
       </div>
     </section>
@@ -195,8 +180,8 @@ const FEATURES: { k: string; t: string; d: string; c: string; art: ReactNode }[]
   { k: "live", t: "Live Quiz", d: "Host a game-show on the big screen; everyone joins with a PIN on their phone. Fastest right answer wins.", c: "ink", art: <ArtLive /> },
   { k: "polls", t: "Live Polls", d: "Word clouds, ratings, rankings and Q&A for town halls and trainings — results appear as people vote.", c: "orange", art: <ArtPoll /> },
   { k: "cert", t: "Certification", d: "Timed exams with a pass mark, limited attempts and a printable certificate with expiry.", c: "blue", art: <ArtCert /> },
-  { k: "gap", t: "Analytics & gap trend", d: "See weak topics by branch and department, and whether each gap is closing week by week.", c: "paper", art: <ArtTrend /> },
-  { k: "sec", t: "Bank-grade security", d: "Answers are scored on the server, never sent to phones. Roles, two-step sign-in, maker-checker and full audit logs.", c: "pink", art: <ArtShield /> },
+  { k: "gap", t: "Analytics & gap trend", d: "See weak topics by team, office and department, and whether each gap is closing week by week.", c: "paper", art: <ArtTrend /> },
+  { k: "sec", t: "Enterprise-grade security", d: "Answers are scored on the server, never sent to phones. Roles, two-step sign-in, maker-checker and full audit logs.", c: "pink", art: <ArtShield /> },
   { k: "wl", t: "White-label", d: "Your product name, logo and colours on every screen — players, admins, big screens and certificates.", c: "yellow", art: <ArtBrand /> },
 ];
 
@@ -228,10 +213,10 @@ function Features() {
 /* ---------------- use cases ---------------- */
 function UseCases() {
   const cases: [string, string, number][] = [
-    ["HR & Learning", "Onboarding, product knowledge and culture — in two minutes a day instead of a lost afternoon.", 5],
-    ["Compliance & Risk", "AML, cyber security and policy refreshers with certificates, expiry dates and an audit trail.", 9],
-    ["Sales & Service", "Keep every branch sharp on new products. Team battles turn knowledge into friendly rivalry.", 2],
-    ["Leaders & Comms", "Town hall polls, anonymous Q&A and live games that get the whole room talking.", 11],
+    ["HR & Onboarding", "Onboarding, product knowledge and company culture — in two minutes a day instead of a lost afternoon.", 5],
+    ["Compliance & Safety", "Data privacy, cyber security, health & safety and code-of-conduct refreshers — with certificates, expiry dates and an audit trail.", 9],
+    ["Sales & Customer teams", "Keep every office and region sharp on new products. Team battles turn knowledge into friendly rivalry.", 2],
+    ["Leaders & Internal comms", "All-hands polls, anonymous Q&A and live games that get every room — and every video call — talking.", 11],
   ];
   return (
     <section className="h-sec rv" aria-labelledby="h-uc" id="use-cases">
@@ -259,7 +244,7 @@ function UseCases() {
 
 function HowItWorks() {
   const steps: [string, string, ReactNode][] = [
-    ["Your company gets its own address", "Branded with your name, logo and colours. Add your branches or locations and departments.", <Chibi key="a" look={4} mood="happy" size={72} />],
+    ["Your company gets its own address", "Branded with your name, logo and colours. Add your offices, regions and departments.", <Chibi key="a" look={4} mood="happy" size={72} />],
     ["Staff play two minutes a day", "Employee ID, email code or Microsoft sign-in. No app to install — it runs in the browser.", <Chibi key="b" look={11} mood="cheer" size={72} />],
     ["You close the gaps", "Spot weak topics by team, re-train with a live game, and watch the trend improve.", <Chibi key="c" look={5} mood="idle" size={72} />],
   ];

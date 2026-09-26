@@ -4,6 +4,7 @@ import { errMsg, useApi } from "../app/ApiCtx";
 import { deviceLabel, useApp } from "../app/ctx";
 import { absUrl } from "../app/router";
 import { Chibi, LOOKS } from "../components/Chibi";
+import { SPECIALS } from "../components/Specials";
 import { Seg } from "../components/ui";
 import { cleanName, normEmpId, validEmpId, validName } from "../lib/security";
 import type { UnitType } from "../types";
@@ -156,13 +157,21 @@ export function Setup({ editing }: { editing?: boolean }) {
   const [unitType, setUT] = useState<UnitType>(me?.unitType ?? "branch");
   const [unit, setUnit] = useState(me?.unit ?? "");
   const [look, setLook] = useState<number>(me?.look ?? Math.floor(Math.random() * LOOKS.length));
-  const [filter, setFilter] = useState<"all" | "f" | "m">("all");
+  const [filter, setFilter] = useState<"all" | "f" | "m" | "s">("all");
   const [agree, setAgree] = useState(!!me);
   const [err, setErr] = useState("");
   const [conflict, setConflict] = useState(false);
   const [busy, setBusy] = useState(false);
-  const list = unitType === "dept" ? d.cfg.departments : d.cfg.branches;
-  const shown = useMemo(() => LOOKS.map((l, i) => ({ l, i })).filter((x) => filter === "all" || x.l.g === filter), [filter]);
+  const base = unitType === "dept" ? d.cfg.departments : d.cfg.branches;
+  // keep showing the player's current unit even if an admin has since removed it from the list
+  const list = me?.unit && me.unitType === unitType && !base.includes(me.unit) ? [...base, me.unit] : base;
+  const shown = useMemo(
+    () => [
+      ...SPECIALS.map((sp, k) => ({ i: LOOKS.length + k, g: "s", name: sp.name })),
+      ...LOOKS.map((l, i) => ({ i, g: l.g as string, name: `Character ${i + 1}` })),
+    ].filter((x) => filter === "all" || x.g === filter),
+    [filter],
+  );
   const email = user && !user.anonymous ? user.email : undefined;
   const uLabel = unitLabel(labels, unitType);
   const bothUnits = d.cfg.branches.length > 0 && d.cfg.departments.length > 0;
@@ -254,11 +263,12 @@ export function Setup({ editing }: { editing?: boolean }) {
         {features.avatars && (
           <div className="field">
             <span className="flabel">Pick your character</span>
-            <Seg value={filter} label="Filter characters" options={[["all", "All"], ["f", "Women"], ["m", "Men"]]} onChange={setFilter} className="narrow" />
+            <Seg value={filter} label="Filter characters" options={[["all", "All"], ["s", "★ Special"], ["f", "Women"], ["m", "Men"]]} onChange={setFilter} className="narrow" />
             <div className="avatars">
-              {shown.map(({ i }) => (
-                <button type="button" key={i} className={look === i ? "on" : ""} aria-label={`Character ${i + 1}`} aria-pressed={look === i} onClick={() => setLook(i)}>
-                  <Chibi look={i} size={64} still />
+              {shown.map(({ i, g, name }) => (
+                <button type="button" key={i} className={`${look === i ? "on" : ""} ${g === "s" ? "special" : ""}`} aria-label={name} title={name} aria-pressed={look === i} onClick={() => setLook(i)}>
+                  <Chibi look={i} size={64} still={look !== i} />
+                  {g === "s" && <span className="sp-badge" aria-hidden="true">★</span>}
                 </button>
               ))}
             </div>

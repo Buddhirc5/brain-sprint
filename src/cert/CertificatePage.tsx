@@ -4,7 +4,7 @@
    A4-landscape print stylesheet (see styles/cert.css). */
 import { useEffect, useState } from "react";
 import { useApp, TenantProvider } from "../app/ctx";
-import { Sprinty } from "../components/Chibi";
+import { Mascot } from "../components/Chibi";
 import { Icon } from "../components/ui";
 import { sha256 } from "../lib/security";
 import { useTenantPub } from "../pages/useTenantPub";
@@ -30,7 +30,7 @@ function Msg({ title, text, slug, action }: { title: string; text: string; slug:
   return (
     <div className="phone" style={{ paddingTop: 40 }}>
       <div className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-        <Sprinty mood="think" size={110} />
+        <Mascot mood="think" size={110} />
         <h2>{title}</h2>
         <p className="fine">{text}</p>
         <a className="btn primary" href={slug ? `#/t/${slug}` : "#/"}>

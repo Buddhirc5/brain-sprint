@@ -1,5 +1,5 @@
 -- =====================================================================
--- Brain Sprint — 0003 functions (the whole server-side API)
+-- Ant Arena — 0003 functions (the whole server-side API)
 --
 -- Every function is SECURITY DEFINER with an empty search_path (all names
 -- are schema-qualified). Rules mirror src/api/demo/index.ts (DemoApi),
@@ -961,7 +961,7 @@ end $$;
 
 create or replace function private.default_branding() returns jsonb
 language sql immutable set search_path = '' as $$
-  select '{"productName":"Brain Sprint","tagline":"Daily quizzes, live games and polls for your team","primary":"#C6F432","accent":"#FF5A1F","ink":"#161512","paper":"#F4F3EE"}'::jsonb
+  select '{"productName":"Ant Arena","tagline":"Daily quizzes, live games and polls for your team","primary":"#C6F432","accent":"#FF5A1F","ink":"#161512","paper":"#F4F3EE"}'::jsonb
 $$;
 
 create or replace function private.template_labels(p_template text) returns jsonb
@@ -1113,7 +1113,7 @@ begin
   t := private.tenant_row(p_tid);
   update public.tenants set
     branding = private.default_branding() || coalesce(case when jsonb_typeof(p_branding) = 'object' then p_branding end, '{}'::jsonb)
-      || jsonb_build_object('productName', coalesce(nullif(private.clean_text(p_branding ->> 'productName', 40), ''), 'Brain Sprint')),
+      || jsonb_build_object('productName', coalesce(nullif(private.clean_text(p_branding ->> 'productName', 40), ''), 'Ant Arena')),
     labels = private.template_labels(t.template) || coalesce(case when jsonb_typeof(p_labels) = 'object' then p_labels end, '{}'::jsonb)
   where id = p_tid;
   perform private.log_t(p_tid, 'Branding changed');

@@ -1,5 +1,5 @@
 -- =====================================================================
--- Brain Sprint — 0001 schema
+-- Ant Arena — 0001 schema
 -- Multi-tenant quiz SaaS. Every tenant-owned row carries tenant_id.
 -- Times are bigint epoch milliseconds (same as the TypeScript types).
 -- All writes happen through SECURITY DEFINER functions (0003); the

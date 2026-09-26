@@ -17,7 +17,7 @@ import type {
 import { runKey } from "../../types";
 import * as store from "./db";
 import type { DB } from "./db";
-import { GRACE_MS, LABELS, LIVE, aggregate, defaultCfg, isRight, livePoints, normalizeCfg, pollValueProblem, scoreAnswer, DEFAULT_BRANDING } from "../engine";
+import { GRACE_MS, LABELS, LIVE, aggregate, defaultCfg, isRight, livePoints, normalizeCfg, pollValueProblem, scoreAnswer, DEFAULT_BRANDING, LOOK_COUNT } from "../engine";
 import { limitMs, runPoints, statsOf, levelOf } from "../../lib/scoring";
 import { ITEM } from "../../lib/catalog";
 import { isOpen } from "../../lib/games";
@@ -281,7 +281,7 @@ class DemoApi implements Api {
     });
     const code = await totp(secret);
     store.tx((db) => this.mail(db, u.email || "", "Demo only: the current authenticator code", { code }));
-    return { factorId: "totp", secret, qr: qrDataUrl(otpauthUrl(secret, u.email || "admin", "Brain Sprint")) };
+    return { factorId: "totp", secret, qr: qrDataUrl(otpauthUrl(secret, u.email || "admin", "Ant Arena")) };
   }
   async mfaVerify(_factorId: string, code: string) {
     const u = this.need();
@@ -534,7 +534,7 @@ class DemoApi implements Api {
       for (const x of Object.values(s.players)) if (x.authUid === u.id) throw err("conflict", "You already have a player card here.");
       const now = Date.now();
       const p: Player & { authUid?: string } = {
-        uid: "p-" + randHex(8), empId, name, unitType: input.unitType, unit: input.unit, look: Math.max(0, Math.min(15, input.look | 0)),
+        uid: "p-" + randHex(8), empId, name, unitType: input.unitType, unit: input.unit, look: Math.max(0, Math.min(LOOK_COUNT - 1, input.look | 0)),
         email: u.email || (input.email ? input.email.trim().toLowerCase() : undefined), consentAt: now, createdAt: now, updatedAt: now, runs: {},
         logins: [{ at: now, dev: device.slice(0, 60) }], authUid: u.id,
       };
@@ -568,10 +568,11 @@ class DemoApi implements Api {
         if (!validName(n)) throw err("invalid", "Please enter your name (letters only).");
         p.name = n;
       }
-      if (patch.look != null) p.look = Math.max(0, Math.min(15, patch.look | 0));
+      if (patch.look != null) p.look = Math.max(0, Math.min(LOOK_COUNT - 1, patch.look | 0));
       if (patch.unit != null && patch.unitType) {
         const units = patch.unitType === "dept" ? cfg.departments : cfg.branches;
-        if (!units.includes(patch.unit)) throw err("invalid", "Pick from the list.");
+        const same = patch.unit === p.unit && patch.unitType === p.unitType; // keep a unit that was later removed from the list
+        if (!same && !units.includes(patch.unit)) throw err("invalid", "Pick from the list.");
         p.unit = patch.unit;
         p.unitType = patch.unitType;
       }
@@ -780,7 +781,7 @@ class DemoApi implements Api {
     store.tx((db) => {
       this.req(db, tid, "admin");
       const t = db.tenants[tid];
-      t.branding = { ...DEFAULT_BRANDING, ...branding, productName: cleanText(branding.productName, 40) || "Brain Sprint" };
+      t.branding = { ...DEFAULT_BRANDING, ...branding, productName: cleanText(branding.productName, 40) || "Ant Arena" };
       t.labels = { ...LABELS[t.template], ...labels };
       this.logT(db, tid, { action: "Branding changed" });
     });
@@ -1458,7 +1459,7 @@ class DemoApi implements Api {
           db.t[id].keys[gid] = { gid, answers: { ...it.answers }, updatedAt: now };
         }
       }
-      this.mail(db, email, `You're the owner of ${name} on Brain Sprint. Open #/t/${slug}/admin and sign in with this email.`);
+      this.mail(db, email, `You're the owner of ${name} on Ant Arena. Open #/t/${slug}/admin and sign in with this email.`);
       this.logS(db, { action: "Company created", target: name, detail: `${slug} · owner ${email}` });
       this.logT(db, id, { action: "Company created", detail: `owner ${email}` });
       return structuredClone(t);
