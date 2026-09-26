@@ -72,6 +72,88 @@ const star = (x: number, y: number, r: number) => {
   return d + "Z";
 };
 
+/** Store items (hats, glasses, earrings) drawn around a chibi head centred at (60, 57). Also used by the special characters. */
+export function accessories(equipped: Equipped, uid: string): JSX.Element[] {
+  const acc: JSX.Element[] = [];
+  const face = equipped.face,
+    head = equipped.head,
+    ears = equipped.ears;
+  if (ears === "hearts") acc.push(<g key="e" fill={K.lime} stroke={shade(K.lime, -0.35)} strokeWidth=".8"><path d={heart(27, 76, 4.2)} /><path d={heart(93, 76, 4.2)} /><path d="M27 68 L27 72 M93 68 L93 72" stroke={K.ink} strokeWidth="1.2" /></g>);
+  if (ears === "hoops") acc.push(<g key="e" fill="none" stroke="#E0B12B" strokeWidth="2.2"><circle cx="27" cy="74" r="5" /><circle cx="93" cy="74" r="5" /></g>);
+  if (ears === "studs") acc.push(<g key="e" fill={K.yellow} stroke="#C99A12" strokeWidth=".6"><path d={star(27, 70, 3.6)} /><path d={star(93, 70, 3.6)} /></g>);
+  if (face === "specs")
+    acc.push(
+      <g key="f" fill="#FFFFFF" fillOpacity=".18" stroke={K.ink} strokeWidth="2.2">
+        <circle cx="47" cy="63" r="9.5" />
+        <circle cx="73" cy="63" r="9.5" />
+        <path d="M56.5 62 Q60 59.5 63.5 62" fill="none" />
+      </g>,
+    );
+  if (face === "shades")
+    acc.push(
+      <g key="f">
+        <defs>
+          <linearGradient id={`${uid}sh`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#FF9A3D" />
+            <stop offset="1" stopColor="#FF4D1F" />
+          </linearGradient>
+        </defs>
+        <rect x="36" y="55" width="21" height="15" rx="6" fill={`url(#${uid}sh)`} stroke={K.ink} strokeWidth="2" />
+        <rect x="63" y="55" width="21" height="15" rx="6" fill={`url(#${uid}sh)`} stroke={K.ink} strokeWidth="2" />
+        <path d="M57 60 L63 60" stroke={K.ink} strokeWidth="2" />
+        <path d="M39 58 L45 58" stroke={K.white} strokeWidth="1.6" strokeLinecap="round" opacity=".8" />
+      </g>,
+    );
+  if (head === "phones")
+    acc.push(
+      <g key="h">
+        <path d="M24 60 C20 16 100 16 96 60" stroke={K.lime} strokeWidth="6" fill="none" strokeLinecap="round" />
+        <rect x="15" y="50" width="14" height="22" rx="7" fill={K.lime} stroke={shade(K.lime, -0.4)} strokeWidth="1.2" />
+        <rect x="91" y="50" width="14" height="22" rx="7" fill={K.lime} stroke={shade(K.lime, -0.4)} strokeWidth="1.2" />
+        <rect x="19" y="55" width="6" height="12" rx="3" fill={shade(K.lime, -0.35)} />
+        <rect x="95" y="55" width="6" height="12" rx="3" fill={shade(K.lime, -0.35)} />
+      </g>,
+    );
+  if (head === "cap")
+    acc.push(
+      <g key="h">
+        <path d="M27 44 C27 16 93 16 93 44 Z" fill={K.orange} />
+        <path d="M60 41 C80 38 102 42 108 47 C98 50 80 47 60 45 Z" fill={shade(K.orange, -0.25)} />
+        <circle cx="60" cy="31" r="5" fill={K.lime} />
+        <path d="M44 22 Q52 18 60 18" stroke={K.white} strokeWidth="2" opacity=".5" fill="none" strokeLinecap="round" />
+      </g>,
+    );
+  if (head === "beanie")
+    acc.push(
+      <g key="h">
+        <path d="M26 46 C26 14 94 14 94 46 Z" fill={K.blue} />
+        <rect x="24" y="38" width="72" height="11" rx="5.5" fill={shade(K.blue, -0.25)} />
+        {[32, 40, 48, 56, 64, 72, 80, 88].map((x) => (
+          <path key={x} d={`M${x} 40 L${x} 47`} stroke={shade(K.blue, 0.25)} strokeWidth="1.4" />
+        ))}
+        <circle cx="60" cy="13" r="7.5" fill={K.pink} />
+      </g>,
+    );
+  if (head === "bow")
+    acc.push(
+      <g key="h" transform="rotate(14 86 26)">
+        <path d="M86 26 L72 16 C68 22 68 32 72 36 Z" fill={K.pink} stroke={shade(K.pink, -0.3)} strokeWidth="1" />
+        <path d="M86 26 L100 16 C104 22 104 32 100 36 Z" fill={K.pink} stroke={shade(K.pink, -0.3)} strokeWidth="1" />
+        <circle cx="86" cy="26" r="4.5" fill={shade(K.pink, -0.15)} />
+      </g>,
+    );
+  if (head === "crown")
+    acc.push(
+      <g key="h">
+        <path d="M36 32 L39 12 L50 24 L60 7 L70 24 L81 12 L84 32 Z" fill={K.yellow} stroke="#C99A12" strokeWidth="1.4" strokeLinejoin="round" />
+        <circle cx="60" cy="25" r="3" fill={K.pink} />
+        <circle cx="46" cy="28" r="2.2" fill={K.lime} />
+        <circle cx="74" cy="28" r="2.2" fill={K.blue} />
+      </g>,
+    );
+  return acc;
+}
+
 export interface ChibiProps {
   look: number;
   equipped?: Equipped;
@@ -87,7 +169,7 @@ export interface ChibiProps {
 export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", size, still, className = "", style, title }: ChibiProps) {
   const uid = useId().replace(/:/g, "");
   const sp = specialOf(look);
-  if (sp) return <SpecialChar kind={sp} uid={uid} mood={mood} variant={variant} still={still} size={size} className={className} style={style} title={title} />;
+  if (sp) return <SpecialChar kind={sp} uid={uid} mood={mood} variant={variant} still={still} size={size} className={className} style={style} title={title} equipped={equipped} />;
   const L = lookOf(look);
   const H = L.hair;
   const hairFill = L.tips ? `url(#${uid}h)` : H;
@@ -186,84 +268,7 @@ export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", si
       </g>
     );
 
-  /* ---- accessories ---- */
-  const acc: JSX.Element[] = [];
-  const face = equipped.face,
-    head = equipped.head,
-    ears = equipped.ears;
-  if (ears === "hearts") acc.push(<g key="e" fill={K.lime} stroke={shade(K.lime, -0.35)} strokeWidth=".8"><path d={heart(27, 76, 4.2)} /><path d={heart(93, 76, 4.2)} /><path d="M27 68 L27 72 M93 68 L93 72" stroke={K.ink} strokeWidth="1.2" /></g>);
-  if (ears === "hoops") acc.push(<g key="e" fill="none" stroke="#E0B12B" strokeWidth="2.2"><circle cx="27" cy="74" r="5" /><circle cx="93" cy="74" r="5" /></g>);
-  if (ears === "studs") acc.push(<g key="e" fill={K.yellow} stroke="#C99A12" strokeWidth=".6"><path d={star(27, 70, 3.6)} /><path d={star(93, 70, 3.6)} /></g>);
-  if (face === "specs")
-    acc.push(
-      <g key="f" fill="#FFFFFF" fillOpacity=".18" stroke={K.ink} strokeWidth="2.2">
-        <circle cx="47" cy="63" r="9.5" />
-        <circle cx="73" cy="63" r="9.5" />
-        <path d="M56.5 62 Q60 59.5 63.5 62" fill="none" />
-      </g>,
-    );
-  if (face === "shades")
-    acc.push(
-      <g key="f">
-        <defs>
-          <linearGradient id={`${uid}sh`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#FF9A3D" />
-            <stop offset="1" stopColor="#FF4D1F" />
-          </linearGradient>
-        </defs>
-        <rect x="36" y="55" width="21" height="15" rx="6" fill={`url(#${uid}sh)`} stroke={K.ink} strokeWidth="2" />
-        <rect x="63" y="55" width="21" height="15" rx="6" fill={`url(#${uid}sh)`} stroke={K.ink} strokeWidth="2" />
-        <path d="M57 60 L63 60" stroke={K.ink} strokeWidth="2" />
-        <path d="M39 58 L45 58" stroke={K.white} strokeWidth="1.6" strokeLinecap="round" opacity=".8" />
-      </g>,
-    );
-  if (head === "phones")
-    acc.push(
-      <g key="h">
-        <path d="M24 60 C20 16 100 16 96 60" stroke={K.lime} strokeWidth="6" fill="none" strokeLinecap="round" />
-        <rect x="15" y="50" width="14" height="22" rx="7" fill={K.lime} stroke={shade(K.lime, -0.4)} strokeWidth="1.2" />
-        <rect x="91" y="50" width="14" height="22" rx="7" fill={K.lime} stroke={shade(K.lime, -0.4)} strokeWidth="1.2" />
-        <rect x="19" y="55" width="6" height="12" rx="3" fill={shade(K.lime, -0.35)} />
-        <rect x="95" y="55" width="6" height="12" rx="3" fill={shade(K.lime, -0.35)} />
-      </g>,
-    );
-  if (head === "cap")
-    acc.push(
-      <g key="h">
-        <path d="M27 44 C27 16 93 16 93 44 Z" fill={K.orange} />
-        <path d="M60 41 C80 38 102 42 108 47 C98 50 80 47 60 45 Z" fill={shade(K.orange, -0.25)} />
-        <circle cx="60" cy="31" r="5" fill={K.lime} />
-        <path d="M44 22 Q52 18 60 18" stroke={K.white} strokeWidth="2" opacity=".5" fill="none" strokeLinecap="round" />
-      </g>,
-    );
-  if (head === "beanie")
-    acc.push(
-      <g key="h">
-        <path d="M26 46 C26 14 94 14 94 46 Z" fill={K.blue} />
-        <rect x="24" y="38" width="72" height="11" rx="5.5" fill={shade(K.blue, -0.25)} />
-        {[32, 40, 48, 56, 64, 72, 80, 88].map((x) => (
-          <path key={x} d={`M${x} 40 L${x} 47`} stroke={shade(K.blue, 0.25)} strokeWidth="1.4" />
-        ))}
-        <circle cx="60" cy="13" r="7.5" fill={K.pink} />
-      </g>,
-    );
-  if (head === "bow")
-    acc.push(
-      <g key="h" transform="rotate(14 86 26)">
-        <path d="M86 26 L72 16 C68 22 68 32 72 36 Z" fill={K.pink} stroke={shade(K.pink, -0.3)} strokeWidth="1" />
-        <path d="M86 26 L100 16 C104 22 104 32 100 36 Z" fill={K.pink} stroke={shade(K.pink, -0.3)} strokeWidth="1" />
-        <circle cx="86" cy="26" r="4.5" fill={shade(K.pink, -0.15)} />
-      </g>,
-    );
-  if (head === "crown")
-    acc.push(
-      <g key="h">
-        <path d="M36 32 L39 12 L50 24 L60 7 L70 24 L81 12 L84 32 Z" fill={K.yellow} stroke="#C99A12" strokeWidth="1.4" strokeLinejoin="round" />
-        <circle cx="60" cy="25" r="3" fill={K.pink} />
-        <circle cx="46" cy="28" r="2.2" fill={K.lime} />
-        <circle cx="74" cy="28" r="2.2" fill={K.blue} />
-      </g>,
-    );
+  const acc = accessories(equipped, uid);
 
   /* ---- body (full variant only needs legs/arms; bust shows shoulders) ---- */
   const armL =
