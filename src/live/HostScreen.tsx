@@ -17,6 +17,7 @@ import { Loading } from "../App";
 import type { LiveBoardRow, LiveHostView, Role, TenantPublic } from "../types";
 import { Shape, TILES, choiceIndex, fmtPts, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
 import { sound } from "./sound";
+import { StageModeToggle, useStageMode } from "../app/stageTheme";
 import "../styles/live.css";
 
 const RANK: Record<Role, number> = { viewer: 0, host: 1, editor: 2, admin: 3, owner: 4 };
@@ -184,6 +185,7 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
     if (document.fullscreenElement) void document.exitFullscreen?.();
     else void document.documentElement.requestFullscreen?.().catch(() => undefined);
   }, []);
+  const [mode, toggleMode] = useStageMode();
   const toggleSound = useCallback(() => {
     sound.set(!sound.on);
     setSoundOn(sound.on);
@@ -197,10 +199,11 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
         if (primary && !primary.disabled && !busy) primary.go();
       } else if (e.key === "f" || e.key === "F") toggleFull();
       else if (e.key === "m" || e.key === "M") toggleSound();
+      else if (e.key === "t" || e.key === "T") toggleMode();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [primary, busy, toggleFull, toggleSound]);
+  }, [primary, busy, toggleFull, toggleSound, toggleMode]);
 
   if (!v || !s)
     return missing ? (
@@ -214,6 +217,7 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
       <button type="button" className="lv-ib" aria-pressed={soundOn} aria-label={soundOn ? "Sound off (M)" : "Sound on (M)"} title={soundOn ? "Sound off (M)" : "Sound on (M)"} onClick={toggleSound}>
         <SoundIcon on={soundOn} />
       </button>
+      <StageModeToggle mode={mode} onToggle={toggleMode} className="lv-ib" />
       <button type="button" className="lv-ib" aria-label={full ? "Exit full screen (F)" : "Full screen (F)"} title={full ? "Exit full screen (F)" : "Full screen (F)"} onClick={toggleFull}>
         <Icon.full />
       </button>
@@ -232,7 +236,7 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
   );
 
   return (
-    <div className={`lv-host st-${state}`}>
+    <div className={`lv-host st-${state} ${mode}`}>
       <Backdrop />
       <header className="lv-top">
         {brand}

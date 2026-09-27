@@ -11,6 +11,7 @@ import { Icon } from "../components/ui";
 import { Mascot } from "../components/Chibi";
 import { LS, clamp } from "../lib/util";
 import type { Poll, PollValue, Slide, TenantPublic } from "../types";
+import { StageModeToggle, useStageMode } from "../app/stageTheme";
 import { ContentSlide, Ico, Results, SlideImage, TYPE_META, TypeIcon, fmtCode, stageVars, useResults } from "./shared";
 
 /** "?fresh=1&t=harbor" after the hash path. */
@@ -91,6 +92,7 @@ function CodeEntry({ initial, qs, pub, error }: { initial?: string; qs: string; 
 }
 
 function VoteHead({ pub, title }: { pub: TenantPublic | null; title?: string }) {
+  const [mode, toggleMode] = useStageMode();
   const name = pub?.branding.productName || "Ant Arena";
   const mark = pub?.branding.logo ? <img src={pub.branding.logo} alt="" className="pv-logo" /> : pub ? <span className="pv-mark" aria-hidden="true">{name.slice(0, 1)}</span> : <LogoMark size={40} />;
   return (
@@ -100,6 +102,7 @@ function VoteHead({ pub, title }: { pub: TenantPublic | null; title?: string }) 
         <b>{name}</b>
         {title && <span>{title}</span>}
       </div>
+      {title && <StageModeToggle mode={mode} onToggle={toggleMode} className="pv-mode" />}
     </header>
   );
 }
@@ -215,6 +218,7 @@ function VoteSession({ code, qs, pub, setPub, fresh }: { code: string; qs: strin
 /* ---------------- one slide ---------------- */
 function VoteSlide({ poll, slide, uid, brand }: { poll: Poll; slide: Slide; uid: string; brand: TenantPublic | null }) {
   const { api } = useApi();
+  const [mode] = useStageMode();
   const [mine, setMine] = useState<PollValue | undefined>();
   const [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -325,7 +329,7 @@ function VoteSlide({ poll, slide, uid, brand }: { poll: Poll; slide: Slide; uid:
         )}
       </div>
       {showRes && (
-        <section className="pv-res pl-dark" style={stageVars(brand?.branding)} aria-label="Live results">
+        <section className="pv-res pl-st" style={stageVars(brand?.branding, mode)} aria-label="Live results">
           <div className="pv-res-h">
             <span>Live results</span>
             <span className="num">{r?.n ?? 0} {r?.n === 1 ? "response" : "responses"}</span>
@@ -346,6 +350,7 @@ function QaVote({
   submit: (v: PollValue) => Promise<boolean>; busy: boolean; err: string; brand: TenantPublic | null;
 }) {
   const { api, toast } = useApi();
+  const [mode] = useStageMode();
   const [text, setText] = useState("");
   const key = `bs.qa.${poll.id}.${uid}`;
   const [voted, setVoted] = useState<Set<string>>(() => {
@@ -406,7 +411,7 @@ function QaVote({
           </>
         )}
       </form>
-      <section className="pv-res pl-dark" style={stageVars(brand?.branding)} aria-label="Questions">
+      <section className="pv-res pl-st" style={stageVars(brand?.branding, mode)} aria-label="Questions">
         <div className="pv-res-h">
           <span>Questions</span>
           <span className="num">{r?.texts?.length ?? 0}</span>

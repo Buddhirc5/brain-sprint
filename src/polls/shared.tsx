@@ -6,6 +6,7 @@ import type { Api } from "../api/Api";
 import type { Branding, PollResponse, Slide, SlideResults, SlideType } from "../types";
 import { DEFAULT_BRANDING, GRID_MAX, aggregate, guessRange } from "../api/engine";
 import { brandProblems, contrast } from "../app/theme";
+import type { StageMode } from "../app/stageTheme";
 import { mix } from "../lib/util";
 import "../styles/polls.css";
 
@@ -70,7 +71,7 @@ export const Ico = {
 export const fmtCode = (c: string) => (c && c.length === 6 ? `${c.slice(0, 3)} ${c.slice(3)}` : c);
 export const pctOf = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 
-/* ---------------- brand-safe colours for the dark "stage" ---------------- */
+/* ---------------- brand-safe colours for the "stage" (light by default, or dark) ---------------- */
 /** A brand colour lightened until text in `ink` on it (and it on `ink`) is readable. */
 function lift(c: string, ink: string, min: number) {
   let t = 0;
@@ -81,26 +82,57 @@ function lift(c: string, ink: string, min: number) {
   }
   return x;
 }
-/** CSS variables for results drawn on an ink background. Only colours that pass
- *  contrast checks against ink are used, whatever palette a company picked. */
-export function stageVars(b0?: Partial<Branding>): CSSProperties {
+/** A colour darkened (towards `ink`) until it reads as text on `bg`. */
+function sink(c: string, bg: string, ink: string, min: number) {
+  let t = 0;
+  let x = c;
+  while (contrast(x, bg) < min && t < 1) {
+    t += 0.06;
+    x = mix(c, ink, Math.min(1, t));
+  }
+  return x;
+}
+/** CSS variables for results on the stage. Only colours that pass contrast checks are
+ *  used, whatever palette a company picked. Light: paper background, bars outlined in ink
+ *  (the brand's bright colours stay bright); dark: the brand ink as background. */
+export function stageVars(b0?: Partial<Branding>, mode: StageMode = "light"): CSSProperties {
   const x = { ...DEFAULT_BRANDING, ...(b0 || {}) };
   const b = brandProblems(x) ? DEFAULT_BRANDING : x;
   const acc = lift(b.accent, b.ink, 5);
+  const fills = [b.primary, acc, mix(b.primary, "#FFFFFF", 0.55), mix(acc, "#FFFFFF", 0.55), "#F4F3EE"];
+  if (mode === "dark")
+    return {
+      "--st-bg": b.ink,
+      "--st-fg": "#FFFFFF",
+      ...Object.fromEntries(fills.map((c, i) => [`--st-${i + 1}`, c])),
+      ...Object.fromEntries(fills.map((c, i) => [`--st-t${i + 1}`, c])),
+      "--st-ink": b.ink,
+      "--st-dim": mix(b.ink, "#FFFFFF", 0.62),
+      "--st-line": mix(b.ink, "#FFFFFF", 0.16),
+      "--st-panel": mix(b.ink, "#FFFFFF", 0.07),
+      "--st-soft": "rgba(255,255,255,.08)",
+      "--st-soft2": "rgba(255,255,255,.16)",
+      "--st-edge": "transparent",
+    } as CSSProperties;
+  const bg = mix(b.paper, "#FFFFFF", 0.55);
+  const text = [b.primary, b.accent, mix(b.primary, b.ink, 0.35), mix(b.accent, b.ink, 0.3), mix(b.ink, bg, 0.3)].map((c) => sink(c, bg, b.ink, 4.5));
   return {
-    "--st-bg": b.ink,
-    "--st-1": b.primary,
-    "--st-2": acc,
-    "--st-3": mix(b.primary, "#FFFFFF", 0.55),
-    "--st-4": mix(acc, "#FFFFFF", 0.55),
-    "--st-5": "#F4F3EE",
+    "--st-bg": bg,
+    "--st-fg": b.ink,
+    ...Object.fromEntries(fills.map((c, i) => [`--st-${i + 1}`, c])),
+    ...Object.fromEntries(text.map((c, i) => [`--st-t${i + 1}`, c])),
     "--st-ink": b.ink,
-    "--st-dim": mix(b.ink, "#FFFFFF", 0.62),
-    "--st-line": mix(b.ink, "#FFFFFF", 0.16),
-    "--st-panel": mix(b.ink, "#FFFFFF", 0.07),
+    "--st-dim": mix(b.ink, bg, 0.4),
+    "--st-line": mix(b.ink, bg, 0.84),
+    "--st-panel": "#FFFFFF",
+    "--st-soft": "rgba(22,21,18,.06)",
+    "--st-soft2": "rgba(22,21,18,.11)",
+    "--st-edge": b.ink,
   } as CSSProperties;
 }
 export const SERIES = ["var(--st-1)", "var(--st-2)", "var(--st-3)", "var(--st-4)", "var(--st-5)"];
+/** The same series, readable as text on the stage background (word cloud). */
+export const SERIES_TEXT = ["var(--st-t1)", "var(--st-t2)", "var(--st-t3)", "var(--st-t4)", "var(--st-t5)"];
 
 /* ---------------- hooks ---------------- */
 export function useSize<T extends HTMLElement>() {
@@ -221,7 +253,7 @@ export function WordCloud({ words, className = "" }: { words: { w: string; n: nu
           key={p.w}
           className="pl-word"
           title={`${p.w} · ${p.n}`}
-          style={{ left: p.x, top: p.y, fontSize: p.size, color: SERIES[p.color] }}
+          style={{ left: p.x, top: p.y, fontSize: p.size, color: SERIES_TEXT[p.color] }}
         >
           {p.w}
         </span>
@@ -355,7 +387,7 @@ export function OpenWall({ r, compact, max = 40 }: { r: SlideResults | null; com
   return (
     <div className={`pl-wall ${compact ? "compact" : ""}`}>
       {list.map((t, i) => (
-        <div key={t.id} className="pl-note" style={{ background: SERIES[hashIdx(t.id) % 5], rotate: compact ? undefined : `${NOTE_TILT[hashIdx(t.id) % NOTE_TILT.length]}deg`, animationDelay: `${Math.min(i, 8) * 30}ms` }}>
+        <div key={t.id} className="pl-note" style={{ ["--c" as string]: SERIES[hashIdx(t.id) % 5], rotate: compact ? undefined : `${NOTE_TILT[hashIdx(t.id) % NOTE_TILT.length]}deg`, animationDelay: `${Math.min(i, 8) * 30}ms` }}>
           {"text" in t.value ? t.value.text : ""}
         </div>
       ))}

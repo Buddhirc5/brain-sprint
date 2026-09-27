@@ -13,6 +13,7 @@ import { Loading } from "../App";
 import type { LivePlayer, LiveSession, Player, TenantPublic } from "../types";
 import { Shape, TILES, fmtPts, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
 import "../styles/live.css";
+import { StageModeToggle, useStageMode } from "../app/stageTheme";
 
 type Found = { sessionId: string; tenantId: string; slug: string; title: string; guests: boolean; pin: string };
 const MINE = "bs.live.me"; // this tab's live player per session (survives reloads)
@@ -305,6 +306,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
   const [late, setLate] = useState(-1); // qIndex we were too late for
   const [sending, setSending] = useState(false);
   const everMe = useRef(false);
+  const [mode, toggleMode] = useStageMode();
 
   useEffect(() => {
     document.body.classList.add("lv-body");
@@ -397,7 +399,10 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
         {pub.branding.logo && <img src={pub.branding.logo} alt="" />}
         {s.state === "lobby" || s.state === "ended" ? pub.branding.productName : `${s.qIndex + 1} of ${s.total}`}
       </span>
-      <span className="lv-pscore num">{me ? fmtPts(me.score) : ""}</span>
+      <span className="lv-pright">
+        <StageModeToggle mode={mode} onToggle={toggleMode} className="lv-pmode" />
+        <span className="lv-pscore num">{me ? fmtPts(me.score) : ""}</span>
+      </span>
     </header>
   );
   const foot = me && (
@@ -540,7 +545,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
   }
 
   return (
-    <div className={`lv-player tone-${tone} st-${s.state}`}>
+    <div className={`lv-player tone-${tone} st-${s.state} ${mode}`}>
       {top}
       <main className="lv-pmain" key={`${s.state}-${s.qIndex}`}>
         {body}
