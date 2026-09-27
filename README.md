@@ -1,5 +1,7 @@
 # Ant Arena
 
+> **Product overview for proposals, pitches and posters:** see [PRODUCT.md](PRODUCT.md).
+
 White-label learning games for companies: **Daily Sprint** quizzes (coins, streaks, levels, leaderboards, cartoon characters), **Live Quiz** (game-show style, game PIN + big screen), **Live Polls** (word cloud, multiple choice, scale, ranking, open text, Q&A) and **Certification** exams with printable certificates.
 
 You run one installation. You (the **super admin**) create a company for each client. Each company gets its own web address, brand (name, logo, colours, wording), admins, players and questions, and can't see any other company's data.
