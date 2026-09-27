@@ -1,14 +1,87 @@
+<div align="center">
+
+<img src="public/icon-192.png" alt="Ant Arena logo" width="96" />
+
 # Ant Arena
 
-> **Product overview for proposals, pitches and posters:** see [PRODUCT.md](PRODUCT.md).
+### Learning your team actually plays.
 
-White-label learning games for companies: **Daily Sprint** quizzes (coins, streaks, levels, leaderboards, cartoon characters), **Live Quiz** (game-show style, game PIN + big screen), **Live Polls** (word cloud, multiple choice, scale, ranking, open text, Q&A) and **Certification** exams with printable certificates.
+**Daily quiz sprints · Big-screen live games · Instant polls · Certification** — all under your own brand.
 
-You run one installation. You (the **super admin**) create a company for each client. Each company gets its own web address, brand (name, logo, colours, wording), admins, players and questions, and can't see any other company's data.
+[![License: MIT](https://img.shields.io/badge/License-MIT-C6F432?style=for-the-badge&labelColor=161512)](LICENSE)
+![React](https://img.shields.io/badge/React_18-161512?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-161512?style=for-the-badge&logo=typescript&logoColor=3178C6)
+![Supabase](https://img.shields.io/badge/Supabase-161512?style=for-the-badge&logo=supabase&logoColor=3ECF8E)
+![Vercel](https://img.shields.io/badge/Vercel-161512?style=for-the-badge&logo=vercel&logoColor=white)
 
-**Stack:** React 18 + TypeScript + Vite · Supabase (Postgres + Row Level Security, Auth, Realtime) · Vercel.
+[**Live site**](https://antarena.vercel.app) · [**Try the free demo**](https://antarena.vercel.app/#/experience) · [**Product guide**](PRODUCT.md) · [**Security**](SECURITY.md)
+
+<br />
+
+<img src="docs/screenshots/landing.webp" alt="Ant Arena landing page with the forest arena scene and cartoon players" width="100%" />
+
+</div>
 
 ---
+
+## ✨ What is Ant Arena?
+
+Ant Arena is a **white-label, multi-company platform** that turns employee training into two minutes of fun a day. Staff play short daily quizzes on their phones, compete in game-show live quizzes at town halls, vote in live polls, and earn branded certificates, while managers see exactly where the knowledge gaps are.
+
+You run one installation. As the **super admin**, you create a private space for each client company, with its own web address, name, logo, colours, admins, players and questions. No company can see another's data.
+
+> 📘 Writing a proposal, pitch deck or poster? Everything is in the **[Product guide (PRODUCT.md)](PRODUCT.md)**.
+
+## 🎮 Four products in one
+
+| | |
+|---|---|
+| 🏃 **Daily Sprint** | 2-minute quizzes with coins, streaks, levels, leaderboards, team battles and 18 cartoon characters with a store of hats, glasses and backgrounds |
+| 🏆 **Live Quiz** | Kahoot-style game show: game PIN + QR, answer tiles, race-track scoreboard and a confetti podium finale |
+| 📊 **Live Polls** | Mentimeter-style: word cloud, multiple choice, scale, ranking, open text, Q&A, guess the number, 100 points, 2×2 grid, pin on image, plus text and image slides |
+| 🎓 **Certification** | Timed exams with pass marks, attempts and expiry, and printable certificates with an editable signature and seal |
+
+## 📸 A look inside
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/live-lobby.webp" alt="Live quiz lobby with a giant game PIN and QR code" /><br /><sub><b>Live quiz lobby:</b> giant PIN, QR code, players popping in</sub></td>
+    <td width="50%"><img src="docs/screenshots/live-reveal.webp" alt="Live quiz answer reveal" /><br /><sub><b>Answer reveal:</b> correct stamp, answer counts, explanation</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/live-podium.webp" alt="Live quiz podium finale" /><br /><sub><b>Podium finale:</b> spotlights, crown and confetti</sub></td>
+    <td><img src="docs/screenshots/poll-wordcloud.webp" alt="Live poll word cloud" /><br /><sub><b>Live polls:</b> a word cloud that grows as people type</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/poll-guess.webp" alt="Guess the number poll results" /><br /><sub><b>Guess the number:</b> the answer is revealed when voting locks</sub></td>
+    <td><img src="docs/screenshots/poll-pins.webp" alt="Pin on image poll results" /><br /><sub><b>Pin on image:</b> every tap lands live on the picture</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/certificate.webp" alt="Printable certificate" /><br /><sub><b>Certificates:</b> branded, with signature, seal and unique ID</sub></td>
+    <td><img src="docs/screenshots/poll-editor.webp" alt="Poll editor with preview" /><br /><sub><b>Poll editor:</b> 12 slide types with a live big-screen preview</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/screenshots/phone-answer.webp" alt="Player phone answering a live quiz" width="240" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/phone-points.webp" alt="Phone sharing 100 points in a poll" width="240" />
+</p>
+<p align="center"><sub>No app to install: players answer on any phone browser.</sub></p>
+
+## 🔒 Built for enterprise trust
+
+Row-level tenant isolation · server-side scoring · 5 admin roles with maker-checker approvals · authenticator-app MFA · private invite links · rate limits · full audit trail · strict security headers. See **[SECURITY.md](SECURITY.md)**.
+
+## 🎨 Truly white-label
+
+Each client gets its own product name, logo, colours (with automatic readability checks) and wording, across the player app, admin portal, big screens, certificates and PDF reports. Live screens come in **light mode by default**, with dark mode one tap away.
+
+---
+
+# 🛠️ Developer guide
+
+**Stack:** React 18 + TypeScript + Vite · Supabase (Postgres + Row Level Security, Auth, Realtime) · Vercel.
 
 ## 1. Try it in 30 seconds (no setup)
 
@@ -113,6 +186,10 @@ See `SECURITY.md`. In short:
 - **Records and devices:** audit logs per company and for the super admin, idle sign-out, and one device at a time for Employee-ID players.
 - **Headers:** strict security headers on Vercel.
 
-## 8. Ownership
+## 8. License & ownership
 
-Ant Arena is your product. Before selling it, check that your employment contract or any client agreement doesn't claim the IP. The demo companies (Harbor Bank, Northwind Traders) are fictional.
+**© 2026 Buddhirc5.** Ant Arena, its source code, design and brand are owned by Buddhirc5 and released under the **[MIT License](LICENSE)**.
+
+The demo companies (Harbor Bank, Northwind Traders) are fictional. The landing-page hero illustration should be replaced with original artwork before commercial use.
+
+<div align="center"><br /><img src="public/icon-192.png" alt="" width="48" /><br /><sub>Made with 🐜 by <b>Buddhirc5</b></sub></div>
