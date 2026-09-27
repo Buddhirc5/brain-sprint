@@ -359,3 +359,58 @@ kbd { font: 700 11px/1 var(--body); border: 1.5px solid currentColor; border-rad
 .lv-qimg { max-width: min(46vw, 720px); max-height: 42vh; object-fit: contain; border-radius: 20px; background: #fff; box-shadow: 0 20px 40px -20px rgba(0,0,0,.5); }
 .lv-pqimg { display: block; max-width: 100%; max-height: 22vh; margin: 0 auto 8px; object-fit: contain; border-radius: 14px; background: #fff; }
 .lv-enter-links { font-size: 14px; text-align: center; color: var(--muted); }
+
+/* =====================================================================
+   LIGHT stage (default) — the same game-show look on paper, with ink outlines
+   instead of glows. Dark is the optional mode (sun/moon button, or T).
+   ===================================================================== */
+.lv-host.light { color: var(--ink); background: linear-gradient(160deg, #FFFEF8 0%, #F4F3EE 55%, #E9E8E1 100%); }
+.lv-host.light .lv-spot { opacity: .34; }
+.lv-host.light .lv-dots { opacity: .1; background-image: radial-gradient(rgba(22,21,18,.8) 1.3px, transparent 1.5px); }
+.lv-host.light .lv-bg > span { opacity: .1; }
+.lv-host.light .lv-brand { color: var(--ink); }
+.lv-host.light .lv-qcount { background: rgba(22,21,18,.07); }
+.lv-host.light .lv-pinpill { box-shadow: inset 0 0 0 2px var(--ink); }
+.lv-host.light .lv-ib { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
+.lv-host.light .lv-ib:hover { background: var(--lime-soft); }
+.lv-host.light .lv-ib[aria-pressed="true"] { background: var(--lime); box-shadow: inset 0 0 0 2px var(--ink); }
+.lv-host.light .lv-joinbox { box-shadow: 0 0 0 3px var(--ink), 0 14px 0 var(--lime-deep), 0 30px 60px -24px rgba(22,21,18,.35); }
+.lv-host.light .lv-ticket { box-shadow: 0 0 0 3px var(--ink), 10px 10px 0 var(--ink); }
+.lv-host.light .lv-ticket::before, .lv-host.light .lv-ticket::after { background: #F4F3EE; box-shadow: inset 0 0 0 3px var(--ink); }
+.lv-host.light .lv-count-big { background: var(--ink); color: var(--lime); }
+.lv-host.light .lv-person, .lv-host.light .lv-qcard, .lv-host.light .lv-explain, .lv-host.light .lv-row { box-shadow: 0 0 0 2px var(--ink), 6px 6px 0 var(--ink); }
+.lv-host.light .lv-person.armed { box-shadow: 0 0 0 2px var(--ink), 4px 4px 0 var(--ink); }
+.lv-host.light .lv-row.first { box-shadow: 0 0 0 2px var(--ink), 6px 6px 0 var(--lime-deep); }
+.lv-host.light .lv-tile { border-color: var(--ink); box-shadow: 6px 6px 0 var(--ink); }
+.lv-host.light .lv-badge { box-shadow: inset 0 -4px 0 rgba(0,0,0,.12), 0 0 0 2px var(--ink); }
+.lv-host.light .revealed .lv-tile.ok { box-shadow: 0 0 0 6px var(--yellow), 0 0 0 8px var(--ink), 12px 12px 0 var(--ink); }
+.lv-host.light .lv-answered { background: #fff; border-color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+.lv-host.light .lv-answered b, .lv-host.light .lv-meter b { color: var(--ink); }
+.lv-host.light .lv-dotrow i { background: rgba(22,21,18,.14); }
+.lv-host.light .lv-dotrow i.on { background: var(--lime-deep); }
+.lv-host.light .lv-meter { background: radial-gradient(closest-side, #fff 72%, transparent 73%), conic-gradient(var(--lime-deep) calc(var(--p) * 1%), rgba(22,21,18,.1) 0); box-shadow: 0 0 0 3px var(--ink), 6px 6px 0 var(--ink); }
+.lv-host.light .lv-h1 span, .lv-host.light .lv-final .lv-h1 span { color: var(--orange); -webkit-text-stroke: 0; text-shadow: 3px 3px 0 var(--ink); }
+.lv-host.light .lv-winner .sc { color: var(--orange-deep); }
+.lv-host.light .lv-block { border-color: var(--ink); }
+.lv-host.light .lv-beam { background: linear-gradient(180deg, rgba(255,216,77,.45), transparent 80%); }
+.lv-host.light .lv-results { box-shadow: 0 0 0 2px var(--ink), 6px 6px 0 var(--ink); }
+.lv-host.light .lv-qimg { box-shadow: 0 0 0 2px var(--ink), 8px 8px 0 var(--ink); }
+.lv-host.light .lv-hint { opacity: .75; }
+
+.lv-player.light { background: #F4F3EE; color: var(--ink); }
+.lv-player.light.tone-brand, .lv-player.light.tone-good { background: var(--lime); }
+.lv-player.light.tone-bad { background: var(--orange); color: var(--on-orange); }
+.lv-player.light .lv-pbrand { background: #fff; box-shadow: inset 0 0 0 2px var(--line); }
+.lv-player.light .lv-pscore { box-shadow: inset 0 0 0 2px var(--ink); }
+.lv-player.light .lv-pfoot .chibi { background: #fff; box-shadow: 0 0 0 2px var(--ink); }
+.lv-player.light .lv-pts.sm { background: #fff; box-shadow: inset 0 0 0 2px var(--ink); }
+.lv-player.light .lv-pbar { background: rgba(22,21,18,.1); }
+.lv-player.light .lv-pqtext { box-shadow: 0 0 0 2px var(--ink), 5px 5px 0 var(--ink); }
+.lv-player.light .lv-pad { border-color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+.lv-player.light .lv-pad:active { box-shadow: 1px 1px 0 var(--ink); }
+.lv-player.light .lv-mypick { border-color: var(--ink); box-shadow: 6px 6px 0 var(--ink); }
+.lv-player.light .lv-vicon { box-shadow: 0 0 0 3px var(--ink), 5px 5px 0 var(--ink); }
+.lv-pright { display: flex; align-items: center; gap: 8px; }
+.lv-pmode { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; background: rgba(255,255,255,.16); color: inherit; }
+.lv-pmode svg { width: 19px; height: 19px; }
+.lv-player.light .lv-pmode, .tone-brand .lv-pmode { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
