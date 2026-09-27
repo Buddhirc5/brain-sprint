@@ -112,7 +112,6 @@ export function SiteFooter() {
           <Logo size={56} />
         </a>
         <span>Learning your team actually plays. Daily quiz sprints, live quiz games, polls and certification — under your own brand.</span>
-        <a className="btn lime small" href="#/experience">Try it free</a>
       </div>
       {cols.map(([t, links]) => (
         <nav key={t} className="h-foot-links" aria-label={t}>

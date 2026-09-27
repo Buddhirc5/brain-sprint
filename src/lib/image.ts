@@ -23,8 +23,10 @@ function load(file: File): Promise<HTMLImageElement> {
   });
 }
 
-/** Fit inside `maxDim` and re-encode (WebP, or JPEG where WebP isn't supported) until it's small enough. */
-export async function compressImage(file: File, maxDim = 1024): Promise<string> {
+/** Fit inside `maxDim` and re-encode (WebP, or JPEG where WebP isn't supported) until it's small enough.
+    `alpha` keeps transparency (signatures, stamps): WebP, or PNG where WebP isn't supported. */
+export async function compressImage(file: File, maxDim = 1024, opts: { alpha?: boolean; maxChars?: number } = {}): Promise<string> {
+  const ok = (s: string) => validImg(s) && s.length <= (opts.maxChars ?? MAX_IMG_CHARS);
   if (!/^image\/(png|jpeg|webp|gif|avif|heic|heif)$/i.test(file.type) && file.type !== "") throw new Error("Use a PNG, JPEG, WebP or GIF image.");
   if (file.size > 15 * 1024 * 1024) throw new Error("That image is over 15 MB — pick a smaller one.");
   const img = await load(file);
@@ -38,13 +40,15 @@ export async function compressImage(file: File, maxDim = 1024): Promise<string> 
     c.height = h;
     const ctx = c.getContext("2d");
     if (!ctx) throw new Error("This browser can't process images.");
-    ctx.fillStyle = "#fff"; // transparent PNGs → white (JPEG has no alpha)
-    ctx.fillRect(0, 0, w, h);
+    if (!opts.alpha) {
+      ctx.fillStyle = "#fff"; // transparent PNGs → white (JPEG has no alpha)
+      ctx.fillRect(0, 0, w, h);
+    }
     ctx.drawImage(img, 0, 0, w, h);
     for (const q of [0.82, 0.7, 0.58]) {
       let out = c.toDataURL("image/webp", q);
-      if (!out.startsWith("data:image/webp")) out = c.toDataURL("image/jpeg", q);
-      if (validImg(out)) return out;
+      if (!out.startsWith("data:image/webp")) out = opts.alpha ? c.toDataURL("image/png") : c.toDataURL("image/jpeg", q);
+      if (ok(out)) return out;
     }
     dim = Math.round(dim * 0.75);
   }

@@ -69,9 +69,30 @@ function SalesCta({ className = "btn white" }: { className?: string }) {
 }
 
 /* ---------------- hero ---------------- */
+const HERO_BOARD: [string, string, string, number][] = [
+  ["Aisha", "Dubai office", "2,450", 3],
+  ["Marco", "Sales · Milan", "2,310", 9],
+  ["Kenji", "Support · Tokyo", "2,180", 11],
+];
+const HERO_CROWD: [number, "cheer" | "happy" | "idle", string][] = [
+  [5, "happy", "+50 coins!"],
+  [12, "cheer", "7-day streak 🔥"],
+  [0, "happy", ""],
+];
 function Hero() {
   return (
     <section className="h-hero">
+      <img
+        className="h-hero-bg"
+        src="/hero-bg-1600.webp"
+        srcSet="/hero-bg-900.webp 900w, /hero-bg-1600.webp 1600w"
+        sizes="(min-width: 1440px) 1440px, 100vw"
+        width={1585}
+        height={992}
+        alt=""
+        {...{ fetchpriority: "high" }}
+        decoding="async"
+      />
       <div className="h-hero-copy">
         <span className="h-tag">Gamified training for global teams</span>
         <h1 className="h-mega">
@@ -94,18 +115,28 @@ function Hero() {
           Here to play? <a href="#/join">Join a live game</a> · <a href="#/vote">Vote in a poll</a>
         </p>
       </div>
-      <div className="h-stage">
-        <img
-          className="h-scene-img"
-          src="/hero-scene-1600.webp"
-          srcSet="/hero-scene-900.webp 900w, /hero-scene-1600.webp 1600w"
-          sizes="(min-width: 900px) 640px, 100vw"
-          width={1705}
-          height={922}
-          alt="A cartoon explorer and a fluffy bunny share a treasure chest of gold coins on a forest path leading to an arena gate"
-          fetchPriority="high"
-          decoding="async"
-        />
+      <div className="h-stage" aria-hidden="true">
+        <div className="h-board">
+          <span className="h-board-h"><i className="h-live-dot" /> Live quiz · Round 3</span>
+          <ol>
+            {HERO_BOARD.map(([name, team, pts, look], i) => (
+              <li key={name}>
+                <span className="h-board-n">{i + 1}</span>
+                <Chibi look={look} mood={i === 0 ? "cheer" : "happy"} size={38} still />
+                <span className="h-board-who"><b>{name}</b><small>{team}</small></span>
+                <b className="h-board-pts">{pts}</b>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="h-crowd">
+          {HERO_CROWD.map(([look, mood, bubble], i) => (
+            <div key={look} className={`h-pal p${i + 1}`}>
+              {bubble && <span className="h-bubble">{bubble}</span>}
+              <Chibi look={look} variant="full" mood={mood} size={i === 1 ? 118 : 100} />
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -203,7 +234,6 @@ function Features() {
         ))}
       </div>
       <div className="h-sec-cta">
-        <a className="btn primary" href="#/experience">Try the live demo</a>
         <a className="btn ghost" href="#/how-it-works">How it works →</a>
       </div>
     </section>
@@ -235,9 +265,6 @@ function UseCases() {
           </article>
         ))}
       </div>
-      <div className="h-sec-cta">
-        <a className="btn ghost" href="#/experience">See it with your own eyes →</a>
-      </div>
     </section>
   );
 }
@@ -267,7 +294,6 @@ function HowItWorks() {
         ))}
       </ol>
       <div className="h-sec-cta">
-        <a className="btn primary" href="#/experience">Start the 5-minute tour</a>
         <a className="btn ghost" href="#/signin">Sign in to your company</a>
       </div>
     </section>
@@ -300,7 +326,6 @@ function Security() {
         ))}
       </div>
       <div className="h-sec-cta">
-        <a className="btn primary" href="#/experience">Explore the admin portal in the demo</a>
         <a className="btn ghost" href="#/faq">Read the FAQ</a>
       </div>
     </section>
@@ -328,11 +353,12 @@ function Faq() {
           </div>
         ))}
       </div>
-      <div className="h-faq-more">
-        <span>Still curious? The quickest answer is to try it.</span>
-        <a className="btn lime small" href="#/experience">Try it free</a>
-        {CONTACT_EMAIL && <a className="btn ghost small" href="#/contact">Contact sales</a>}
-      </div>
+      {CONTACT_EMAIL && (
+        <div className="h-faq-more">
+          <span>Still curious? Ask us anything — security reviews included.</span>
+          <a className="btn ghost small" href="#/contact">Contact sales</a>
+        </div>
+      )}
     </section>
   );
 }

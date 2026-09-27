@@ -11,6 +11,8 @@ import { useTenantPub } from "../pages/useTenantPub";
 import { Loading } from "../App";
 import { addMonths, fmtLongDate, scorePct } from "../player/common";
 import { runKey } from "../types";
+import { initialsOf } from "../lib/cert";
+import { CertFoot } from "./CertFoot";
 import "../styles/cert.css";
 
 export function CertificatePage({ slug, gid, attempt }: { slug: string; gid: string; attempt?: number }) {
@@ -74,13 +76,7 @@ function Certificate({ gid, attempt }: { gid: string; attempt: number }) {
   const title = g.cert?.certTitle || g.title;
   const validUntil = g.cert?.validMonths && run.finishedAt ? addMonths(run.finishedAt, g.cert.validMonths) : undefined;
   const expired = !!validUntil && validUntil < Date.now();
-  const initials =
-    b.productName
-      .split(/\s+/)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 3)
-      .toUpperCase() || "✓";
+  const initials = initialsOf(b.productName);
 
   return (
     <div className="cert-page">
@@ -140,16 +136,7 @@ function Certificate({ gid, attempt }: { gid: string; attempt: number }) {
             </div>
           </dl>
 
-          <footer className="cert-foot">
-            <div className="cert-sign">
-              <span className="cert-line" />
-              <span>Authorised signatory · {pub.name}</span>
-            </div>
-            <div className="cert-seal" aria-hidden="true">
-              <span>{initials}</span>
-              <small>Certified</small>
-            </div>
-          </footer>
+          <CertFoot cert={g.cert} org={pub.name} product={b.productName} />
         </div>
       </article>
     </div>

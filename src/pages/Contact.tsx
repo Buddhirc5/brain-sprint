@@ -56,9 +56,6 @@ export function Contact() {
           ) : (
             <p className="banner">Sales contact isn't set up yet. Meanwhile, try the product yourself in the free demo.</p>
           )}
-          <div className="h-sec-cta">
-            <a className="btn lime" href="#/experience">Try the demo first</a>
-          </div>
         </div>
         <div className="h-contact-art" aria-hidden="true">
           <Mascot who="explorer" mood="cheer" size={150} />

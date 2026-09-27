@@ -26,6 +26,7 @@ import { LS, newId, randHex, randInt } from "../../lib/util";
 import { newSecret, otpauthUrl, totp, verifyTotp } from "../../lib/totp";
 import { qrDataUrl } from "../../lib/qr";
 import { validImg } from "../../lib/image";
+import { cleanCert } from "../../lib/cert";
 
 const AUTH_KEY = "bsx.demo.auth";
 const RANK: Record<Role, number> = { viewer: 0, host: 1, editor: 2, admin: 3, owner: 4 };
@@ -781,13 +782,14 @@ class DemoApi implements Api {
       if (g.questions.length > 50) throw err("invalid", "50 questions at most.");
       for (const q of g.questions) if (!d.key.answers[q.id]) throw err("invalid", "Every question needs an answer.");
       if (g.kind === "live" && g.questions.some((q) => q.type !== "mcq" && q.type !== "tf")) throw err("invalid", "Live quizzes use multiple-choice and true/false questions.");
+      if (g.cert) g.cert = cleanCert(g.cert);
       for (const q of g.questions) {
         if (q.img === undefined) continue;
         if (!validImg(q.img)) throw err("invalid", "Question images must be PNG, JPEG, WebP or GIF and under about 250 KB.");
       }
       // the demo lives in localStorage (~5 MB per site): keep room for everything else
       const imgChars = Object.values(db.t).flatMap((x) => Object.values(x.games)).filter((x) => x.id !== g.id).flatMap((x) => x.questions).reduce((n, q) => n + (q.img?.length || 0), 0)
-        + g.questions.reduce((n, q) => n + (q.img?.length || 0), 0);
+        + g.questions.reduce((n, q) => n + (q.img?.length || 0), 0) + (g.cert?.signImg?.length || 0) + (g.cert?.sealImg?.length || 0);
       if (imgChars > 2_500_000) throw err("invalid", "The demo stores everything in this browser, which only has room for a few images. Remove an image, or reset the demo.");
       // maker-checker: editors can't publish directly; a change to a live quiz goes back to pending
       if (cfg.makerChecker && g.status === "live" && g.kind !== "live") {

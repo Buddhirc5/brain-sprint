@@ -111,7 +111,16 @@ export interface CertSettings {
   certTitle: string; // "Certified in AML Basics"
   validMonths: number; // 0 = never expires
   showAnswers: boolean; // show right answers after the exam ends
+  // printed on the certificate (all optional — see src/lib/cert.ts)
+  signName?: string; // "Jane Perera"
+  signRole?: string; // "Head of Learning"
+  signImg?: string; // drawn or uploaded signature: data: URL with transparency
+  sealText?: string; // centre of the seal, 1–4 characters (default: product initials)
+  sealLabel?: string; // small text under it (default "Certified")
+  sealColor?: SealColor;
+  sealImg?: string; // the company's own stamp, replaces the drawn seal
 }
+export type SealColor = "ink" | "navy" | "crimson" | "forest" | "gold";
 
 export interface Game {
   id: string;
