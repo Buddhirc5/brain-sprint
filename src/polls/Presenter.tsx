@@ -10,7 +10,8 @@ import { Mascot } from "../components/Chibi";
 import { Loading } from "../App";
 import { useTenantPub } from "../pages/useTenantPub";
 import type { Poll, PollResponse, Role, TenantPublic } from "../types";
-import { Ico, Results, TYPE_META, TypeIcon, fmtCode, stageVars, useResults } from "./shared";
+import { Ico, Results, SlideImage, TYPE_META, TypeIcon, fmtCode, stageVars, useResults } from "./shared";
+import { isContentSlide } from "../api/engine";
 
 const RANK: Record<Role, number> = { viewer: 0, host: 1, editor: 2, admin: 3, owner: 4 };
 
@@ -88,7 +89,7 @@ function Stage({ pub, pollId }: { pub: TenantPublic; pollId: string }) {
   }, []);
 
   const slide = poll?.slides[poll.current];
-  const r = useResults(api, poll?.id, slide?.id);
+  const r = useResults(api, poll?.id, slide && !isContentSlide(slide.type) ? slide.id : undefined);
   const vars = useMemo(() => stageVars(pub.branding), [pub.branding]);
 
   const ctl = useCallback((patch: Parameters<typeof api.pollControl>[1]) => void run(() => api.pollControl(pollId, patch)), [api, pollId, run]);
@@ -187,16 +188,20 @@ function Stage({ pub, pollId }: { pub: TenantPublic; pollId: string }) {
               {TYPE_META[slide.type].label}
               {slide.type === "rank" ? " · Borda points (1st place = most)" : ""}
               {slide.type === "mc" && slide.multi ? " · multiple answers allowed" : ""}
+              {slide.type === "guess" && slide.numAnswer != null && !poll.locked ? " · lock voting (L) to reveal the answer" : ""}
             </div>
-            <h1 className={`pl-prompt ${slide.prompt.length > 90 ? "long" : ""}`}>{slide.prompt}</h1>
+            <div className="pl-qrow">
+              <h1 className={`pl-prompt ${slide.prompt.length > 90 ? "long" : ""} ${slide.type === "text" ? "big" : ""}`}>{slide.prompt}</h1>
+              <SlideImage slide={slide} className="pl-qimg" />
+            </div>
             <div className={`pl-res t-${slide.type}`} key={slide.id}>
-              {hideRes && slide.type !== "qa" ? (
+              {hideRes && slide.type !== "qa" && !isContentSlide(slide.type) ? (
                 <div className="pl-hidden">
                   <span className="big num">{n}</span>
                   <span>{n === 1 ? "response" : "responses"} so far — results hidden</span>
                 </div>
               ) : (
-                <Results slide={slide} r={r} qa={slide.type === "qa" ? moderate : undefined} spotlight />
+                <Results slide={slide} r={r} qa={slide.type === "qa" ? moderate : undefined} spotlight reveal={poll.locked} />
               )}
             </div>
           </>

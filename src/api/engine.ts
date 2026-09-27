@@ -4,6 +4,7 @@
    ===================================================================== */
 import type { Branding, Features, Game, Labels, OrgConfig, Poll, PollResponse, SignIn, Slide, SlideResults, Tenant } from "../types";
 import { answerPoints, shareMs } from "../lib/scoring";
+import { MAX_POLL_IMG_CHARS, MAX_SLIDE_IMG_CHARS, validImg } from "../lib/image";
 
 export const DEFAULT_BRANDING: Branding = {
   productName: "Ant Arena",
@@ -115,9 +116,77 @@ export function aggregate(slide: Slide, rs: PollResponse[]): SlideResults {
     const sc = Array.from({ length: n }, () => 0);
     for (const r of list) ((r.value as { order: number[] }).order || []).forEach((opt, pos) => { if (sc[opt] != null) sc[opt] += n - pos; });
     out.rank = sc.map((score, i) => ({ i, score })).sort((a, b) => b.score - a.score);
+  } else if (slide.type === "guess") {
+    const [lo, hi] = guessRange(slide);
+    const whole = Number.isInteger(lo) && Number.isInteger(hi) && hi - lo + 1 <= 12;
+    const B = whole ? hi - lo + 1 : 10;
+    const w = whole ? 1 : (hi - lo) / B || 1;
+    out.bins = Array.from({ length: B }, (_, i) => (whole ? { lo: lo + i, hi: lo + i, n: 0 } : { lo: lo + i * w, hi: lo + (i + 1) * w, n: 0 }));
+    const vs = list.map((r) => (r.value as { num: number }).num).filter((v) => Number.isFinite(v) && v >= lo && v <= hi).sort((a, b) => a - b);
+    for (const v of vs) out.bins[Math.min(B - 1, Math.floor((v - lo) / w))].n++;
+    out.avg = vs.length ? Math.round((vs.reduce((a, b) => a + b, 0) / vs.length) * 10) / 10 : 0;
+    out.median = vs.length ? (vs.length % 2 ? vs[(vs.length - 1) / 2] : (vs[vs.length / 2 - 1] + vs[vs.length / 2]) / 2) : 0;
+  } else if (slide.type === "points") {
+    const n = (slide.options || []).length;
+    const sum = Array.from({ length: n }, () => 0);
+    for (const r of list) ((r.value as { alloc: number[] }).alloc || []).forEach((v, i) => { if (i < n && v > 0) sum[i] += v; });
+    out.points = sum.map((v) => (list.length ? Math.round((v / list.length) * 10) / 10 : 0));
+  } else if (slide.type === "grid") {
+    const n = (slide.options || []).length;
+    const acc = Array.from({ length: n }, () => ({ x: 0, y: 0, k: 0 }));
+    for (const r of list)
+      ((r.value as { xy: [number, number][] }).xy || []).forEach((p, i) => {
+        if (i < n && Array.isArray(p)) { acc[i].x += p[0]; acc[i].y += p[1]; acc[i].k++; }
+      });
+    out.grid = acc.map((a) => (a.k ? { x: Math.round((a.x / a.k) * 10) / 10, y: Math.round((a.y / a.k) * 10) / 10 } : null));
+  } else if (slide.type === "pin") {
+    out.pins = list.slice(-500).map((r) => (r.value as { pin: [number, number] }).pin).filter((p) => Array.isArray(p) && p.length === 2);
   }
   return out;
 }
+
+/** Slides that only show something (no answers): a text slide or a picture. */
+export const isContentSlide = (t: Slide["type"]) => t === "text" || t === "image";
+/** "Guess the number" range (defaults 0–100). */
+export const guessRange = (s: Slide): [number, number] => {
+  const lo = Number.isFinite(s.numMin) ? (s.numMin as number) : 0;
+  const hi = Number.isFinite(s.numMax) ? (s.numMax as number) : 100;
+  return hi > lo ? [lo, hi] : [lo, lo + 1];
+};
+export const GRID_MAX = 10;
+const SLIDE_TYPES_ALL = new Set(["mc", "word", "scale", "open", "qa", "rank", "guess", "points", "grid", "pin", "text", "image"]);
+const SLIDE_KEYS = ["id", "type", "prompt", "options", "multi", "scaleMin", "scaleMax", "scaleLabels", "maxWords", "img", "body", "numMin", "numMax", "numAnswer", "axes"] as const;
+/** Keep only the fields a slide may have (mirrors private.clean_slide in SQL). */
+export function cleanSlide(s: Slide): Slide {
+  const o: Record<string, unknown> = {};
+  for (const k of SLIDE_KEYS) if (s[k] !== undefined && s[k] !== "") o[k] = s[k];
+  return { ...o, prompt: s.prompt || "" } as unknown as Slide;
+}
+/** What the audience receives: no answers to "guess" slides, and only the current slide's picture. */
+export function audiencePoll(p: Poll): Poll {
+  return {
+    ...structuredClone(p),
+    createdBy: undefined,
+    slides: p.slides.map((s, i) => {
+      const { numAnswer: _a, img, ...rest } = s;
+      return i === p.current && img ? { ...rest, img } : rest;
+    }),
+  };
+}
+/** Server-side checks on a poll's slides: types, pictures and their total size. */
+export function pollSlidesProblem(slides: Slide[]): string | null {
+  if (slides.length > 30) return "30 slides at most.";
+  let total = 0;
+  for (const s of slides) {
+    if (!s || !s.id || !SLIDE_TYPES_ALL.has(s.type)) return "A slide is malformed.";
+    if (s.img !== undefined && !(validImg(s.img) && s.img.length <= MAX_SLIDE_IMG_CHARS)) return "Slide pictures must be PNG, JPEG, WebP or GIF and under about 150 KB.";
+    if ((s.type === "pin" || s.type === "image") && !s.img) return "Add a picture to every Pin on image and Image slide.";
+    total += s.img?.length || 0;
+  }
+  if (total > MAX_POLL_IMG_CHARS) return "This poll's pictures are too big together. Remove a picture or use smaller ones.";
+  return null;
+}
+export const POINTS_TOTAL = 100;
 
 /** Validate a poll answer for its slide; returns an error message or null. */
 export function pollValueProblem(slide: Slide, v: unknown): string | null {
@@ -139,6 +208,23 @@ export function pollValueProblem(slide: Slide, v: unknown): string | null {
   } else if (slide.type === "rank") {
     const ord = o.order as number[];
     if (!Array.isArray(ord) || ord.length !== n || new Set(ord).size !== n || ord.some((i) => !Number.isInteger(i) || i < 0 || i >= n)) return "Rank every option";
+  } else if (slide.type === "guess") {
+    const [lo, hi] = guessRange(slide);
+    const v = o.num as number;
+    if (typeof v !== "number" || !Number.isFinite(v) || v < lo || v > hi) return `Enter a number from ${lo} to ${hi}`;
+  } else if (slide.type === "points") {
+    const a = o.alloc as number[];
+    if (!Array.isArray(a) || a.length !== n || a.some((x) => !Number.isInteger(x) || x < 0 || x > POINTS_TOTAL)) return "Share out your points";
+    const sum = a.reduce((x, y) => x + y, 0);
+    if (sum < 1 || sum > POINTS_TOTAL) return `Give out 1–${POINTS_TOTAL} points`;
+  } else if (slide.type === "grid") {
+    const a = o.xy as number[][];
+    if (!Array.isArray(a) || a.length !== n || a.some((p) => !Array.isArray(p) || p.length !== 2 || p.some((x) => !Number.isInteger(x) || x < 1 || x > GRID_MAX))) return "Place every item";
+  } else if (slide.type === "pin") {
+    const p = o.pin as number[];
+    if (!Array.isArray(p) || p.length !== 2 || p.some((x) => !Number.isInteger(x) || x < 0 || x > 1000)) return "Tap the picture to drop your pin";
+  } else if (isContentSlide(slide.type)) {
+    return "This slide doesn't take answers";
   }
   return null;
 }

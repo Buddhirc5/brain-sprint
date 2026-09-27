@@ -5,6 +5,9 @@
 /** Largest image a question may carry (length of the data: URL). Mirrored in SQL. */
 export const MAX_IMG_CHARS = 350_000;
 export const IMG_RE = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
+/** Poll slide pictures: each one, and all of a poll's together (mirrored in SQL, 0013). */
+export const MAX_SLIDE_IMG_CHARS = 200_000;
+export const MAX_POLL_IMG_CHARS = 1_500_000;
 export const validImg = (s: unknown): s is string => typeof s === "string" && s.length <= MAX_IMG_CHARS && IMG_RE.test(s);
 
 function load(file: File): Promise<HTMLImageElement> {

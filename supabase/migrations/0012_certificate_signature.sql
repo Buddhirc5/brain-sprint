@@ -48,3 +48,5 @@ end $$;
 drop trigger if exists quizzes_clean_cert on public.quizzes;
 create trigger quizzes_clean_cert before insert or update of cert on public.quizzes
   for each row execute function private.quizzes_clean_cert();
+
+revoke all on function private.clean_cert_img(jsonb), private.clean_cert_txt(jsonb, int), private.clean_cert(jsonb), private.quizzes_clean_cert() from public, anon, authenticated;
