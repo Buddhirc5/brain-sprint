@@ -188,8 +188,8 @@ See `SECURITY.md`. In short:
 
 ## 8. License & ownership
 
-**© 2026 Buddhirc5.** Ant Arena, its source code, design and brand are owned by Buddhirc5 and released under the **[MIT License](LICENSE)**.
+**© 2026 Buddhi Sandeepa.** Ant Arena, its source code, design and brand are owned by Buddhi Sandeepa and released under the **[MIT License](LICENSE)**.
 
 The demo companies (Harbor Bank, Northwind Traders) are fictional. The landing-page hero illustration should be replaced with original artwork before commercial use.
 
-<div align="center"><br /><img src="public/icon-192.png" alt="" width="48" /><br /><sub>Made with 🐜 by <b>Buddhirc5</b></sub></div>
+<div align="center"><br /><img src="public/icon-192.png" alt="" width="48" /><br /><sub>Made with 🐜 by <b>Buddhi Sandeepa</b></sub></div>
