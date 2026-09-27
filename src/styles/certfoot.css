@@ -1,0 +1,16 @@
+/* Certificate signature + seal (see src/cert/CertFoot.tsx). cqw = % of the certificate width. */
+.cert-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; }
+.cert-sign { display: grid; gap: .5cqw; font-size: 1.2cqw; font-weight: 700; color: var(--ink-2); min-width: 32cqw; max-width: 50cqw; }
+.cert-line { position: relative; display: flex; align-items: flex-end; justify-content: flex-start; height: 5.5cqw; border-bottom: .18cqw solid var(--ink); }
+.cert-sig-img { display: block; max-height: 7cqw; max-width: 100%; object-fit: contain; margin-bottom: -1.4cqw; }
+.cert-sig-typed { font-family: var(--hand); font-weight: 700; font-size: 3.6cqw; line-height: 1; color: #1E2F5C; margin: 0 0 .2cqw 1cqw; transform: rotate(-3deg); white-space: nowrap; }
+.cert-sig-name { font-size: 1.45cqw; font-weight: 900; color: var(--ink); }
+.cert-seal {
+  --seal-bg: #1B1A17; --seal-ring: #D4F24A; --seal-ink: #D4F24A;
+  flex: none; width: 11cqw; height: 11cqw; border-radius: 50%; background: var(--seal-bg); color: var(--seal-ink); display: grid; place-content: center; text-align: center;
+  box-shadow: 0 0 0 .5cqw var(--seal-ring), 0 0 0 .8cqw var(--seal-bg); transform: rotate(-8deg); margin: 0 .8cqw .8cqw 0;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.cert-seal span { font-family: var(--display); font-size: 3.4cqw; line-height: 1; }
+.cert-seal small { font-size: 1cqw; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; color: #fff; max-width: 9cqw; overflow: hidden; }
+.cert-stamp { flex: none; width: 13cqw; height: 13cqw; object-fit: contain; transform: rotate(-6deg); margin: 0 .4cqw .2cqw 0; }

@@ -275,10 +275,11 @@ class SupabaseApi implements Api {
               ),
             ]
           : [],
-      debounceMs: 300,
-      minGapMs: 1500,
+      // the snapshot is the biggest read: coalesce bursts (e.g. many people playing at once)
+      debounceMs: 800,
+      minGapMs: 4000,
       pollMs: 60_000,
-      fastPollMs: 20_000,
+      fastPollMs: 30_000,
     });
     let set = this.tenantWatchers.get(tenantId);
     if (!set) this.tenantWatchers.set(tenantId, (set = new Set()));
@@ -531,31 +532,38 @@ class SupabaseApi implements Api {
       bindings: [{ table: "polls", filter: `id=eq.${pollId}` }],
       debounceMs: 150,
       minGapMs: 300,
-      pollMs: 5000,
-      fastPollMs: 2500,
+      pollMs: 20_000, // Realtime brings changes; this is only a safety net
+      fastPollMs: 4000,
     });
     return () => w.stop();
+  }
+  private async pollResultsOnce(pollId: string, slideId: string): Promise<SlideResults | null> {
+    const v = await this.rpc<{ host: boolean; slide: Slide; rows: PollResponse[] } | null>("poll_results", { p_poll: pollId, p_slide: slideId });
+    if (!v) return null;
+    const r = aggregate(v.slide, v.rows);
+    if (!v.host && r.texts) r.texts = r.texts.map((x) => ({ ...x, who: "" }));
+    return r;
+  }
+  async readPollResults(pollId: string, slideId: string) {
+    return this.pollResultsOnce(pollId, slideId);
+  }
+  async pollCounts(tenantId: string) {
+    return (await this.rpc<Record<string, number> | null>("poll_counts", { p_tid: tenantId })) ?? {};
   }
   watchPollResults(pollId: string, slideId: string, cb: (r: SlideResults) => void): Unsub {
     const w = watch<SlideResults>({
       sb: this.sb,
       name: "poll-results",
-      fetch: async () => {
-        const v = await this.rpc<{ host: boolean; slide: Slide; rows: PollResponse[] } | null>("poll_results", { p_poll: pollId, p_slide: slideId });
-        if (!v) return null;
-        const r = aggregate(v.slide, v.rows);
-        if (!v.host && r.texts) r.texts = r.texts.map((x) => ({ ...x, who: "" }));
-        return r;
-      },
+      fetch: () => this.pollResultsOnce(pollId, slideId),
       cb,
       bindings: [
         { table: "poll_pulse", filter: `poll_id=eq.${pollId}` },
         { table: "polls", filter: `id=eq.${pollId}` },
       ],
-      debounceMs: 400,
-      minGapMs: 700,
-      pollMs: 5000,
-      fastPollMs: 3000,
+      debounceMs: 500,
+      minGapMs: 1200,
+      pollMs: 20_000,
+      fastPollMs: 5000,
     });
     return () => w.stop();
   }

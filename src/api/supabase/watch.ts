@@ -1,7 +1,9 @@
 /* A watcher = fetch a view from the server, then re-fetch when Realtime says
    something changed (debounced and rate-limited), plus a slow safety poll
    (faster when the Realtime channel is not connected — e.g. free-tier
-   connection limit reached, or the network dropped). */
+   connection limit reached, or the network dropped). Nothing is fetched while
+   the tab is hidden (phone locked, another tab in front): a change seen then
+   is fetched once the page is visible again. */
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import type { ApiError } from "../Api";
 import { toApiError } from "./errors";
@@ -31,6 +33,7 @@ export interface Watcher {
 }
 
 let seq = 0;
+const hidden = () => typeof document !== "undefined" && document.visibilityState === "hidden";
 
 export function watch<T>(o: WatchOpts<T>): Watcher {
   let alive = true;
@@ -42,13 +45,15 @@ export function watch<T>(o: WatchOpts<T>): Watcher {
   let ch: RealtimeChannel | null = null;
   let live = false;
   let first = true;
+  let stale = false; // something changed while the tab was hidden
 
   const schedule = (debounce = o.debounceMs) => {
     if (!alive || timer) return;
     const wait = Math.max(debounce, last + o.minGapMs - Date.now(), 0);
     timer = setTimeout(() => {
       timer = null;
-      void run();
+      if (hidden() && !first) stale = true;
+      else void run();
     }, wait);
   };
 
@@ -97,10 +102,19 @@ export function watch<T>(o: WatchOpts<T>): Watcher {
     if (!alive) return;
     const every = ch && !live ? o.fastPollMs ?? o.pollMs : o.pollMs;
     pollTimer = setTimeout(() => {
-      if (Date.now() - last >= every - 50) schedule(0);
+      if (!hidden() && Date.now() - last >= every - 50) schedule(0);
       tick();
     }, every);
   };
+  const onVis = () => {
+    if (hidden() || !alive) return;
+    const every = ch && !live ? o.fastPollMs ?? o.pollMs : o.pollMs;
+    if (stale || Date.now() - last >= every) {
+      stale = false;
+      schedule(0);
+    }
+  };
+  if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVis);
 
   if (Array.isArray(o.bindings)) subscribe(o.bindings);
   void run();
@@ -109,6 +123,7 @@ export function watch<T>(o: WatchOpts<T>): Watcher {
   return {
     stop: () => {
       alive = false;
+      if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVis);
       if (timer) clearTimeout(timer);
       if (pollTimer) clearTimeout(pollTimer);
       if (ch) void o.sb.removeChannel(ch);

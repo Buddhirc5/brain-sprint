@@ -6,12 +6,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { useApi, errMsg } from "../app/ApiCtx";
 import { applyBranding, setTitle } from "../app/theme";
 import { isDemo } from "../api/demo/guard";
-import { pollValueProblem } from "../api/engine";
+import { GRID_MAX, POINTS_TOTAL, guessRange, isContentSlide, pollValueProblem } from "../api/engine";
 import { Icon } from "../components/ui";
 import { Mascot } from "../components/Chibi";
 import { LS, clamp } from "../lib/util";
 import type { Poll, PollValue, Slide, TenantPublic } from "../types";
-import { Ico, Results, TYPE_META, TypeIcon, fmtCode, stageVars, useResults } from "./shared";
+import { ContentSlide, Ico, Results, SlideImage, TYPE_META, TypeIcon, fmtCode, stageVars, useResults } from "./shared";
 
 /** "?fresh=1&t=harbor" after the hash path. */
 function hashQuery() {
@@ -221,9 +221,10 @@ function VoteSlide({ poll, slide, uid, brand }: { poll: Poll; slide: Slide; uid:
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
+  const content = isContentSlide(slide.type);
   useEffect(() => {
     let live = true;
-    if (slide.type === "qa") {
+    if (slide.type === "qa" || content) {
       setLoaded(true);
       return;
     }
@@ -238,11 +239,11 @@ function VoteSlide({ poll, slide, uid, brand }: { poll: Poll; slide: Slide; uid:
     return () => {
       live = false;
     };
-  }, [api, poll.id, slide.id, slide.type]);
+  }, [api, poll.id, slide.id, slide.type, content]);
 
   const submitted = !!mine && !editing;
   const showRes = poll.showResults && (submitted || poll.locked || slide.type === "qa");
-  const r = useResults(api, poll.id, slide.id, showRes || slide.type === "qa");
+  const r = useResults(api, poll.id, slide.id, !content && (showRes || slide.type === "qa"));
 
   const submit = async (v: PollValue): Promise<boolean> => {
     const bad = pollValueProblem(slide, v);
@@ -273,9 +274,21 @@ function VoteSlide({ poll, slide, uid, brand }: { poll: Poll; slide: Slide; uid:
         {slide.type === "mc" && slide.multi ? " · pick any" : ""}
         {slide.type === "word" && (slide.maxWords || 1) > 1 ? ` · up to ${slide.maxWords} words` : ""}
       </span>
-      <h1>{slide.prompt || "…"}</h1>
+      {(slide.prompt || slide.type !== "image") && <h1>{slide.prompt || "…"}</h1>}
+      <SlideImage slide={slide} />
     </div>
   );
+
+  if (content)
+    return (
+      <div className="card stack pv-card">
+        {head}
+        <div className="pv-content">
+          <ContentSlide slide={slide} />
+          <span className="fine">👀 Look at the screen — the next question will appear here.</span>
+        </div>
+      </div>
+    );
 
   if (slide.type === "qa") return <QaVote poll={poll} slide={slide} uid={uid} head={head} r={r} submit={submit} busy={busy} err={err} brand={brand} />;
   if (!loaded) return <div className="card">{head}</div>;
@@ -420,11 +433,17 @@ export function SlideInput({
   const [score, setScore] = useState<number | null>(initial && "score" in initial ? initial.score : null);
   const [text, setText] = useState(initial && "text" in initial ? initial.text : "");
   const [order, setOrder] = useState<number[]>(() => (initial && "order" in initial && initial.order.length === opts.length ? initial.order : opts.map((_, i) => i)));
+  const [num, setNum] = useState<string>(initial && "num" in initial ? String(initial.num) : "");
+  const [alloc, setAlloc] = useState<number[]>(() => (initial && "alloc" in initial && initial.alloc.length === opts.length ? initial.alloc : opts.map(() => 0)));
+  const [xy, setXy] = useState<[number, number][]>(() => (initial && "xy" in initial && initial.xy.length === opts.length ? initial.xy : opts.map(() => [5, 5] as [number, number])));
+  const [pin, setPin] = useState<[number, number] | null>(initial && "pin" in initial ? initial.pin : null);
   useEffect(() => {
     // editor preview: keep in step with option edits
     if (preview) {
       setOrder(opts.map((_, i) => i));
       setWords(Array.from({ length: nWords }, () => ""));
+      setAlloc(opts.map(() => 0));
+      setXy(opts.map(() => [5, 5]));
     }
   }, [preview, opts.length, nWords]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -438,12 +457,29 @@ export function SlideInput({
         return { score: score ?? NaN };
       case "rank":
         return { order };
+      case "guess":
+        return { num: num.trim() === "" ? NaN : Number(num) };
+      case "points":
+        return { alloc };
+      case "grid":
+        return { xy };
+      case "pin":
+        return { pin: pin || [-1, -1] };
       default:
         return { text: text.trim() };
     }
   };
+  const spent = alloc.reduce((a, b) => a + b, 0);
   const ready =
-    slide.type === "mc" ? choice.length > 0 : slide.type === "word" ? words.some((w) => w.trim()) : slide.type === "scale" ? score != null : slide.type === "rank" ? true : text.trim().length >= 2;
+    slide.type === "mc" ? choice.length > 0
+    : slide.type === "word" ? words.some((w) => w.trim())
+    : slide.type === "scale" ? score != null
+    : slide.type === "rank" || slide.type === "grid" ? true
+    : slide.type === "guess" ? num.trim() !== "" && Number.isFinite(Number(num))
+    : slide.type === "points" ? spent > 0 && spent <= POINTS_TOTAL
+    : slide.type === "pin" ? !!pin
+    : text.trim().length >= 2;
+  const [gLo, gHi] = guessRange(slide);
 
   const lo = slide.scaleMin ?? 1;
   const hi = slide.scaleMax ?? 5;
@@ -516,6 +552,68 @@ export function SlideInput({
         </div>
       )}
       {slide.type === "rank" && <RankInput options={opts} order={order} setOrder={setOrder} />}
+      {slide.type === "guess" && (
+        <div className="pv-guess">
+          <label className="sr" htmlFor="pv-num">Your guess</label>
+          <input id="pv-num" className="inp num" type="number" inputMode="decimal" min={gLo} max={gHi} step="any" placeholder={`${gLo} – ${gHi}`} value={num} onChange={(e) => setNum(e.target.value)} />
+          {gHi - gLo <= 1000 && (
+            <input type="range" min={gLo} max={gHi} step={1} value={num === "" ? Math.round((gLo + gHi) / 2) : Number(num)} onChange={(e) => setNum(e.target.value)} aria-label="Your guess (slider)" />
+          )}
+          <div className="pv-scale-ends"><span className="num">{gLo}</span><span className="num">{gHi}</span></div>
+        </div>
+      )}
+      {slide.type === "points" && (
+        <div className="pv-points">
+          <p className={`pv-left ${spent > POINTS_TOTAL ? "over" : ""}`} aria-live="polite">
+            <b className="num">{POINTS_TOTAL - spent}</b> of {POINTS_TOTAL} points left
+          </p>
+          {opts.map((o, i) => (
+            <div key={i} className="pv-pt">
+              <span className="t">{o || `Option ${i + 1}`}</span>
+              <button type="button" aria-label={`Fewer points for ${o}`} disabled={alloc[i] <= 0} onClick={() => setAlloc(alloc.map((x, k) => (k === i ? Math.max(0, x - 10) : x)))}>−</button>
+              <input className="inp num" type="number" inputMode="numeric" min={0} max={POINTS_TOTAL} aria-label={`Points for ${o}`} value={alloc[i]} onChange={(e) => setAlloc(alloc.map((x, k) => (k === i ? clamp(Math.round(Number(e.target.value) || 0), 0, POINTS_TOTAL) : x)))} />
+              <button type="button" aria-label={`More points for ${o}`} disabled={spent >= POINTS_TOTAL} onClick={() => setAlloc(alloc.map((x, k) => (k === i ? x + Math.min(10, POINTS_TOTAL - spent) : x)))}>+</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {slide.type === "grid" && (
+        <div className="pv-gridin">
+          {opts.map((o, i) => (
+            <fieldset key={i} className="pv-gi">
+              <legend>{o || `Item ${i + 1}`}</legend>
+              {([0, 1] as const).map((ax) => (
+                <label key={ax} className="pv-gs">
+                  <span>{slide.axes?.[ax] || (ax ? "Up" : "Across")}</span>
+                  <input type="range" min={1} max={GRID_MAX} step={1} value={xy[i]?.[ax] ?? 5} onChange={(e) => setXy(xy.map((p, k) => (k === i ? (ax ? [p[0], Number(e.target.value)] : [Number(e.target.value), p[1]]) : p)))} />
+                  <b className="num">{xy[i]?.[ax] ?? 5}</b>
+                </label>
+              ))}
+            </fieldset>
+          ))}
+        </div>
+      )}
+      {slide.type === "pin" && (
+        <div className="pv-pin">
+          {slide.img ? (
+            <button
+              type="button"
+              className="frame"
+              aria-label="Tap the picture to drop your pin"
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                setPin([clamp(Math.round(((e.clientX - r.left) / r.width) * 1000), 0, 1000), clamp(Math.round(((e.clientY - r.top) / r.height) * 1000), 0, 1000)]);
+              }}
+            >
+              <img src={slide.img} alt="" draggable={false} />
+              {pin && <i style={{ left: `${pin[0] / 10}%`, top: `${pin[1] / 10}%` }} />}
+            </button>
+          ) : (
+            <p className="fine">Add a picture to this slide.</p>
+          )}
+          <span className="fine">{pin ? "Tap somewhere else to move your pin." : "Tap the picture to drop your pin."}</span>
+        </div>
+      )}
       {err && <p className="err" role="alert">{err}</p>}
       <div className="row">
         {onCancel && (

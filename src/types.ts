@@ -111,7 +111,16 @@ export interface CertSettings {
   certTitle: string; // "Certified in AML Basics"
   validMonths: number; // 0 = never expires
   showAnswers: boolean; // show right answers after the exam ends
+  // printed on the certificate (all optional — see src/lib/cert.ts)
+  signName?: string; // "Jane Perera"
+  signRole?: string; // "Head of Learning"
+  signImg?: string; // drawn or uploaded signature: data: URL with transparency
+  sealText?: string; // centre of the seal, 1–4 characters (default: product initials)
+  sealLabel?: string; // small text under it (default "Certified")
+  sealColor?: SealColor;
+  sealImg?: string; // the company's own stamp, replaces the drawn seal
 }
+export type SealColor = "ink" | "navy" | "crimson" | "forest" | "gold";
 
 export interface Game {
   id: string;
@@ -294,7 +303,7 @@ export interface LiveHostView {
 }
 
 /* ---------------- live polls (interactive) ---------------- */
-export type SlideType = "mc" | "word" | "scale" | "open" | "qa" | "rank";
+export type SlideType = "mc" | "word" | "scale" | "open" | "qa" | "rank" | "guess" | "points" | "grid" | "pin" | "text" | "image";
 export interface Slide {
   id: string;
   type: SlideType;
@@ -305,6 +314,12 @@ export interface Slide {
   scaleMax?: number;
   scaleLabels?: [string, string];
   maxWords?: number; // word cloud entries per person (1–3)
+  img?: string; // optional picture (data: URL, see lib/pollImage) — required for "pin" and "image"
+  body?: string; // "text" slide: paragraph under the heading
+  numMin?: number; // "guess": allowed range (default 0–100)
+  numMax?: number;
+  numAnswer?: number; // "guess": the right number, revealed on the big screen (optional)
+  axes?: [string, string]; // "grid": x-axis and y-axis labels (each rated 1–10)
 }
 export interface Poll {
   id: string;
@@ -320,7 +335,16 @@ export interface Poll {
   updatedAt: number;
   createdBy?: string;
 }
-export type PollValue = { choice: number[] } | { words: string[] } | { score: number } | { text: string } | { order: number[] };
+export type PollValue =
+  | { choice: number[] }
+  | { words: string[] }
+  | { score: number }
+  | { text: string }
+  | { order: number[] }
+  | { num: number } // guess the number
+  | { alloc: number[] } // 100 points: points per option (sum 1–100)
+  | { xy: [number, number][] } // 2×2 grid: [x, y] (1–10) per item
+  | { pin: [number, number] }; // pin on image: x, y in thousandths of the picture
 export interface PollResponse {
   id: string;
   pollId: string;
@@ -341,6 +365,11 @@ export interface SlideResults {
   dist?: number[]; // scale distribution
   texts?: PollResponse[]; // open / qa (sorted by votes for qa)
   rank?: { i: number; score: number }[]; // rank: Borda score
+  bins?: { lo: number; hi: number; n: number }[]; // guess: histogram
+  median?: number; // guess
+  points?: number[]; // 100 points: average points per option
+  grid?: ({ x: number; y: number } | null)[]; // 2×2 grid: average position per item
+  pins?: [number, number][]; // pin on image
 }
 
 /* ---------------- super admin ---------------- */

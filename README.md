@@ -66,7 +66,7 @@ supabase/               SQL migrations, seed, backend README
 ## 3. Set up Supabase (free plan)
 
 1. Create a project at [supabase.com](https://supabase.com) (the free plan is fine to start).
-2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, `0005_live_player_count.sql`, `0006_super_self_approve.sql`, `0007_rename_ant_arena.sql`, `0008_special_characters.sql`, `0009_super_requires_authenticator.sql`, `0010_mfa_reset_by_email.sql`, `0011_private_invite_links.sql`, then `supabase/seed.sql`.
+2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, `0005_live_player_count.sql`, `0006_super_self_approve.sql`, `0007_rename_ant_arena.sql`, `0008_special_characters.sql`, `0009_super_requires_authenticator.sql`, `0010_mfa_reset_by_email.sql`, `0011_private_invite_links.sql`, `0012_certificate_signature.sql`, `0013_poll_slide_types.sql`, then `supabase/seed.sql`.
 3. Make yourself super admin: `select public.bootstrap_super_admin('you@yourmail.com');`
 4. In **Authentication**, turn **Anonymous sign-ins ON**, set the **email OTP length to 6**, enable **MFA (TOTP)**, add your redirect URLs, and raise the anonymous sign-in rate limit. The full checklist is in `supabase/README.md` §3.
 5. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (**Project Settings → API**).

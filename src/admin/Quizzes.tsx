@@ -9,6 +9,8 @@ const CERT_MINUTES = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180]; // exams: 1–18
 import { limitMs, runCorrect } from "../lib/scoring";
 import { cleanText } from "../lib/security";
 import { compressImage } from "../lib/image";
+import { cleanCert } from "../lib/cert";
+import { CertDesign } from "./CertDesign";
 import { fmtDate, fmtMin, newId, pct, todayKey } from "../lib/util";
 import { LIVE } from "../api/engine";
 import type { AnswerKey, CardColor, CertSettings, Game, GameStatus, LibraryItem, QType, QuizKind } from "../types";
@@ -391,7 +393,7 @@ export function Editor({ gid }: { gid?: string }) {
         id, kind: f.kind, title, desc: cleanText(f.desc, 110).trim(), color: f.color, status: f.status,
         date: live ? undefined : f.date || undefined, until: live ? undefined : f.until || undefined, minutes: live ? 0 : f.minutes,
         order: orig?.order ?? 0, questions: sealed.map((s) => s.q),
-        ...(cert ? { cert: { ...f.cert, certTitle: cleanText(f.cert.certTitle, 80).trim(), attempts: Math.max(1, Math.min(5, Math.round(f.cert.attempts))) } } : {}),
+        ...(cert ? { cert: cleanCert(f.cert) } : {}),
         createdAt: orig?.createdAt ?? now, updatedAt: now, createdBy: orig?.createdBy, editedBy: orig?.editedBy, approvedBy: orig?.approvedBy,
       };
       const k: AnswerKey = { gid: id, answers: Object.fromEntries(sealed.map((s) => [s.q.id, s.canon])), updatedAt: now };
@@ -525,6 +527,7 @@ export function Editor({ gid }: { gid?: string }) {
           <BulkImport text={importText} setText={setImport} onAdd={importRows} live={live} />
         )}
       </div>
+      {cert && <CertDesign cert={f.cert} setCert={setCert} />}
       {cert && <BulkImport text={importText} setText={setImport} onAdd={importRows} live={false} />}
       <section className="panel">
         <div className="panel-h">

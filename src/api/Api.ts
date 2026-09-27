@@ -206,6 +206,8 @@ export interface Api {
   pollFind(code: string): Promise<{ pollId: string; title: string; slug: string } | null>;
   watchPoll(pollId: string, cb: (p: Poll) => void): Unsub; // audience-safe view
   watchPollResults(pollId: string, slideId: string, cb: (r: SlideResults) => void): Unsub;
+  readPollResults(pollId: string, slideId: string): Promise<SlideResults | null>; // one-off read (exports)
+  pollCounts(tenantId: string): Promise<Record<string, number>>; // pollId → people who answered anything
   pollRespond(pollId: string, slideId: string, value: PollValue): Promise<void>;
   pollMyResponses(pollId: string): Promise<Record<string, PollValue>>; // slideId → my last answer
   qaVote(pollId: string, responseId: string): Promise<void>;

@@ -103,8 +103,8 @@ export function TenantProvider({ pub, area, role, superUser = false, children }:
         () => live && setChecked(true),
       );
     check();
-    // one device at a time: re-check every 20 s and whenever the tab comes back
-    const t = setInterval(check, 20_000);
+    // one device at a time: re-check every 30 s while the tab is showing, and whenever it comes back
+    const t = setInterval(() => document.visibilityState !== "hidden" && check(), 30_000);
     const onVis = () => document.visibilityState === "visible" && check();
     document.addEventListener("visibilitychange", onVis);
     const un = api.onAuth(() => check());

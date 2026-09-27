@@ -17,7 +17,7 @@ import type {
 import { runKey } from "../../types";
 import * as store from "./db";
 import type { DB } from "./db";
-import { GRACE_MS, LABELS, LIVE, aggregate, defaultCfg, isRight, livePoints, normalizeCfg, pollValueProblem, scoreAnswer, DEFAULT_BRANDING, LOOK_COUNT } from "../engine";
+import { GRACE_MS, LABELS, LIVE, aggregate, audiencePoll, cleanSlide, pollSlidesProblem, defaultCfg, isRight, livePoints, normalizeCfg, pollValueProblem, scoreAnswer, DEFAULT_BRANDING, LOOK_COUNT } from "../engine";
 import { limitMs, runPoints, statsOf, levelOf } from "../../lib/scoring";
 import { ITEM } from "../../lib/catalog";
 import { isOpen } from "../../lib/games";
@@ -26,6 +26,7 @@ import { LS, newId, randHex, randInt } from "../../lib/util";
 import { newSecret, otpauthUrl, totp, verifyTotp } from "../../lib/totp";
 import { qrDataUrl } from "../../lib/qr";
 import { validImg } from "../../lib/image";
+import { cleanCert } from "../../lib/cert";
 
 const AUTH_KEY = "bsx.demo.auth";
 const RANK: Record<Role, number> = { viewer: 0, host: 1, editor: 2, admin: 3, owner: 4 };
@@ -781,13 +782,14 @@ class DemoApi implements Api {
       if (g.questions.length > 50) throw err("invalid", "50 questions at most.");
       for (const q of g.questions) if (!d.key.answers[q.id]) throw err("invalid", "Every question needs an answer.");
       if (g.kind === "live" && g.questions.some((q) => q.type !== "mcq" && q.type !== "tf")) throw err("invalid", "Live quizzes use multiple-choice and true/false questions.");
+      if (g.cert) g.cert = cleanCert(g.cert);
       for (const q of g.questions) {
         if (q.img === undefined) continue;
         if (!validImg(q.img)) throw err("invalid", "Question images must be PNG, JPEG, WebP or GIF and under about 250 KB.");
       }
       // the demo lives in localStorage (~5 MB per site): keep room for everything else
       const imgChars = Object.values(db.t).flatMap((x) => Object.values(x.games)).filter((x) => x.id !== g.id).flatMap((x) => x.questions).reduce((n, q) => n + (q.img?.length || 0), 0)
-        + g.questions.reduce((n, q) => n + (q.img?.length || 0), 0);
+        + g.questions.reduce((n, q) => n + (q.img?.length || 0), 0) + (g.cert?.signImg?.length || 0) + (g.cert?.sealImg?.length || 0);
       if (imgChars > 2_500_000) throw err("invalid", "The demo stores everything in this browser, which only has room for a few images. Remove an image, or reset the demo.");
       // maker-checker: editors can't publish directly; a change to a live quiz goes back to pending
       if (cfg.makerChecker && g.status === "live" && g.kind !== "live") {
@@ -1268,14 +1270,18 @@ class DemoApi implements Api {
       if (!normalizeCfg(t.cfg, t.template).features.polls) throw err("forbidden", "Polls are turned off for this company.");
       const prev = db.polls[poll.id];
       if (prev && prev.tenantId !== tid) throw err("forbidden", "Not your poll.");
-      if (poll.slides.length > 30) throw err("invalid", "30 slides at most.");
+      const bad = pollSlidesProblem(poll.slides);
+      if (bad) throw err("invalid", bad);
       let code = prev?.code || poll.code;
       const used = new Set(Object.values(db.polls).filter((p) => p.id !== poll.id).map((p) => p.code));
       if (!PIN_RE.test(code || "") || used.has(code)) {
         do code = String(100000 + randInt(900000));
         while (used.has(code));
       }
-      db.polls[poll.id] = { ...structuredClone(poll), tenantId: tid, code, updatedAt: Date.now(), createdAt: prev?.createdAt || Date.now(), createdBy: prev?.createdBy || this.actor(db) };
+      // the demo lives in localStorage (~5 MB per site): keep room for everything else
+      const imgChars = Object.values(db.polls).filter((x) => x.id !== poll.id).flatMap((x) => x.slides).reduce((n, x) => n + (x.img?.length || 0), 0) + poll.slides.reduce((n, x) => n + (x.img?.length || 0), 0);
+      if (imgChars > 2_000_000) throw err("invalid", "The demo stores everything in this browser, which only has room for a few pictures. Remove one, or reset the demo.");
+      db.polls[poll.id] = { ...structuredClone(poll), slides: poll.slides.map(cleanSlide), tenantId: tid, code, updatedAt: Date.now(), createdAt: prev?.createdAt || Date.now(), createdBy: prev?.createdBy || this.actor(db) };
       db.resp[poll.id] ||= [];
       if (!prev) this.logT(db, tid, { action: "Poll created", target: poll.title });
     });
@@ -1330,8 +1336,9 @@ class DemoApi implements Api {
       const db = store.read();
       const p = db.polls[pollId];
       if (!p) return;
-      if (p.status !== "open" && !this.canHost(db, p)) return cb({ ...structuredClone(p), slides: [] });
-      cb(structuredClone(p));
+      if (this.canHost(db, p)) return cb(structuredClone(p));
+      if (p.status !== "open") return cb({ ...structuredClone(p), slides: [] });
+      cb(audiencePoll(p));
     };
     setTimeout(run, 0);
     return store.subscribe(run);
@@ -1350,6 +1357,28 @@ class DemoApi implements Api {
     };
     setTimeout(run, 0);
     return store.subscribe(run);
+  }
+  async readPollResults(pollId: string, slideId: string) {
+    return new Promise<SlideResults | null>((res) => {
+      let un: Unsub | undefined = undefined;
+      let done = false;
+      un = this.watchPollResults(pollId, slideId, (r) => {
+        done = true;
+        res(r);
+        setTimeout(() => un?.(), 0);
+      });
+      setTimeout(() => {
+        if (!done) res(null);
+        un?.();
+      }, 50);
+    });
+  }
+  async pollCounts(tid: string) {
+    const db = store.read();
+    this.req(db, tid, "host");
+    const out: Record<string, number> = {};
+    for (const p of Object.values(db.polls)) if (p.tenantId === tid) out[p.id] = new Set((db.resp[p.id] || []).map((r) => r.who)).size;
+    return out;
   }
   async pollRespond(pollId: string, slideId: string, value: PollValue) {
     const u = this.need();

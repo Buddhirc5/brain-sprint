@@ -46,16 +46,6 @@
 .cert-meta dd small { font-size: 1.1cqw; font-weight: 600; color: var(--muted); }
 .cert-id { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .04em; }
 
-.cert-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; }
-.cert-sign { display: grid; gap: .6cqw; font-size: 1.2cqw; font-weight: 700; color: var(--ink-2); min-width: 32cqw; }
-.cert-line { display: block; height: 4cqw; border-bottom: .18cqw solid var(--ink); }
-.cert-seal {
-  width: 11cqw; height: 11cqw; border-radius: 50%; background: var(--ink); color: var(--lime); display: grid; place-content: center; text-align: center;
-  box-shadow: 0 0 0 .5cqw var(--lime), 0 0 0 .8cqw var(--ink); transform: rotate(-8deg); margin: 0 .8cqw .8cqw 0;
-}
-.cert-seal span { font-family: var(--display); font-size: 3.4cqw; line-height: 1; }
-.cert-seal small { font-size: 1cqw; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; color: #fff; }
-
 @media print {
   @page { size: A4 landscape; margin: 0; }
   html, body { background: #fff !important; }

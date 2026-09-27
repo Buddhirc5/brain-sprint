@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Api } from "../api/Api";
 import type { Branding, PollResponse, Slide, SlideResults, SlideType } from "../types";
-import { DEFAULT_BRANDING } from "../api/engine";
+import { DEFAULT_BRANDING, GRID_MAX, aggregate, guessRange } from "../api/engine";
 import { brandProblems, contrast } from "../app/theme";
 import { mix } from "../lib/util";
 import "../styles/polls.css";
@@ -18,6 +18,12 @@ export const TypeIcons: Record<SlideType, () => JSX.Element> = {
   open: () => (<svg viewBox="0 0 24 24" {...P}><path d="M4 5h16v11H9l-5 4V5z" /><path d="M8 9h8M8 12h5" /></svg>),
   rank: () => (<svg viewBox="0 0 24 24" {...P}><path d="M10 6h10M10 12h7M10 18h4" /><path d="M4 5l1.5-1v5M3.5 13.5a1.5 1.5 0 1 1 2.5 1.2L3.5 17H6" /></svg>),
   qa: () => (<svg viewBox="0 0 24 24" {...P}><path d="M4 5h16v11h-7l-5 4v-4H4V5z" /><path d="M10 9a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.2M12 14h.01" /></svg>),
+  guess: () => (<svg viewBox="0 0 24 24" {...P}><circle cx="12" cy="12" r="9" /><path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.9.6-.9 1.1v.6M12 16.6h.01" /></svg>),
+  points: () => (<svg viewBox="0 0 24 24" {...P}><ellipse cx="12" cy="6" rx="7" ry="2.5" /><path d="M5 6v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 10v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-4M5 14v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-4" /></svg>),
+  grid: () => (<svg viewBox="0 0 24 24" {...P}><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M12 4v16M4 12h16" /><circle cx="16.2" cy="7.8" r="1.6" fill="currentColor" /><circle cx="8" cy="15.6" r="1.6" fill="currentColor" /></svg>),
+  pin: () => (<svg viewBox="0 0 24 24" {...P}><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z" /><circle cx="12" cy="10" r="2.2" /></svg>),
+  text: () => (<svg viewBox="0 0 24 24" {...P}><path d="M5 7V4h14v3M12 4v16M9 20h6" /></svg>),
+  image: () => (<svg viewBox="0 0 24 24" {...P}><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.8" /><path d="M21 16l-5-5-8 8" /></svg>),
 };
 export function TypeIcon({ t }: { t: SlideType }) {
   const I = TypeIcons[t];
@@ -30,8 +36,17 @@ export const TYPE_META: Record<SlideType, { label: string; hint: string }> = {
   open: { label: "Open text", hint: "Short free-text answers" },
   rank: { label: "Ranking", hint: "Put options in order" },
   qa: { label: "Q&A", hint: "Audience asks, everyone upvotes" },
+  guess: { label: "Guess the number", hint: "Everyone guesses; reveal the answer" },
+  points: { label: "100 points", hint: "Share 100 points between options" },
+  grid: { label: "2 × 2 grid", hint: "Place items on two 1–10 scales" },
+  pin: { label: "Pin on image", hint: "Tap a spot on your picture" },
+  text: { label: "Text", hint: "A heading and a paragraph — no answers" },
+  image: { label: "Image", hint: "Show a picture with a caption" },
 };
-export const SLIDE_TYPES: SlideType[] = ["mc", "word", "scale", "open", "rank", "qa"];
+/** Slide types that collect answers, then the ones that only show something. */
+export const QUESTION_TYPES: SlideType[] = ["mc", "word", "open", "scale", "rank", "qa", "guess", "points", "grid", "pin"];
+export const CONTENT_TYPES: SlideType[] = ["text", "image"];
+export const SLIDE_TYPES: SlideType[] = [...QUESTION_TYPES, ...CONTENT_TYPES];
 
 export const Ico = {
   prev: () => (<svg viewBox="0 0 24 24" {...P}><path d="M15 5l-7 7 7 7" /></svg>),
@@ -114,21 +129,9 @@ export function useResults(api: Api, pollId: string | undefined, slideId: string
   return r && r.slideId === slideId ? r : null;
 }
 
-/** One-shot read of a slide's results (for exports and list counts). */
-export function fetchResults(api: Api, pollId: string, slideId: string, ms = 5000): Promise<SlideResults | null> {
-  return new Promise((res) => {
-    let done = false;
-    let un: (() => void) | undefined;
-    const finish = (v: SlideResults | null) => {
-      if (done) return;
-      done = true;
-      setTimeout(() => un?.(), 0);
-      res(v);
-    };
-    un = api.watchPollResults(pollId, slideId, (r) => finish(r));
-    if (done) un();
-    setTimeout(() => finish(null), ms);
-  });
+/** One-shot read of a slide's results (exports). */
+export function fetchResults(api: Api, pollId: string, slideId: string, ms = 8000): Promise<SlideResults | null> {
+  return Promise.race([api.readPollResults(pollId, slideId).catch(() => null), new Promise<null>((res) => setTimeout(() => res(null), ms))]);
 }
 
 /* ---------------- word cloud ---------------- */
@@ -419,6 +422,118 @@ export function QaList({ r, compact, h = {}, spotlight }: { r: SlideResults | nu
   );
 }
 
+/* ---------------- guess the number ---------------- */
+const fmtNum = (v: number) => (Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 1 }));
+export function GuessChart({ slide, r, compact, reveal }: { slide: Slide; r: SlideResults | null; compact?: boolean; reveal?: boolean }) {
+  const [lo, hi] = guessRange(slide);
+  const bins = r?.bins || [];
+  const top = Math.max(1, ...bins.map((b) => b.n));
+  const ans = reveal && Number.isFinite(slide.numAnswer) ? (slide.numAnswer as number) : undefined;
+  const hit = ans == null ? -1 : bins.findIndex((b, i) => (b.lo === b.hi ? ans === b.lo : ans >= b.lo && (ans < b.hi || i === bins.length - 1)));
+  return (
+    <div className={`pl-guess ${compact ? "compact" : ""}`}>
+      <div className="stats">
+        <div><span className="label">Average</span><b className="num">{r?.n ? fmtNum(r.avg || 0) : "–"}</b></div>
+        <div><span className="label">Middle guess</span><b className="num">{r?.n ? fmtNum(r.median || 0) : "–"}</b></div>
+        {ans != null && <div className="ans"><span className="label">Right answer</span><b className="num">{fmtNum(ans)}</b></div>}
+      </div>
+      <div className="dist" style={{ gridTemplateColumns: `repeat(${Math.max(1, bins.length)}, minmax(0, 1fr))` }}>
+        {bins.map((b, i) => (
+          <div key={i} className={`d ${i === hit ? "hit" : ""}`}>
+            <div className="well">
+              <div className="fill" style={{ height: `${(b.n / top) * 100}%` }}>{b.n > 0 && <span className="num">{b.n}</span>}</div>
+            </div>
+            <div className="pl-l num">{b.lo === b.hi ? fmtNum(b.lo) : fmtNum(Math.round(b.lo))}</div>
+          </div>
+        ))}
+      </div>
+      <div className="ends"><span className="num">{fmtNum(lo)}</span><span className="num">{fmtNum(hi)}</span></div>
+    </div>
+  );
+}
+
+/* ---------------- 100 points ---------------- */
+export function PointsChart({ slide, r }: { slide: Slide; r: SlideResults | null }) {
+  const opts = slide.options || [];
+  const pts = r?.points || opts.map(() => 0);
+  const top = Math.max(1, ...pts);
+  const lead = pts.indexOf(Math.max(...pts));
+  return (
+    <div className="pl-hbars">
+      {opts.map((o, i) => (
+        <div key={i} className={`pl-hbar ${pts[i] && i === lead ? "lead" : ""}`}>
+          <div className="pl-l">{o}</div>
+          <div className="trk"><span style={{ width: `${(pts[i] / top) * 100}%`, background: SERIES[i % 5] }} /></div>
+          <div className="val num"><b>{fmtNum(pts[i] || 0)}</b> <small>pts avg</small></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------------- 2 × 2 grid ---------------- */
+export function GridChart({ slide, r, compact }: { slide: Slide; r: SlideResults | null; compact?: boolean }) {
+  const opts = slide.options || [];
+  const pos = (v: number) => ((v - 1) / (GRID_MAX - 1)) * 100;
+  const [ax, ay] = slide.axes || ["", ""];
+  return (
+    <div className={`pl-grid ${compact ? "compact" : ""}`}>
+      <div className="ylab">{ay || "Y"}</div>
+      <div className="box" role="img" aria-label={`2 by 2 grid: ${opts.map((o, i) => (r?.grid?.[i] ? `${o} at ${r.grid[i]!.x}, ${r.grid[i]!.y}` : `${o}: no answers`)).join("; ")}`}>
+        <i className="q q1" /><i className="q q2" /><i className="q q3" /><i className="q q4" />
+        {opts.map((o, i) => {
+          const g = r?.grid?.[i];
+          if (!g) return null;
+          return (
+            <span key={i} className="pt" style={{ left: `${pos(g.x)}%`, bottom: `${pos(g.y)}%`, ["--c" as string]: SERIES[i % 5] }}>
+              <i />
+              <b>{o}</b>
+            </span>
+          );
+        })}
+        <span className="tick l num">1</span>
+        <span className="tick r num">{GRID_MAX}</span>
+      </div>
+      <div className="xlab">{ax || "X"} →</div>
+    </div>
+  );
+}
+
+/* ---------------- pin on image ---------------- */
+export function PinChart({ slide, r }: { slide: Slide; r: SlideResults | null }) {
+  if (!slide.img) return <Waiting text="Add a picture to this slide" />;
+  const pins = r?.pins || [];
+  return (
+    <div className="pl-pins">
+      <div className="frame">
+        <img src={slide.img} alt="" />
+        {pins.map((p, i) => (
+          <i key={i} style={{ left: `${p[0] / 10}%`, top: `${p[1] / 10}%` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- content slides ---------------- */
+export function ContentSlide({ slide }: { slide: Slide }) {
+  if (slide.type === "image")
+    return slide.img ? (
+      <figure className="pl-figure">
+        <img src={slide.img} alt={slide.prompt || "Slide picture"} />
+      </figure>
+    ) : (
+      <Waiting text="Add a picture to this slide" />
+    );
+  return slide.body ? <p className="pl-body">{slide.body}</p> : null;
+}
+
+/** The optional picture on a question slide (pin & image slides draw their own). */
+export function SlideImage({ slide, className = "" }: { slide: Slide; className?: string }) {
+  if (!slide.img || slide.type === "pin" || slide.type === "image") return null;
+  return <img className={`sl-img ${className}`} src={slide.img} alt="" />;
+}
+
 export function Waiting({ text }: { text: string }) {
   return (
     <div className="pl-waiting">
@@ -433,7 +548,7 @@ export function Waiting({ text }: { text: string }) {
 }
 
 /** Results for any slide type. */
-export function Results({ slide, r, compact, qa, spotlight }: { slide: Slide; r: SlideResults | null; compact?: boolean; qa?: QaHandlers; spotlight?: boolean }): ReactNode {
+export function Results({ slide, r, compact, qa, spotlight, reveal }: { slide: Slide; r: SlideResults | null; compact?: boolean; qa?: QaHandlers; spotlight?: boolean; reveal?: boolean }): ReactNode {
   switch (slide.type) {
     case "mc":
       return <McChart slide={slide} r={r} layout={compact ? "row" : "auto"} />;
@@ -447,6 +562,17 @@ export function Results({ slide, r, compact, qa, spotlight }: { slide: Slide; r:
       return <OpenWall r={r} compact={compact} max={compact ? 12 : 40} />;
     case "qa":
       return <QaList r={r} compact={compact} h={qa} spotlight={spotlight} />;
+    case "guess":
+      return <GuessChart slide={slide} r={r} compact={compact} reveal={reveal} />;
+    case "points":
+      return <PointsChart slide={slide} r={r} />;
+    case "grid":
+      return <GridChart slide={slide} r={r} compact={compact} />;
+    case "pin":
+      return <PinChart slide={slide} r={r} />;
+    case "text":
+    case "image":
+      return <ContentSlide slide={slide} />;
   }
 }
 
@@ -468,5 +594,13 @@ export function sampleResults(s: Slide): SlideResults {
   } else if (s.type === "rank") out.rank = opts.map((_, i) => ({ i, score: Math.max(0, (opts.length - i) * 20 - (i === 1 ? 25 : 0)) })).sort((a, b) => b.score - a.score);
   else if (s.type === "open" || s.type === "qa")
     out.texts = SAMPLE_TEXT.map((t, i) => ({ id: "x" + i, pollId: "", slideId: s.id, who: "", value: { text: t }, at: i, votes: s.type === "qa" ? 9 - i * 2 : undefined }));
+  else if (s.type === "guess") {
+    const [lo, hi] = guessRange(s);
+    const rs: PollResponse[] = Array.from({ length: 24 }, (_, i) => ({ id: "g" + i, pollId: "", slideId: s.id, who: "w" + i, at: i, value: { num: Math.round(lo + (hi - lo) * Math.min(1, Math.max(0, 0.55 + Math.sin(i * 1.7) * 0.28))) } }));
+    return { ...aggregate(s, rs), slideId: s.id };
+  } else if (s.type === "points") out.points = opts.map((_, i) => [42, 26, 18, 9, 5, 4, 3, 2][i] ?? 1);
+  else if (s.type === "grid") out.grid = opts.map((_, i) => ({ x: [8.1, 3.2, 6.5, 2.4, 5][i % 5], y: [7.4, 8.2, 3.1, 2.6, 5.5][i % 5] }));
+  else if (s.type === "pin") out.pins = Array.from({ length: 24 }, (_, i) => [Math.round(500 + Math.cos(i * 2.4) * (80 + i * 9)), Math.round(480 + Math.sin(i * 2.4) * (60 + i * 7))] as [number, number]);
+  else out.n = 0;
   return out;
 }
