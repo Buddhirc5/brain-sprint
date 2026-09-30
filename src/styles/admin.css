@@ -245,3 +245,9 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .signpad { position: relative; display: grid; gap: 8px; }
 .signpad canvas { width: 100%; max-width: 540px; aspect-ratio: 3 / 1; height: auto; background: #FFFEFA; border: 2px dashed var(--line); border-radius: var(--r-md); touch-action: none; cursor: crosshair; }
 .signpad-hint { position: absolute; left: 16px; top: 10px; font-family: var(--hand); font-size: 22px; color: var(--muted); pointer-events: none; }
+
+/* password rules */
+.pw-rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.pw-rules li.ok { color: var(--good, #1B6332); }
+.pw-temp { display: flex; gap: 8px; align-items: center; }
+.pw-temp .inp { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .04em; }

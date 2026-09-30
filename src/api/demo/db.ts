@@ -10,6 +10,8 @@ export interface DemoUser {
   id: string;
   email?: string;
   pw?: string; // sha256(salt|password)
+  mustChange?: string; // password hash when a super admin reset it: no admin rights until it changes
+  recover?: boolean; // a reset link was sent: ask for a new password after signing in
   anonymous: boolean;
   mfa?: { secret: string; verified: boolean };
   createdAt: number;

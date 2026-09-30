@@ -4,7 +4,7 @@ import "../styles/admin.css";
 import { useCallback, useEffect, useState } from "react";
 import { TenantProvider } from "../app/ctx";
 import { useApi, errMsg } from "../app/ApiCtx";
-import { AdminSignIn, MfaGate, SandboxSignInNote } from "../components/auth";
+import { AdminSignIn, MfaGate, NewPasswordGate, SandboxSignInNote } from "../components/auth";
 import { Admin } from "../admin/Admin";
 import { Loading } from "../App";
 import { Gone } from "./TenantApp";
@@ -14,7 +14,7 @@ import { absUrl } from "../app/router";
 import { isDemo } from "../api/demo/guard";
 import { DEMO_HINT } from "./demoHints";
 
-type Gate = { s: "loading" } | { s: "signin" } | { s: "mfa"; enrolled: boolean } | { s: "denied"; email?: string } | { s: "ok"; role: Role; superUser: boolean };
+type Gate = { s: "loading" } | { s: "signin" } | { s: "mfa"; enrolled: boolean } | { s: "newpw" } | { s: "denied"; email?: string } | { s: "ok"; role: Role; superUser: boolean };
 
 export function AdminApp({ slug, tab }: { slug: string; tab?: string }) {
   const { api, user, toast } = useApi();
@@ -26,6 +26,11 @@ export function AdminApp({ slug, tab }: { slug: string; tab?: string }) {
     if (!user || user.anonymous) return setGate({ s: "signin" });
     try {
       await api.acceptInvites();
+      // password reset by a super admin (or opened a reset email): authenticator first if they have one, then a new password
+      if ((await api.passwordStatus()).mustChange) {
+        const m = await api.mfaState();
+        return setGate(m.enrolled && !m.verified ? { s: "mfa", enrolled: true } : { s: "newpw" });
+      }
       let a = await api.access(pub.id);
       if (!a.role) {
         // maybe MFA is required before the role counts
@@ -72,6 +77,13 @@ export function AdminApp({ slug, tab }: { slug: string; tab?: string }) {
         <Brand name={pub.branding.productName} company={pub.name} logo={pub.branding.logo} />
         <MfaGate enrolled={gate.enrolled} onDone={() => void check()} />
         <button className="link" style={{ justifySelf: "center" }} onClick={() => void api.signOut()}>Sign out</button>
+      </div>
+    );
+  if (gate.s === "newpw")
+    return (
+      <div className="phone" style={{ paddingTop: 24 }}>
+        <Brand name={pub.branding.productName} company={pub.name} logo={pub.branding.logo} />
+        <NewPasswordGate onDone={() => void check()} />
       </div>
     );
   if (gate.s === "denied")

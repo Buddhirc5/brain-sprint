@@ -372,6 +372,7 @@ function AdminsPanel({ t }: { t: TenantRow }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const { reload } = useSuper();
+  const [resetFor, setResetFor] = useState<string | null>(null);
   const load = () => api.superAdmins(t.id).then(setList, (e) => setErr(errMsg(e)));
   useEffect(() => {
     void load();
@@ -406,7 +407,7 @@ function AdminsPanel({ t }: { t: TenantRow }) {
         <div className="scroll-x">
           <table className="tbl">
             <thead>
-              <tr><th>Email</th><th>Role</th><th>Status</th></tr>
+              <tr><th>Email</th><th>Role</th><th>Status</th><th><span className="sr">Actions</span></th></tr>
             </thead>
             <tbody>
               {list.map((m) => (
@@ -414,6 +415,9 @@ function AdminsPanel({ t }: { t: TenantRow }) {
                   <td>{m.email}</td>
                   <td><span className={`chip su-role ${m.role}`}>{m.role}</span></td>
                   <td className="sub">{m.joinedAt ? `joined ${ago(m.joinedAt)}${m.mfa ? " · 2-step on" : ""}` : `invited ${ago(m.invitedAt)}`}</td>
+                  <td className="right">
+                    <button type="button" className="btn ghost tiny" onClick={() => setResetFor(m.email)}>Reset password</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -437,7 +441,98 @@ function AdminsPanel({ t }: { t: TenantRow }) {
       </form>
       {err && <p className="err" role="alert">{err}</p>}
       <p className="fine">They sign in at the admin portal with this email (first time: “Set a password”).</p>
+      {resetFor && <ResetPasswordModal t={t} email={resetFor} onClose={() => setResetFor(null)} />}
     </section>
+  );
+}
+
+/** Temporary password: 14 characters, no look-alikes (0/O, 1/l/I), always letters and numbers. */
+function tempPassword() {
+  const A = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  for (;;) {
+    const r = crypto.getRandomValues(new Uint32Array(14));
+    const p = Array.from(r, (x) => A[x % A.length]).join("");
+    if (/[A-Za-z]/.test(p) && /\d/.test(p)) return p;
+  }
+}
+
+function ResetPasswordModal({ t, email, onClose }: { t: TenantRow; email: string; onClose: () => void }) {
+  const { api, toast } = useApi();
+  const [how, setHow] = useState<"link" | "temp">("link");
+  const [pw, setPw] = useState(tempPassword);
+  const [done, setDone] = useState<"" | "link" | "temp">("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true);
+    setErr("");
+    try {
+      await api.superResetAdminPassword(t.id, email, how === "link" ? { link: absUrl({ r: "admin", slug: t.slug }) } : { temp: pw });
+      setDone(how);
+    } catch (e) {
+      setErr(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(pw);
+      toast("Temporary password copied");
+    } catch {
+      /* the password is on screen */
+    }
+  };
+  return (
+    <Modal label={`Reset password for ${email}`} onClose={onClose}>
+      <div className="stack">
+        <h3>Reset password</h3>
+        <p className="fine"><b>{email}</b> · {t.name}</p>
+        {done === "link" ? (
+          <p className="banner">A reset link is on its way to <b>{email}</b>. When they open it, they'll be asked to choose a new password.</p>
+        ) : done === "temp" ? (
+          <>
+            <p className="banner">
+              Temporary password set and <b>{email}</b> was signed out everywhere. Share it privately (not by the same email). They must choose a new password when they sign in.
+            </p>
+            <div className="pw-temp">
+              <input className="inp" readOnly value={pw} aria-label="Temporary password" onFocus={(e) => e.currentTarget.select()} />
+              <button type="button" className="btn primary small" onClick={copy}>Copy</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="seg" role="radiogroup" aria-label="How to reset">
+              <button type="button" role="radio" aria-checked={how === "link"} className={how === "link" ? "on" : ""} onClick={() => setHow("link")}>Email a reset link</button>
+              <button type="button" role="radio" aria-checked={how === "temp"} className={how === "temp" ? "on" : ""} onClick={() => setHow("temp")}>Set a temporary password</button>
+            </div>
+            {how === "link" ? (
+              <p className="fine">Safest: they get an email, open it and choose a new password themselves. Nobody else sees it.</p>
+            ) : (
+              <>
+                <p className="fine">Use this when their email isn't working. They're signed out now, get no admin access until they replace it, and their authenticator app (if they use one) is still required.</p>
+                <div className="field">
+                  <label htmlFor="tmp-pw">Temporary password</label>
+                  <div className="pw-temp">
+                    <input className="inp" id="tmp-pw" value={pw} onChange={(e) => setPw(e.target.value)} maxLength={72} autoComplete="off" spellCheck={false} />
+                    <button type="button" className="btn ghost small" onClick={() => setPw(tempPassword())}>New one</button>
+                  </div>
+                </div>
+              </>
+            )}
+            {err && <p className="err" role="alert">{err}</p>}
+          </>
+        )}
+        <div className="row end">
+          <button type="button" className="btn ghost small" onClick={onClose}>{done ? "Done" : "Cancel"}</button>
+          {!done && (
+            <button type="button" className="btn primary small" disabled={busy || (how === "temp" && (pw.length < 10 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)))} onClick={() => void go()}>
+              {busy ? "Working…" : how === "link" ? "Send reset link" : "Set temporary password"}
+            </button>
+          )}
+        </div>
+      </div>
+    </Modal>
   );
 }
 

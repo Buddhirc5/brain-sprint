@@ -259,7 +259,27 @@ class DemoApi implements Api {
     const u = this.need();
     if (pw.length < 10) throw err("invalid", "Use at least 10 characters.");
     const h = await sha256("bsx|" + pw);
-    store.tx((db) => void (db.users[u.id].pw = h));
+    store.tx((db) => {
+      const x = db.users[u.id];
+      x.pw = h;
+      if (x.mustChange && x.mustChange !== h) delete x.mustChange;
+      delete x.recover;
+    });
+  }
+  async changeMyPassword(current: string, next: string) {
+    const u = this.need();
+    if (next === current) throw err("invalid", "Pick a password different from your current one.");
+    const rl = this.rate("mypw:" + u.id);
+    if (!u.pw || (await sha256("bsx|" + current)) !== u.pw) {
+      rl.fail();
+      throw err("auth", "Your current password isn't right.");
+    }
+    rl.ok();
+    await this.updatePassword(next);
+  }
+  async passwordStatus() {
+    const u = this.sess && store.read().users[this.sess.userId];
+    return { mustChange: !!u && (!!u.mustChange || !!u.recover) };
   }
   async signOut() {
     this.setSess(null);
@@ -334,6 +354,7 @@ class DemoApi implements Api {
     if (!m) return null;
     const cfg = normalizeCfg(t.cfg, t.template);
     if (cfg.signIn.adminMfa && this.sess.aal !== 2) return null; // MFA required: no admin rights until verified
+    if (u.mustChange) return null; // temporary password from a super admin: choose a new one first
     return m.role;
   }
   private isSuper(db: DB): boolean {
@@ -1442,6 +1463,34 @@ class DemoApi implements Api {
     const db = store.read();
     const u = this.sess && db.users[this.sess.userId];
     return { isSuperUser: !!u?.email && db.sup.emails.includes(u.email) };
+  }
+  async superResetAdminPassword(tid: string, email: string, how: { link: string } | { temp: string }) {
+    const e = email.trim().toLowerCase();
+    const db0 = store.read();
+    this.needSuper(db0);
+    const t = db0.tenants[tid];
+    if (!t) throw err("not_found", "Company not found.");
+    if (!db0.t[tid].members.some((m) => m.email === e)) throw err("not_found", "That email isn't an admin of this company.");
+    if (db0.sup.emails.includes(e)) throw err("forbidden", "Super admin passwords can't be reset here.");
+    const target = Object.values(db0.users).find((x) => x.email === e && !x.anonymous);
+    if (!target) throw err("not_found", "This admin hasn't created an account yet — they can set a password on first sign-in.");
+    if ("temp" in how) {
+      const p = how.temp;
+      if (p.length < 10 || !/[A-Za-z]/.test(p) || !/\d/.test(p)) throw err("invalid", "Use 10+ characters with letters and numbers.");
+      const h = await sha256("bsx|" + p);
+      store.tx((db) => {
+        db.users[target.id].pw = h;
+        db.users[target.id].mustChange = h;
+        this.logS(db, { action: "Admin temporary password set", target: e, detail: t.name, sev: "warn" });
+        this.logT(db, tid, { action: "Temporary password set by super admin", target: e, sev: "warn" });
+      });
+    } else {
+      store.tx((db) => {
+        db.users[target.id].recover = true;
+        this.logS(db, { action: "Admin password reset link sent", target: e, detail: t.name, sev: "warn" });
+      });
+      await this.sendMagicLink(e, how.link);
+    }
   }
   private needSuper(db: DB) {
     if (!this.isSuper(db)) throw err("forbidden", "Verify with your authenticator app to use the super admin console.");

@@ -210,6 +210,7 @@ The platform owner runs every client from one console:
 - **Links panel:** the player link, admin link and private invite link for each company, ready to send.
 - **Usage per company:** players, active players and activity — useful for billing.
 - **Question library:** shared starter content that new companies can start from.
+- **Password tools:** change your own password; reset any company admin's password by emailed link or a temporary password they must replace at next sign-in.
 - **Audit log** of every super-admin action.
 - Protected by email + password and a required **authenticator app** (2-step verification), with automatic sign-out after 15 minutes idle.
 
