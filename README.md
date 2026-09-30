@@ -101,7 +101,7 @@ With no Supabase keys, the app runs a full **demo backend inside the browser** (
 | Harbor Bank, admin portal | `#/t/harbor/admin` | `admin@harbor.demo` / `demo1234` (Owner) · `host@harbor.demo` / `demo1234` (Host) |
 | Northwind Traders (generic template) | `#/t/northwind` · `/admin` | `admin@northwind.demo` / `demo1234` |
 | Live poll (audience) | `#/vote/482913` | anonymous |
-| Super admin console | `#/super` | `super@demo.app` / `demo1234`, then code **Sandeepa** |
+| Super admin console | `#/super` | `super@demo.app` / `demo1234`, then the authenticator code shown on screen |
 
 In the demo, email codes and links appear in a blue "Demo inbox" box instead of being emailed. To test a live game, host it from the admin portal and press **+ Open a test player** to open player tabs.
 
@@ -141,11 +141,11 @@ supabase/               SQL migrations, seed, backend README
 ## 3. Set up Supabase (free plan)
 
 1. Create a project at [supabase.com](https://supabase.com) (the free plan is fine to start).
-2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, `0005_live_player_count.sql`, `0006_super_self_approve.sql`, `0007_rename_ant_arena.sql`, `0008_special_characters.sql`, `0009_super_requires_authenticator.sql`, `0010_mfa_reset_by_email.sql`, `0011_private_invite_links.sql`, `0012_certificate_signature.sql`, `0013_poll_slide_types.sql`, then `supabase/seed.sql`.
+2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, `0005_live_player_count.sql`, `0006_super_self_approve.sql`, `0007_rename_ant_arena.sql`, `0008_special_characters.sql`, `0009_super_requires_authenticator.sql`, `0010_mfa_reset_by_email.sql`, `0011_private_invite_links.sql`, `0012_certificate_signature.sql`, `0013_poll_slide_types.sql`, `0014_super_admin_authenticator_only.sql`, then `supabase/seed.sql`.
 3. Make yourself super admin: `select public.bootstrap_super_admin('you@yourmail.com');`
 4. In **Authentication**, turn **Anonymous sign-ins ON**, set the **email OTP length to 6**, enable **MFA (TOTP)**, add your redirect URLs, and raise the anonymous sign-in rate limit. The full checklist is in `supabase/README.md` §3.
 5. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (**Project Settings → API**).
-6. Run `npm run dev`. The app now uses Supabase. Open `#/super`, sign in with your email ("First time? Set a password"), and unlock with **Sandeepa**. **Change the code straight away** (you'll see a red banner until you do).
+6. Run `npm run dev`. The app now uses Supabase. Open `#/super`, sign in with your email and password, then scan the QR code with an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…) and enter the 6-digit code. Email + password + authenticator is all a super admin needs.
 
 Optional: `npm run test:supabase` runs about 230 end-to-end checks against a Supabase stack (see `supabase/README.md`).
 
@@ -182,7 +182,7 @@ See `SECURITY.md`. In short:
 
 - **Tenant isolation** by Postgres Row Level Security.
 - **Server-side scoring:** answer keys never reach players.
-- **Access:** role-based access, optional or required authenticator-app MFA for admins, a super admin code as a second factor with lockout, and rate limits on every guessable input.
+- **Access:** role-based access, optional or required authenticator-app MFA for admins, a required authenticator app for super admins, and rate limits on every guessable input.
 - **Records and devices:** audit logs per company and for the super admin, idle sign-out, and one device at a time for Employee-ID players.
 - **Headers:** strict security headers on Vercel.
 

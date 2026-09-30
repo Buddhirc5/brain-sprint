@@ -217,10 +217,10 @@ function Accounts() {
           <dl className="h-creds">
             <dt>Email</dt><dd>{DEMO_SUPER}</dd>
             <dt>Password</dt><dd>{DEMO_PASSWORD}</dd>
-            <dt>Super code</dt><dd>Sandeepa</dd>
+            <dt>Authenticator</dt><dd>code shown on screen</dd>
           </dl>
           <DemoHref className="btn lime block" href="#/super">Open the console</DemoHref>
-          <p className="fine">You'll be asked to change the starting code — in the demo you can skip that.</p>
+          <p className="fine">The demo shows the current authenticator code for you — no phone needed.</p>
         </article>
       </div>
       <div className="h-reset">

@@ -211,7 +211,7 @@ The platform owner runs every client from one console:
 - **Usage per company:** players, active players and activity — useful for billing.
 - **Question library:** shared starter content that new companies can start from.
 - **Audit log** of every super-admin action.
-- Protected by email + password, a required **authenticator app**, and a separate **super admin code** with lockout.
+- Protected by email + password and a required **authenticator app** (2-step verification), with automatic sign-out after 15 minutes idle.
 
 ---
 
@@ -236,7 +236,7 @@ Built to pass corporate and financial-sector security reviews:
 - **Tenant isolation at the database level** (Postgres Row-Level Security on every table): companies cannot see each other's data.
 - **Server-side scoring:** answer keys never reach the browser, so results can't be faked.
 - **Role-based access** with five admin roles and **maker-checker** approvals.
-- **Authenticator-app (MFA) sign-in** for admins — optional or required per company; always required for the super admin.
+- **Authenticator-app (MFA) sign-in** for admins — optional or required per company; always required for the super admin (email + password + authenticator).
 - **Lost authenticator recovery** via a secure emailed link.
 - **Private invite links** with secret keys, rotatable at any time.
 - **Rate limits** on every guessable input (codes, PINs, sign-ins).
@@ -403,7 +403,7 @@ Typical time to first game: **one day**.
 
 **Security**
 - [x] Row-level tenant isolation
-- [x] Admin MFA (optional/required), super admin MFA + code
+- [x] Admin MFA (optional/required), super admin email + password + authenticator
 - [x] Lost-authenticator email reset
 - [x] Rate limits, audit logs, idle sign-out, one device per player
 - [x] Server-side validation of all inputs, strict security headers

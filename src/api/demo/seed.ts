@@ -4,7 +4,7 @@ import seed from "../../demo/seed.json";
 import library from "../../data/library.json";
 import type { AnswerKey, Game, LibraryItem, Player, Poll, PollResponse, Tenant } from "../../types";
 import { DEFAULT_BRANDING, LABELS, defaultCfg } from "../engine";
-import { pbkdf2, PBKDF2_ITER, sha256 } from "../../lib/security";
+import { sha256 } from "../../lib/security";
 import { randHex } from "../../lib/util";
 import type { DB, TStore } from "./db";
 
@@ -155,7 +155,6 @@ export async function buildDemoDB(): Promise<DB> {
   rs.push({ id: "r-q2", pollId: poll.id, slideId: "s6", who: "seed-2", value: { text: "Can branches get more training days?" }, at: now - DAY, votes: 4 });
   rs.push({ id: "r-o1", pollId: poll.id, slideId: "s5", who: "seed-3", value: { text: "Printing reports nobody reads." }, at: now - DAY });
 
-  const salt = randHex(16);
   const db: DB = {
     v: 1,
     users: {},
@@ -171,9 +170,6 @@ export async function buildDemoDB(): Promise<DB> {
     la: {},
     sup: {
       emails: [DEMO_ACCOUNTS.super],
-      code: { salt, hash: await pbkdf2("Sandeepa", salt, PBKDF2_ITER), iter: PBKDF2_ITER, isDefault: true },
-      unlocked: {},
-      fails: {},
       audit: [],
     },
     library: lib,
