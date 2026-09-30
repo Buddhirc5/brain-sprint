@@ -21,7 +21,7 @@ import { GRACE_MS, LABELS, LIVE, aggregate, audiencePoll, cleanSlide, pollSlides
 import { limitMs, runPoints, statsOf, levelOf } from "../../lib/scoring";
 import { ITEM } from "../../lib/catalog";
 import { isOpen } from "../../lib/games";
-import { cleanName, cleanText, maskId, normEmpId, pbkdf2, PBKDF2_ITER, safeEqual, sha256, validEmpId, validName } from "../../lib/security";
+import { cleanName, cleanText, maskId, normEmpId, sha256, validEmpId, validName } from "../../lib/security";
 import { LS, newId, randHex, randInt } from "../../lib/util";
 import { newSecret, otpauthUrl, totp, verifyTotp } from "../../lib/totp";
 import { qrDataUrl } from "../../lib/qr";
@@ -262,12 +262,6 @@ class DemoApi implements Api {
     store.tx((db) => void (db.users[u.id].pw = h));
   }
   async signOut() {
-    if (this.sess) {
-      const id = this.sess.userId;
-      store.tx((db) => {
-        for (const until of Object.keys(db.sup.unlocked)) if (until === id) delete db.sup.unlocked[id];
-      });
-    }
     this.setSess(null);
   }
   async mfaState(): Promise<MfaState> {
@@ -345,9 +339,9 @@ class DemoApi implements Api {
   private isSuper(db: DB): boolean {
     if (!this.sess) return false;
     const u = db.users[this.sess.userId];
-    return !!u?.email && db.sup.emails.includes(u.email) && (db.sup.unlocked[u.id] || 0) > Date.now();
+    return !!u?.email && db.sup.emails.includes(u.email) && this.sess.aal === 2; // email + password + authenticator
   }
-  /** On the super admin list, whether or not the console is unlocked. */
+  /** On the super admin list, whether or not they've verified with the authenticator yet. */
   private isSuperUser(db: DB): boolean {
     const u = this.sess ? db.users[this.sess.userId] : undefined;
     return !!u?.email && db.sup.emails.includes(u.email);
@@ -1447,59 +1441,10 @@ class DemoApi implements Api {
   async superStatus() {
     const db = store.read();
     const u = this.sess && db.users[this.sess.userId];
-    const isSuperUser = !!u?.email && db.sup.emails.includes(u.email);
-    return { isSuperUser, unlockedUntil: isSuperUser ? db.sup.unlocked[u!.id] || 0 : 0, codeIsDefault: db.sup.code.isDefault };
-  }
-  async superUnlock(code: string) {
-    const u = this.need();
-    const db0 = store.read();
-    if (!u.email || !db0.sup.emails.includes(u.email) || u.anonymous) throw err("forbidden", "This account isn't a super admin.");
-    if (this.sess?.aal !== 2) throw err("forbidden", "Verify with your authenticator app first.");
-    const f = db0.sup.fails[u.id];
-    if (f && f.until > Date.now()) throw err("rate_limited", `Too many wrong codes. Try again in ${Math.ceil((f.until - Date.now()) / 60000)} min.`, f.until - Date.now());
-    const c = db0.sup.code;
-    const ok = safeEqual(await pbkdf2(code, c.salt, c.iter), c.hash);
-    if (!ok) {
-      // record the failure first (tx only persists when its callback returns), then throw
-      const cur = store.tx((db) => {
-        const c2 = db.sup.fails[u.id] || { n: 0, until: 0 };
-        c2.n++;
-        if (c2.n >= 5) c2.until = Date.now() + Math.min(15 * 60_000, 60_000 * 2 ** (c2.n - 5));
-        db.sup.fails[u.id] = c2;
-        this.logS(db, { action: "Wrong super admin code", detail: `attempt ${c2.n}`, sev: c2.n >= 5 ? "alert" : "warn" });
-        return { ...c2 };
-      });
-      const locked = cur.until > Date.now();
-      throw err(locked ? "rate_limited" : "auth", locked ? "Too many wrong codes. Locked for a while." : `That code isn't right. ${Math.max(0, 5 - cur.n)} tries left.`, locked ? cur.until - Date.now() : undefined);
-    }
-    return store.tx((db) => {
-      delete db.sup.fails[u.id];
-      const until = Date.now() + 30 * 60_000;
-      db.sup.unlocked[u.id] = until;
-      this.logS(db, { action: "Super admin unlocked" });
-      return { until };
-    });
-  }
-  async superLock() {
-    const id = this.sess?.userId;
-    if (id) store.tx((db) => void delete db.sup.unlocked[id]);
+    return { isSuperUser: !!u?.email && db.sup.emails.includes(u.email) };
   }
   private needSuper(db: DB) {
-    if (!this.isSuper(db)) throw err("forbidden", "Unlock the super admin console first.");
-  }
-  async superChangeCode(oldCode: string, newCode: string) {
-    const db0 = store.read();
-    this.needSuper(db0);
-    const c = db0.sup.code;
-    if (!safeEqual(await pbkdf2(oldCode, c.salt, c.iter), c.hash)) throw err("auth", "The current code isn't right.");
-    if (newCode.length < 8 || !/[A-Za-z]/.test(newCode) || !/\d/.test(newCode)) throw err("invalid", "Use 8+ characters with letters and numbers.");
-    if (newCode.toLowerCase() === "sandeepa") throw err("invalid", "Pick something other than the starting code.");
-    const salt = randHex(16);
-    const hash = await pbkdf2(newCode, salt, PBKDF2_ITER);
-    store.tx((db) => {
-      db.sup.code = { salt, hash, iter: PBKDF2_ITER, isDefault: false };
-      this.logS(db, { action: "Super admin code changed", sev: "warn" });
-    });
+    if (!this.isSuper(db)) throw err("forbidden", "Verify with your authenticator app to use the super admin console.");
   }
   private usage(db: DB, tid: string): TenantUsage {
     const s = db.t[tid];

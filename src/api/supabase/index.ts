@@ -585,22 +585,8 @@ class SupabaseApi implements Api {
 
   /* ================= super admin ================= */
   async superStatus() {
-    if (!this.session) return { isSuperUser: false, unlockedUntil: 0, codeIsDefault: false };
-    return this.rpc<{ isSuperUser: boolean; unlockedUntil: number; codeIsDefault: boolean }>("super_status");
-  }
-  async superUnlock(code: string) {
-    this.needSession();
-    const r = await this.rpc<{ until: number }>("super_unlock", { p_code: code });
-    this.refreshAll();
-    return r;
-  }
-  async superLock() {
-    if (!this.session) return;
-    await this.rpc<void>("super_lock");
-    this.refreshAll();
-  }
-  async superChangeCode(oldCode: string, newCode: string) {
-    await this.rpc<void>("super_change_code", { p_old: oldCode, p_new: newCode });
+    if (!this.session) return { isSuperUser: false };
+    return this.rpc<{ isSuperUser: boolean }>("super_status");
   }
   async superTenants() {
     return this.rpc<(Tenant & { usage: TenantUsage })[]>("super_tenants");

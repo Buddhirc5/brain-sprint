@@ -350,7 +350,7 @@ function LinksPanel({ t }: { t: TenantRow }) {
   }, [api, t.id]);
   return (
     <section className="panel">
-      <PanelH icon={<SI.ext />} title="Links to share" sub="While the console is unlocked you can open this company's admin portal as an owner." />
+      <PanelH icon={<SI.ext />} title="Links to share" sub="As a verified super admin you can open this company's admin portal as an owner." />
       <CopyField label="Player invite link" value={absUrl({ r: "tenant", slug: t.slug, key })} />
       <CopyField label="Admin portal" value={absUrl({ r: "admin", slug: t.slug })} />
     </section>

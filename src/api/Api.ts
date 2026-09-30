@@ -4,7 +4,7 @@
    • DemoApi     (src/api/demo)     — runs entirely in this browser (localStorage +
                                      BroadcastChannel), for demos and development.
    Both must behave the same. Anything security-relevant (scoring, answer keys,
-   tenant isolation, roles, super-admin code) is enforced by the backend, never
+   tenant isolation, roles, super-admin authenticator) is enforced by the backend, never
    by the UI. Every method throws ApiError on failure.
    ===================================================================== */
 import type {
@@ -62,7 +62,7 @@ export interface TenantData {
 
 export interface Access {
   role: Role | null; // tenant admin role, or null
-  isSuper: boolean; // super admin AND unlocked with the code right now
+  isSuper: boolean; // super admin AND verified with their authenticator app in this session
   superUser?: boolean; // on the super admin list (unlocked or not): may approve their own quiz changes
 }
 
@@ -214,10 +214,7 @@ export interface Api {
   qaModerate(pollId: string, responseId: string, patch: Partial<Pick<PollResponse, "hidden" | "answered">>): Promise<void>;
 
   /* ---- super admin ---- */
-  superStatus(): Promise<{ isSuperUser: boolean; unlockedUntil: number; codeIsDefault: boolean }>;
-  superUnlock(code: string): Promise<{ until: number }>; // throws rate_limited with wait
-  superLock(): Promise<void>;
-  superChangeCode(oldCode: string, newCode: string): Promise<void>;
+  superStatus(): Promise<{ isSuperUser: boolean }>; // on the super admin list (access also needs the authenticator: mfaState)
   superTenants(): Promise<(Tenant & { usage: TenantUsage })[]>;
   superCreateTenant(input: NewTenantInput): Promise<Tenant>;
   superUpdateTenant(id: string, patch: Partial<Pick<Tenant, "name" | "slug" | "status" | "template" | "branding" | "labels" | "cfg">>): Promise<void>;

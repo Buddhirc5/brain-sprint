@@ -17,12 +17,7 @@ insert into public.library (id, title, topic, industry, questions, answers, ord)
 on conflict (id) do update set title = excluded.title, topic = excluded.topic, industry = excluded.industry,
   questions = excluded.questions, answers = excluded.answers, ord = excluded.ord;
 
--- 2) the super admin code. Starting code: Sandeepa (bcrypt). The console shows a red banner until it is changed.
-insert into public.super_secret (id, hash, is_default)
-values (1, extensions.crypt('Sandeepa', extensions.gen_salt('bf', 10)), true)
-on conflict (id) do nothing;
-
--- 3) make yourself super admin — EITHER uncomment and edit this line:
+-- 2) make yourself super admin (you'll sign in with email + password + an authenticator app) — EITHER uncomment and edit this line:
 -- insert into public.super_admins (email) values ('YOUR-EMAIL@example.com');
 -- OR run this in the SQL editor (not callable from the app):
 -- select public.bootstrap_super_admin('YOUR-EMAIL@example.com');

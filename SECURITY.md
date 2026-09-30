@@ -10,7 +10,7 @@ Built for companies with strict security needs. The production controls are enfo
 ## Identity & roles
 | Who | How they sign in |
 |---|---|
-| Super admin | Email + password (no self sign-up or email reset on this page), then an **authenticator app (TOTP)** — enforced by the database (`super_unlock` needs `aal2`) — then a **super admin code** (bcrypt-hashed, starts as `Sandeepa`; the live console stays closed until it is changed). 5 wrong codes → locked for 1 min, doubling up to 15 min. Unlock lasts 30 min and the console locks after 15 min idle. Every attempt is audited. |
+| Super admin | Email + password (no self sign-up or email reset on this page), then an **authenticator app (TOTP)**. The database only grants super admin rights in a session verified with the authenticator (`public.is_super()` needs `aal2`), so a stolen password alone opens nothing. The console signs out after 15 min idle. Every action is audited. |
 | Company admins | Password and/or magic link (each company chooses). An **authenticator app (TOTP)** can be required (on by default for the bank template): until the admin passes it (`aal2`), the database gives them no admin rights. Roles: Viewer < Host < Editor < Admin < Owner, and at least one Owner is always kept. Idle sign-out (5–30 min). Admin rights only count for **confirmed** emails, and never for anonymous users. |
 | Players | Employee ID + "Is this you?" (no password), a 6-digit email code, or Microsoft Entra ID (optional). One device at a time for Employee ID: signing in elsewhere signs the old device out. Admins can lock a card or sign it out of all devices. |
 
@@ -57,7 +57,7 @@ Built for companies with strict security needs. The production controls are enfo
 - **Secrets:** the browser only ever has the Supabase **anon** key. Never put the service-role key in the app or in Vercel env vars starting with `VITE_`.
 
 ## Before go-live checklist
-- [ ] Change the super admin code from `Sandeepa` (the live console requires it).
+- [ ] Super admins: set up the authenticator app on first sign-in, and keep the recovery email safe (lost phone → emailed reset link).
 - [ ] Supabase Auth: enable **leaked password protection**, set minimum password length 10, turn on **CAPTCHA** (hCaptcha/Turnstile) for sign-in/sign-up if you see abuse.
 - [ ] Vercel: turn on **Firewall → Bot protection / Attack challenge mode** when needed.
 - [ ] Custom SMTP set up; Confirm email ON; OTP length 6; MFA TOTP ON.

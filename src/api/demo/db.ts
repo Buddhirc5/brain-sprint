@@ -39,9 +39,6 @@ export interface DB {
   la: Record<string, LiveAnswer[]>;
   sup: {
     emails: string[];
-    code: { salt: string; hash: string; iter: number; isDefault: boolean };
-    unlocked: Record<string, number>;
-    fails: Record<string, { n: number; until: number }>;
     audit: AuditEntry[];
   };
   library: LibraryItem[];

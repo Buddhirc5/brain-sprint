@@ -122,7 +122,7 @@ const once = (subscribe) =>
   });
 
 /* =============================================================== */
-section("super admin bootstrap & unlock");
+section("super admin bootstrap & authenticator");
 const superEmail = mail("super");
 const sup = await adminUser(superEmail);
 {
@@ -133,23 +133,10 @@ const sup = await adminUser(superEmail);
 }
 {
   const st = await sup.superStatus();
-  ok(st.isSuperUser && st.unlockedUntil === 0, "superStatus before unlock", st);
-  await rejects(sup.superTenants(), "forbidden", "super console locked until unlocked");
-  await rejects(sup.superUnlock("wrong-code-1"), "auth", "wrong super code", /tries left/);
-  const u = await sup.superUnlock("Sandeepa");
-  ok(u.until > Date.now() + 29 * 60_000, "unlock lasts 30 min", u);
-  ok((await sup.superStatus()).codeIsDefault === true || process.env.SB_CODE_CHANGED, "code is still the default");
-  await rejects(sup.superChangeCode("nope", "Abcdefgh12"), "auth", "change code needs the current code");
-  await rejects(sup.superChangeCode("Sandeepa", "short1"), "invalid", "new code must be 8+ letters+digits");
-  if (process.env.SB_TEST_CHANGE_CODE) {
-    // changes the real code; restore with: update super_secret set hash = crypt('Sandeepa', gen_salt('bf')), is_default = true;
-    await sup.superChangeCode("Sandeepa", "Harbour2026x");
-    ok((await sup.superStatus()).codeIsDefault === false, "code changed");
-    await sup.superLock();
-    await rejects(sup.superUnlock("Sandeepa"), "auth", "old code no longer works");
-    await sup.superUnlock("Harbour2026x");
-    ok((await sup.superStatus()).unlockedUntil > Date.now(), "new code unlocks");
-  }
+  ok(st.isSuperUser === true, "superStatus: on the super admin list", st);
+  await rejects(sup.superTenants(), "forbidden", "super console closed until the authenticator is verified");
+  await withMfa(sup);
+  ok(Array.isArray(await sup.superTenants()), "email + password + authenticator opens the console");
 }
 
 section("tenants");
@@ -443,7 +430,7 @@ section("direct table access is blocked (RLS + grants)");
   ok(!!up.error, "player cannot update players", up.error?.message);
   const upq = await r.from("quizzes").update({ status: "live" }).eq("id", L.game.id);
   ok(!!upq.error, "player cannot update quizzes");
-  for (const t of ["library", "live_keys", "super_secret", "super_admins", "rate_limits", "poll_votes", "super_unlocks"]) {
+  for (const t of ["library", "live_keys", "super_admins", "rate_limits", "poll_votes"]) {
     const x = await r.from(t).select("*");
     ok(!!x.error || x.data.length === 0, `no access to ${t}`, x.data?.length);
   }
@@ -721,19 +708,16 @@ section("super admin — manage tenants");
   await rejects(pz.playerRegister(tB.id, { empId: "E999", name: "Zed Zed", unitType: "dept", unit: "IT", look: 0 }, "x"), "suspended", "suspended tenant refuses players");
   await rejects(sup.superUpdateTenant(tB.id, { slug: slugA }), "conflict", "slug taken");
   const aud = await sup.superAudit();
-  ok(aud.some((a) => a.action === "Company created") && aud.some((a) => a.action === "Wrong super admin code") && aud.some((a) => a.action === "Company suspended"), "super audit trail");
+  ok(aud.some((a) => a.action === "Company created") && aud.some((a) => a.action === "Company suspended"), "super audit trail");
   await rejects(sup.superDeleteTenant(tB.id, "wrong"), "invalid", "delete needs the exact slug");
   await sup.superDeleteTenant(tB.id, slugB);
   ok((await sup.tenantBySlug(slugB)) === null, "tenant deleted");
   const lib = await owner.library();
   await sup.superSaveLibrary(lib);
   ok((await owner.library()).length === lib.length, "superSaveLibrary");
-  await sup.superLock();
-  await rejects(sup.superTenants(), "forbidden", "locked again");
-  // wrong codes → lockout
-  for (let i = 0; i < 4; i++) await sup.superUnlock("bad" + i).catch(() => undefined);
-  await rejects(sup.superUnlock("bad5"), "rate_limited", "5 wrong codes → locked");
-  await rejects(sup.superUnlock("Sandeepa"), "rate_limited", "even the right code waits out the lock");
+  const plain = await adminUser(mail("super2"));
+  await service.rpc("bootstrap_super_admin", { p_email: mail("super2") });
+  await rejects(plain.superTenants(), "forbidden", "a super admin without the authenticator gets nothing");
 }
 
 /* ---------- optional: coin/streak parity (SQL vs TS) through psql ---------- */
