@@ -317,3 +317,91 @@ function hereUrl() {
   const base = location.protocol === "file:" ? raw : raw + "/";
   return base + location.hash.replace(/[?&]demo_token=[a-f0-9]+/, "");
 }
+
+/* ---------------- passwords ---------------- */
+const pwRules = (pw: string, again: string, current?: string): [boolean, string][] => [
+  [pw.length >= 10, "10 or more characters"],
+  [/[A-Za-z]/.test(pw) && /\d/.test(pw), "Letters and numbers"],
+  [!!pw && pw === again, "Both new passwords match"],
+  ...(current !== undefined ? [[!!pw && pw !== current, "Different from your current password"] as [boolean, string]] : []),
+];
+
+/** Change your password ("change": asks for the current one) or choose a new one after a reset ("set"). */
+export function PasswordForm({ mode, onDone, onCancel }: { mode: "change" | "set"; onDone: () => void; onCancel?: () => void }) {
+  const { api, toast } = useApi();
+  const [cur, setCur] = useState("");
+  const [pw, setPw] = useState("");
+  const [again, setAgain] = useState("");
+  const [show, setShow] = useState(false);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const rules = pwRules(pw, again, mode === "change" ? cur : undefined);
+  const ok = rules.every((r) => r[0]) && (mode === "set" || !!cur);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ok) return;
+    setBusy(true);
+    setErr("");
+    try {
+      if (mode === "change") await api.changeMyPassword(cur, pw);
+      else await api.updatePassword(pw);
+      toast("Password changed");
+      onDone();
+    } catch (e2) {
+      setErr(errMsg(e2));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const type = show ? "text" : "password";
+  return (
+    <form className="stack" onSubmit={submit} noValidate>
+      {mode === "change" && (
+        <div className="field">
+          <label htmlFor="pw-cur">Current password</label>
+          <input className="inp" id="pw-cur" type={type} autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} />
+        </div>
+      )}
+      <div className="field">
+        <label htmlFor="pw-new">New password</label>
+        <input className="inp" id="pw-new" type={type} autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor="pw-again">Type the new password again</label>
+        <input className="inp" id="pw-again" type={type} autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />
+      </div>
+      <label className="check-row">
+        <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
+        <span>Show passwords</span>
+      </label>
+      <ul className="pw-rules" aria-label="Password rules">
+        {rules.map(([pass, t]) => (
+          <li key={t} className={pass ? "ok" : ""}>
+            <span aria-hidden="true">{pass ? "✓" : "•"}</span> {t}
+          </li>
+        ))}
+      </ul>
+      {err && <p className="err" role="alert">{err}</p>}
+      <div className="row end">
+        {onCancel && <button type="button" className="btn ghost small" onClick={onCancel}>Cancel</button>}
+        <button className="btn primary small" disabled={!ok || busy}>{busy ? "Saving…" : mode === "change" ? "Change password" : "Save new password"}</button>
+      </div>
+    </form>
+  );
+}
+
+/** Shown after signing in with a temporary password, or from a "reset your password" email. */
+export function NewPasswordGate({ onDone }: { onDone: () => void }) {
+  const { api } = useApi();
+  return (
+    <div className="card stack auth-card">
+      <span className="lock-badge">
+        <Icon.lock />
+      </span>
+      <h2 style={{ fontSize: 24, fontWeight: 900 }}>Choose a new password</h2>
+      <p className="fine">Your password was reset. Pick a new one that only you know — you'll use it from now on.</p>
+      <PasswordForm mode="set" onDone={onDone} />
+      <button type="button" className="link" style={{ justifySelf: "center" }} onClick={() => void api.signOut()}>Sign out</button>
+    </div>
+  );
+}

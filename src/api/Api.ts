@@ -120,7 +120,9 @@ export interface Api {
   signInMicrosoft(redirectTo: string): Promise<void>;
   signInAnonymous(): Promise<void>; // players using Employee ID, poll voters, live guests
   resetPassword(email: string, redirectTo: string): Promise<void>;
-  updatePassword(pw: string): Promise<void>;
+  updatePassword(pw: string): Promise<void>; // also clears "choose a new password" once it has changed
+  changeMyPassword(current: string, next: string): Promise<void>; // checks the current password first
+  passwordStatus(): Promise<{ mustChange: boolean }>; // temporary password set by a super admin, or opened from a reset link
   signOut(): Promise<void>;
   mfaState(): Promise<MfaState>;
   mfaEnroll(): Promise<{ factorId: string; qr: string; secret: string }>; // qr = SVG markup or data URL
@@ -220,6 +222,8 @@ export interface Api {
   superUpdateTenant(id: string, patch: Partial<Pick<Tenant, "name" | "slug" | "status" | "template" | "branding" | "labels" | "cfg">>): Promise<void>;
   superDeleteTenant(id: string, confirmSlug: string): Promise<void>;
   superAdmins(tenantId: string): Promise<AdminMember[]>;
+  /** Company admin password: email them a reset link, or set a temporary password they must replace on sign-in. */
+  superResetAdminPassword(tenantId: string, email: string, how: { link: string } | { temp: string }): Promise<void>;
   superInvite(tenantId: string, email: string, role: Role): Promise<void>;
   superAudit(): Promise<AuditEntry[]>;
   superSaveLibrary(items: LibraryItem[]): Promise<void>;

@@ -79,6 +79,7 @@ class SupabaseApi implements Api {
   constructor(private sb: SupabaseClient, session: Session | null) {
     this.session = session;
     sb.auth.onAuthStateChange((event, s) => {
+      if (event === "PASSWORD_RECOVERY") markRecovery(); // opened a "reset your password" email: ask for a new one
       const before = this.session?.user.id ?? null;
       this.session = s;
       const u = this.user();
@@ -188,15 +189,23 @@ class SupabaseApi implements Api {
     if (pw.length < 10) throw new ApiError("invalid", "Use at least 10 characters.");
     const { error } = await this.sb.auth.updateUser({ password: pw });
     if (error) throw authError(error);
+    clearRecovery();
+    await this.rpc<boolean>("pw_changed");
+    this.refreshAll();
+  }
+  async changeMyPassword(current: string, next: string) {
+    this.needSession();
+    if (next === current) throw new ApiError("invalid", "Pick a password different from your current one.");
+    if (!(await this.rpc<boolean>("verify_my_password", { p_password: current }))) throw new ApiError("auth", "Your current password isn't right.");
+    await this.updatePassword(next);
+  }
+  async passwordStatus() {
+    if (!this.session) return { mustChange: false };
+    const r = await this.rpc<{ mustChange: boolean }>("pw_status");
+    return { mustChange: r.mustChange || inRecovery() };
   }
   async signOut() {
-    if (this.session) {
-      try {
-        await this.rpc("super_lock"); // like the demo: signing out locks the super console
-      } catch {
-        /* ignore */
-      }
-    }
+    clearRecovery();
     const { error } = await this.sb.auth.signOut();
     if (error && !/session/i.test(error.message)) throw authError(error);
   }
@@ -588,6 +597,14 @@ class SupabaseApi implements Api {
     if (!this.session) return { isSuperUser: false };
     return this.rpc<{ isSuperUser: boolean }>("super_status");
   }
+  async superResetAdminPassword(tenantId: string, email: string, how: { link: string } | { temp: string }) {
+    const e = email.trim().toLowerCase();
+    await this.rpc<void>("super_admin_reset_password", { p_tid: tenantId, p_email: e, p_new: "temp" in how ? how.temp : null });
+    if ("link" in how) {
+      const { error } = await this.sb.auth.resetPasswordForEmail(e, { redirectTo: how.link });
+      if (error) throw authError(error);
+    }
+  }
   async superTenants() {
     return this.rpc<(Tenant & { usage: TenantUsage })[]>("super_tenants");
   }
@@ -613,6 +630,30 @@ class SupabaseApi implements Api {
   }
   async superSaveLibrary(items: LibraryItem[]) {
     await this.rpc<void>("super_save_library", { p_items: items });
+  }
+}
+
+/** A "reset your password" email was opened in this tab: the admin screens ask for a new password first. */
+const REC = "bsx.pwrecovery";
+function markRecovery() {
+  try {
+    sessionStorage.setItem(REC, "1");
+  } catch {
+    /* private mode */
+  }
+}
+function clearRecovery() {
+  try {
+    sessionStorage.removeItem(REC);
+  } catch {
+    /* private mode */
+  }
+}
+function inRecovery() {
+  try {
+    return sessionStorage.getItem(REC) === "1";
+  } catch {
+    return false;
   }
 }
 

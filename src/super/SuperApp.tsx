@@ -14,8 +14,8 @@ import { ApiError } from "../api/Api";
 import { useApi, errMsg } from "../app/ApiCtx";
 import { absUrl, nav } from "../app/router";
 import { applyBranding } from "../app/theme";
-import { AdminSignIn, MfaGate, SandboxSignInNote } from "../components/auth";
-import { Icon } from "../components/ui";
+import { AdminSignIn, MfaGate, NewPasswordGate, PasswordForm, SandboxSignInNote } from "../components/auth";
+import { Icon, Modal } from "../components/ui";
 import { Mascot } from "../components/Chibi";
 import { Loading } from "../App";
 import { onIdle } from "../lib/security";
@@ -56,6 +56,13 @@ export function SuperApp({ tab }: { tab?: string }) {
     if (!user || user.anonymous) return setMfa(null);
     api.mfaState().then(setMfa, (e) => setErr(errMsg(e)));
   }, [api, user]);
+  // opened a "reset your password" email: choose a new password after the authenticator
+  const [mustChange, setMustChange] = useState<boolean | null>(null);
+  const checkPw = useCallback(() => {
+    if (!user || user.anonymous) return setMustChange(null);
+    api.passwordStatus().then((p) => setMustChange(p.mustChange), () => setMustChange(false));
+  }, [api, user]);
+  useEffect(checkPw, [checkPw]);
 
   if (!user || user.anonymous)
     return (
@@ -107,6 +114,14 @@ export function SuperApp({ tab }: { tab?: string }) {
         <button className="link su-center" onClick={() => void api.signOut()}>Sign out</button>
       </div>
     );
+  if (mustChange === null) return <Loading text="Checking access…" />;
+  if (mustChange)
+    return (
+      <div className="su-gate">
+        <GateHead />
+        <NewPasswordGate onDone={checkPw} />
+      </div>
+    );
   return <Console tab={tab} recheck={recheck} />;
 }
 
@@ -131,6 +146,7 @@ const TABS: [string, string, () => JSX.Element][] = [
 function Console({ tab, recheck }: { tab?: string; recheck: () => void }) {
   const { api, user, toast } = useApi();
   const [tenants, setTenants] = useState<TenantRow[] | null>(null);
+  const [changingPw, setChangingPw] = useState(false);
 
   const reload = useCallback(async () => {
     try {
@@ -187,12 +203,22 @@ function Console({ tab, recheck }: { tab?: string; recheck: () => void }) {
             <span className="sess" title="Signed in with password and authenticator app">
               <span className="dot" /> <Icon.lock /> <span className="lbl">Authenticator verified</span>
             </span>
+            <button className="icon-btn" aria-label="Change my password" title="Change my password" onClick={() => setChangingPw(true)}>
+              <SI.key />
+            </button>
             <button className="icon-btn" aria-label={`Sign out ${user?.email || ""}`} title={`Sign out ${user?.email || ""}`} onClick={() => void api.signOut()}>
               <Icon.logout />
             </button>
           </div>
         </nav>
         {body}
+        {changingPw && (
+          <Modal label="Change my password" onClose={() => setChangingPw(false)}>
+            <h3>Change my password</h3>
+            <p className="fine">For <b>{user?.email}</b>. Your authenticator app stays the same.</p>
+            <PasswordForm mode="change" onDone={() => setChangingPw(false)} onCancel={() => setChangingPw(false)} />
+          </Modal>
+        )}
         <p className="fine su-foot">
           Signed in as <b>{user?.email}</b> · signs out after 15 minutes idle · every action here is logged in <a className="link" href="#/super/audit">Audit</a>
         </p>
