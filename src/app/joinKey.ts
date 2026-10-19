@@ -7,6 +7,8 @@ import { LS } from "../lib/util";
 const k = (slug: string) => "bsx.jk." + slug;
 export const getJoinKey = (slug: string) => LS.get(k(slug)) || "";
 export const setJoinKey = (slug: string, key: string | null) => LS.set(k(slug), key);
+/** Marker: this device was let in by a live game's PIN (the server already holds the pass). */
+export const LIVE_PASS = "~LIVE";
 /** Accepts a whole pasted link or just the key. */
 export function cleanJoinKey(s: string) {
   const m = s.match(/\/k\/([A-Za-z0-9-]+)/);
@@ -16,7 +18,7 @@ export function cleanJoinKey(s: string) {
 /** Before a new player signs in: present the remembered key (no-op when there is none). */
 export async function joinIfNeeded(api: Api, tid: string, slug: string) {
   const key = getJoinKey(slug);
-  if (!key) return;
+  if (!key || key === LIVE_PASS) return;
   if (!api.user()) await api.signInAnonymous();
   if (!(await api.joinCompany(tid, key))) {
     setJoinKey(slug, null);

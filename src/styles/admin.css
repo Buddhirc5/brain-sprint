@@ -251,3 +251,28 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .pw-rules li.ok { color: var(--good, #1B6332); }
 .pw-temp { display: flex; gap: 8px; align-items: center; }
 .pw-temp .inp { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .04em; }
+
+/* starter packs */
+.sp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.sp-card { display: grid; gap: 6px; align-content: start; padding: 14px; border-radius: var(--r-md); background: var(--paper); border-top: 6px solid var(--lime-deep); }
+.sp-card.k-cert { border-top-color: var(--ink); }
+.sp-card.k-live { border-top-color: var(--orange); }
+.sp-card.k-poll { border-top-color: var(--blue); }
+.sp-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sp-kind { font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sp-title { font-size: 17px; line-height: 1.2; }
+.sp-card .btn { justify-self: start; margin-top: 4px; }
+
+/* dashboard highlights */
+.hl-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; }
+.hl-card { position: relative; display: grid; gap: 1px; padding: 12px 14px 12px 18px; border-radius: var(--r-md); background: var(--card); box-shadow: var(--shadow); overflow: hidden; min-width: 0; }
+.hl-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--lime-deep); }
+.hl-card.bad::before { background: var(--orange); }
+.hl-card.blue::before { background: var(--blue); }
+.hl-l { font-size: 11px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.hl-n { font-size: 16px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl-v { font-family: var(--display); font-size: 28px; line-height: 1.05; }
+.hl-card.good .hl-v { color: var(--good, #1B6332); }
+.hl-card.bad .hl-v { color: var(--orange-deep, #C23C0C); }
+.hl-card.blue .hl-v { color: var(--blue); }
+.hl-s { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

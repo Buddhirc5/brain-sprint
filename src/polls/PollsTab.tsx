@@ -13,6 +13,7 @@ import { clamp, fmtDT, newId, randHex } from "../lib/util";
 import type { Poll, Slide, SlideResults, SlideType } from "../types";
 import { CONTENT_TYPES, Ico, QUESTION_TYPES, Results, SlideImage, TYPE_META, TypeIcon, fetchResults, fmtCode, sampleResults, stageVars } from "./shared";
 import { SlideInput } from "./VotePage";
+import { StarterPacks } from "../admin/StarterPacks";
 
 const MAX_SLIDES = 30;
 const MAX_OPTS: Partial<Record<SlideType, number>> = { mc: 10, rank: 8, points: 8, grid: 8 };
@@ -22,6 +23,7 @@ export function PollsTab() {
   const { d, can, tid, api, approve, run, slug } = useApp();
   const { exportCSV } = useAdmin();
   const [editing, setEditing] = useState<Poll | null>(null);
+  const [packs, setPacks] = useState(false);
   const polls = useMemo(() => Object.values(d.polls).sort((a, b) => b.updatedAt - a.updatedAt), [d.polls]);
   const [counts, setCounts] = useState<Record<string, number>>({});
 
@@ -53,12 +55,18 @@ export function PollsTab() {
 
   return (
     <div className="stack">
+      {packs && <StarterPacks kinds={["poll"]} onClose={() => setPacks(false)} />}
       <div className="toolbar">
         <h1>Live polls</h1>
         {can("editor") && (
-          <button className="btn primary small" onClick={() => setEditing(blankPoll(newId("poll"), tid, ""))}>
-            <Ico.plus /> New poll
-          </button>
+          <>
+            <button className="btn lime small" onClick={() => setPacks(true)}>
+              ✨ Starter packs
+            </button>
+            <button className="btn primary small" onClick={() => setEditing(blankPoll(newId("poll"), tid, ""))}>
+              <Ico.plus /> New poll
+            </button>
+          </>
         )}
       </div>
       <p className="fine">
@@ -71,7 +79,7 @@ export function PollsTab() {
         <div className="empty stack" style={{ justifyItems: "center" }}>
           <Mascot mood="idle" size={100} />
           <b>No polls yet.</b>
-          {can("editor") && <span>Create one with “New poll”.</span>}
+          {can("editor") && <span>Create one with “New poll”, or add a ready-made one from “Starter packs”.</span>}
         </div>
       ) : (
         <div className="gcards">

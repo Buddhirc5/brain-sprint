@@ -13,6 +13,8 @@ import { Loading } from "../App";
 import type { LivePlayer, LiveSession, Player, TenantPublic } from "../types";
 import { Shape, TILES, fmtPts, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
 import "../styles/live.css";
+import { setReturnTo } from "../app/returnTo";
+import { LIVE_PASS, getJoinKey, setJoinKey } from "../app/joinKey";
 import { StageModeToggle, useStageMode } from "../app/stageTheme";
 
 type Found = { sessionId: string; tenantId: string; slug: string; title: string; guests: boolean; pin: string };
@@ -208,6 +210,12 @@ function JoinFlow({ found, pub, onLeave }: { found: Found; pub: TenantPublic; on
       />
     );
   if (card === undefined) return <Loading text="Checking who you are…" />;
+  // after signing in / registering in the company app, come straight back to this game
+  const back = () => {
+    setReturnTo(pub.slug, `#/join/${found.pin}`);
+    // the PIN let this person into the company (see live_find): no invite link needed to make a card
+    if (pub.joinKeyRequired && !getJoinKey(pub.slug)) setJoinKey(pub.slug, LIVE_PASS);
+  };
 
   const head = (
     <div className="lv-joinhead">
@@ -267,7 +275,7 @@ function JoinFlow({ found, pub, onLeave }: { found: Found; pub: TenantPublic; on
           </button>
           <p className="fine">
             Keep it friendly — everyone sees it on the big screen. Have a {pub.branding.productName} player card?{" "}
-            <a className="link" href={href({ r: "tenant", slug: pub.slug })}>
+            <a className="link" href={href({ r: "tenant", slug: pub.slug })} onClick={back}>
               Sign in
             </a>{" "}
             first to play as yourself.
@@ -283,10 +291,10 @@ function JoinFlow({ found, pub, onLeave }: { found: Found; pub: TenantPublic; on
         <Mascot mood="think" size={110} />
         <h2>Sign in to {pub.branding.productName} first</h2>
         <p className="fine">
-          This game is for {pub.name} players. Sign in with your player card, then come back here — the PIN is <b className="num">{found.pin}</b>.
+          This game is for {pub.name} players. Sign in, or create your player card in a minute — you'll come straight back to this game (PIN <b className="num">{found.pin}</b>).
         </p>
-        <a className="btn primary block" href={href({ r: "tenant", slug: pub.slug })}>
-          Sign in to {pub.branding.productName}
+        <a className="btn primary block" href={href({ r: "tenant", slug: pub.slug })} onClick={back}>
+          Sign in or create my player card
         </a>
         <button type="button" className="link" onClick={onLeave}>
           Use a different PIN

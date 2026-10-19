@@ -99,6 +99,7 @@ Ant Arena is a **white-label, multi-company web platform** for learning and enga
 - **Scoring on the server** — answers are checked securely, so nobody can cheat from the browser.
 - Points for correct and fast answers, **coins**, **daily streaks**, **levels** and **leaderboards**.
 - A built-in **starter library** of ready-made questions, plus bulk import from spreadsheets (CSV).
+- **Starter packs:** one-click banking and general-knowledge certifications, live quizzes and live polls, added as drafts.
 - Maker-checker approval: an editor writes a quiz, another admin approves it before it goes live (optional, on by default for the Bank template).
 
 ### 5.2 Live Quiz — the game-show experience
@@ -196,7 +197,7 @@ Each client company gets its own admin portal with these tabs:
 | **Security** | Audit log, sign-in rules, data retention (purge old plays), disqualify suspicious plays |
 | **Admins** | Invite admins with five roles: **Owner, Admin, Editor, Host, Viewer** |
 | **Branding** | Product name, tagline, logo, colours (with contrast checks so the brand always stays readable) |
-| **Settings** | Offices/branches, departments, topics, features on/off, sign-in methods, invite link and QR code, admin authenticator requirement |
+| **Settings** | How staff are organised (branches + departments, branches only, or departments only), the lists themselves, topics, features on/off, sign-in methods, invite link and QR code, admin authenticator requirement |
 
 **Knowledge-gap analytics** is the core value for managers: every answer feeds a picture of which topics, questions and teams need attention, week by week — and the PDF report turns it into an executive-ready summary with "what to do next" recommendations.
 

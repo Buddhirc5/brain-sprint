@@ -3,7 +3,7 @@ import { useApp } from "../app/ctx";
 import { absUrl } from "../app/router";
 import { Seg } from "../components/ui";
 import { cleanText } from "../lib/security";
-import type { Features, OrgConfig, SignIn } from "../types";
+import type { Features, OrgConfig, SignIn, UnitMode } from "../types";
 import { SwitchRow, useLiveTenant } from "./common";
 import { qrDataUrl } from "../lib/qr";
 import { errMsg } from "../app/ApiCtx";
@@ -11,6 +11,7 @@ import { errMsg } from "../app/ApiCtx";
 const lines = (s: string) => [...new Set(s.split(/\r?\n/).map((x) => cleanText(x, 60).trim()).filter(Boolean))];
 
 interface Form {
+  units: UnitMode;
   branches: string;
   departments: string;
   topics: string;
@@ -20,6 +21,7 @@ interface Form {
   signIn: SignIn;
 }
 const toForm = (c: OrgConfig): Form => ({
+  units: c.units || "both",
   branches: c.branches.join("\n"), departments: c.departments.join("\n"), topics: c.topics.join("\n"),
   minQ: c.minQ, maxQ: c.maxQ, features: { ...c.features }, signIn: { ...c.signIn },
 });
@@ -59,7 +61,8 @@ export function Settings() {
 
   const problem = (): string | null => {
     if (f.minQ > f.maxQ) return "Minimum questions can't be more than the maximum.";
-    if (!lines(f.branches).length && !lines(f.departments).length) return `Add at least one ${labels.branch.toLowerCase()} or ${labels.dept.toLowerCase()}.`;
+    if (f.units !== "dept" && !lines(f.branches).length) return `Add at least one ${labels.branch.toLowerCase()}, or switch to ${labels.depts.toLowerCase()} only.`;
+    if (f.units !== "branch" && !lines(f.departments).length) return `Add at least one ${labels.dept.toLowerCase()}, or switch to ${labels.branches.toLowerCase()} only.`;
     if (!lines(f.topics).length) return "Add at least one topic.";
     if (!f.signIn.empId && !f.signIn.emailOtp && !f.signIn.sso) return "Players need at least one way to sign in.";
     if (!f.features.sprint && !f.features.cert && !f.features.live && !f.features.polls) return "Turn on at least one mode (sprint, certification, live quiz or polls).";
@@ -69,10 +72,11 @@ export function Settings() {
   const save = async () => {
     const p = problem();
     if (p) return toast(p);
-    const cfg: OrgConfig = { ...d.cfg, branches: lines(f.branches), departments: lines(f.departments), topics: lines(f.topics), minQ: f.minQ, maxQ: f.maxQ, features: f.features, signIn: f.signIn };
+    const cfg: OrgConfig = { ...d.cfg, units: f.units, branches: lines(f.branches), departments: lines(f.departments), topics: lines(f.topics), minQ: f.minQ, maxQ: f.maxQ, features: f.features, signIn: f.signIn };
     const mfaOn = f.signIn.adminMfa && !d.cfg.signIn.adminMfa;
     const verified = mfaOn ? (await api.mfaState().catch(() => ({ verified: false }))).verified : true;
     const changes: string[] = [];
+    if (f.units !== (d.cfg.units || "both")) changes.push(f.units === "both" ? `${labels.branches} + ${labels.depts}` : `${f.units === "branch" ? labels.branches : labels.depts} only`);
     (Object.keys(f.features) as (keyof Features)[]).forEach((k) => f.features[k] !== d.cfg.features[k] && changes.push(`${FEAT[k].title(labels.battle)} ${f.features[k] ? "on" : "off"}`));
     (Object.keys(f.signIn) as (keyof SignIn)[]).forEach((k) => f.signIn[k] !== d.cfg.signIn[k] && changes.push(`${SI_NAME[k]}: ${String(f.signIn[k]).replace("true", "on").replace("false", "off")}`));
     approve({
@@ -155,16 +159,42 @@ export function Settings() {
             </div>
           </section>
         </div>
-        <section className="panel">
-          <div className="panel-h"><div><h2>{labels.branches}</h2><p>One per line. All of them appear in the gap report, even with no plays.</p></div></div>
-          <textarea className="inp" rows={9} value={f.branches} onChange={(e) => setF({ ...f, branches: e.target.value })} aria-label={labels.branches} />
-          <span className="fine">{lines(f.branches).length} {labels.branches.toLowerCase()}</span>
+        <section className="panel units-panel">
+          <div className="panel-h">
+            <div>
+              <h2>How your staff are organised</h2>
+              <p>Players pick where they work when they sign up. Dashboards, reports and the {labels.battle} follow this.</p>
+            </div>
+          </div>
+          <Seg<UnitMode>
+            value={f.units}
+            label="Staff are organised by"
+            options={[["both", `${labels.branches} + ${labels.depts}`], ["branch", `${labels.branches} only`], ["dept", `${labels.depts} only`]]}
+            onChange={(v) => setF({ ...f, units: v })}
+          />
+          <p className="fine">
+            {f.units === "both"
+              ? `Each player belongs to one ${labels.branch.toLowerCase()} or one ${labels.dept.toLowerCase()} (e.g. branch staff and head-office teams).`
+              : f.units === "branch"
+                ? `Players only pick a ${labels.branch.toLowerCase()}. Your ${labels.depts.toLowerCase()} list is kept but hidden.`
+                : `Players only pick a ${labels.dept.toLowerCase()}. Your ${labels.branches.toLowerCase()} list is kept but hidden.`}
+            {" "}Existing players keep their current unit. Rename these words in Branding.
+          </p>
         </section>
-        <section className="panel">
-          <div className="panel-h"><div><h2>{labels.depts}</h2><p>One per line</p></div></div>
-          <textarea className="inp" rows={9} value={f.departments} onChange={(e) => setF({ ...f, departments: e.target.value })} aria-label={labels.depts} />
-          <span className="fine">{lines(f.departments).length} {labels.depts.toLowerCase()} · rename these words in Branding</span>
-        </section>
+        {f.units !== "dept" && (
+          <section className="panel">
+            <div className="panel-h"><div><h2>{labels.branches}</h2><p>One per line. All of them appear in the gap report, even with no plays.</p></div></div>
+            <textarea className="inp" rows={9} value={f.branches} onChange={(e) => setF({ ...f, branches: e.target.value })} aria-label={labels.branches} />
+            <span className="fine">{lines(f.branches).length} {labels.branches.toLowerCase()}</span>
+          </section>
+        )}
+        {f.units !== "branch" && (
+          <section className="panel">
+            <div className="panel-h"><div><h2>{labels.depts}</h2><p>One per line. All of them appear in the gap report, even with no plays.</p></div></div>
+            <textarea className="inp" rows={9} value={f.departments} onChange={(e) => setF({ ...f, departments: e.target.value })} aria-label={labels.depts} />
+            <span className="fine">{lines(f.departments).length} {labels.depts.toLowerCase()}</span>
+          </section>
+        )}
         <section className="panel">
           <div className="panel-h"><div><h2>Topics</h2><p>One per line. Every question is tagged with one — they drive the knowledge-gap dashboard.</p></div></div>
           <textarea className="inp" rows={8} value={f.topics} onChange={(e) => setF({ ...f, topics: e.target.value })} aria-label="Topics" />

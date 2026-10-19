@@ -9,7 +9,9 @@ import { dayKey, mix, pct } from "../lib/util";
 import { Avatar } from "../player/common";
 import { useAdmin } from "./Admin";
 import { slugify, unitWord, unitsWord, useLiveTenant } from "./common";
-import type { QuizKind } from "../types";
+import type { Labels, QuizKind, UnitType } from "../types";
+import { unitTypes } from "../api/engine";
+import type { UnitStat } from "../lib/analytics";
 import { GapTrend } from "./GapTrend";
 import { ReportView, type ReportData } from "./Report";
 import { useApi } from "../app/ApiCtx";
@@ -26,14 +28,22 @@ export function Dashboard() {
   const quizzes = useMemo(() => sortGames(Object.values(d.games).filter((g) => g.kind !== "live" && (withCert || g.kind !== "cert"))), [d.games, withCert]);
   const [period, setPeriod] = useState<Period>("all");
   const [gid, setGid] = useState("all");
-  const [ut, setUt] = useState<"branch" | "dept">("branch");
+  // only the kinds of unit this company uses (Settings → How your staff are organised)
+  const types = unitTypes(d.cfg);
+  const [ut0, setUt] = useState<UnitType>(types[0]);
+  const ut: UnitType = types.includes(ut0) ? ut0 : types[0];
   useEffect(() => {
     if (gid !== "all" && !quizzes.some((g) => g.id === gid)) setGid("all");
   }, [gid, quizzes]);
 
   const { runs, answers } = useMemo(() => scope(players, d.games, d.dq, gid, period, kinds), [players, d.games, d.dq, gid, period, withCert]);
   const an = useMemo(() => analyze(answers, d.games), [answers, d.games]);
-  const urows = useMemo(() => unitStats(ut, ut === "dept" ? d.cfg.departments : d.cfg.branches, players, runs, answers), [ut, d.cfg, players, runs, answers]);
+  const byType = useMemo(
+    () => Object.fromEntries(types.map((t) => [t, unitStats(t, t === "dept" ? d.cfg.departments : d.cfg.branches, players, runs, answers)])) as Partial<Record<UnitType, UnitStat[]>>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [types.join(), d.cfg, players, runs, answers],
+  );
+  const urows = byType[ut] || [];
   const from = period === "7" ? Date.now() - 7 * 864e5 : period === "30" ? Date.now() - 30 * 864e5 : period === "today" ? new Date().setHours(0, 0, 0, 0) : 0;
   const lb = useMemo(() => board(players, d.dq, from).filter((r) => gid === "all" || d.players[r.uid]?.runs?.[gid]).slice(0, 10), [players, d.dq, from, gid, d.players]);
   const certRuns = runs.filter((r) => r.kind === "cert" && r.done);
@@ -131,6 +141,8 @@ export function Dashboard() {
         )}
       </div>
 
+      <Highlights byType={byType} topics={an.topics} labels={labels} />
+
       <GapTrend gid={gid} kinds={kinds} />
 
       <div className="grid2">
@@ -191,7 +203,7 @@ export function Dashboard() {
             <h2>Gaps across all {unitsWord(labels, ut).toLowerCase()}</h2>
             <p>Every {unitWord(labels, ut).toLowerCase()} from Settings, weakest first. Rows with no plays need engagement.</p>
           </div>
-          <Seg value={ut} options={[["branch", labels.branches], ["dept", labels.depts]]} onChange={setUt} label="Group by" />
+          {types.length > 1 && <Seg<UnitType> value={ut} options={types.map((t) => [t, unitsWord(labels, t)] as [UnitType, string])} onChange={setUt} label="Group by" />}
         </div>
         <div className="scroll-x">
           <table className="tbl">
@@ -261,7 +273,10 @@ export function Dashboard() {
           <ActivityChart days={days} perDay={perDay} />
         </section>
         <section className="panel">
-          <div className="panel-h"><div><h2>Participation by {unitWord(labels, ut).toLowerCase()}</h2><p>Players vs registered</p></div></div>
+          <div className="panel-h">
+            <div><h2>Participation by {unitWord(labels, ut).toLowerCase()}</h2><p>Players vs registered</p></div>
+            {types.length > 1 && <Seg<UnitType> value={ut} options={types.map((t) => [t, unitsWord(labels, t)] as [UnitType, string])} onChange={setUt} label="Participation by" />}
+          </div>
           <div className="bars">
             {urows
               .filter((u) => u.registered || u.players)
@@ -282,6 +297,43 @@ export function Dashboard() {
         </section>
       </div>
     </>
+  );
+}
+
+/** At a glance: the strongest and weakest unit of each kind, the most engaged one, and the topic extremes. */
+function Highlights({ byType, topics, labels }: { byType: Partial<Record<UnitType, UnitStat[]>>; topics: { k: string; acc: number; n: number }[]; labels: Labels }) {
+  const cards: { k: string; tone: string; label: string; name: string; v: string; sub: string }[] = [];
+  for (const t of ["branch", "dept"] as UnitType[]) {
+    const rows = (byType[t] || []).filter((u) => u.n >= 5 && u.acc != null);
+    const w = unitWord(labels, t);
+    if (rows.length) {
+      const best = rows.reduce((a, b) => ((b.acc ?? 0) > (a.acc ?? 0) ? b : a));
+      const worst = rows.reduce((a, b) => ((b.acc ?? 0) < (a.acc ?? 0) ? b : a));
+      cards.push({ k: t + "best", tone: "good", label: `Top ${w.toLowerCase()}`, name: best.name, v: `${best.acc}%`, sub: `${best.players} player${best.players === 1 ? "" : "s"} · ${best.plays} play${best.plays === 1 ? "" : "s"}` });
+      if (worst.name !== best.name) cards.push({ k: t + "worst", tone: "bad", label: `${w} to support`, name: worst.name, v: `${worst.acc}%`, sub: worst.weak ? `weakest: ${worst.weak.k}` : `${worst.n} answers` });
+    }
+    const eng = (byType[t] || []).filter((u) => u.registered >= 2).map((u) => ({ u, r: u.players / u.registered })).sort((a, b) => b.r - a.r)[0];
+    if (eng && eng.r > 0) cards.push({ k: t + "eng", tone: "blue", label: `Most engaged ${w.toLowerCase()}`, name: eng.u.name, v: `${Math.round(eng.r * 100)}%`, sub: `${eng.u.players} of ${eng.u.registered} played` });
+  }
+  const ts = topics.filter((t) => t.n >= 3);
+  if (ts.length) {
+    const strong = ts.reduce((a, b) => (b.acc > a.acc ? b : a));
+    const weak = ts.reduce((a, b) => (b.acc < a.acc ? b : a));
+    cards.push({ k: "tstrong", tone: "good", label: "Strongest topic", name: strong.k, v: `${strong.acc}%`, sub: `${strong.n} answers` });
+    if (weak.k !== strong.k) cards.push({ k: "tweak", tone: "bad", label: "Biggest gap", name: weak.k, v: `${weak.acc}%`, sub: "plan a refresher sprint" });
+  }
+  if (!cards.length) return null;
+  return (
+    <section className="hl-strip" aria-label="Highlights">
+      {cards.map((c) => (
+        <div key={c.k} className={`hl-card ${c.tone}`}>
+          <span className="hl-l">{c.label}</span>
+          <b className="hl-n" title={c.name}>{c.name}</b>
+          <span className="hl-v num">{c.v}</span>
+          <span className="hl-s">{c.sub}</span>
+        </div>
+      ))}
+    </section>
   );
 }
 

@@ -53,7 +53,10 @@ export interface SignIn {
   adminMfa: boolean; // require an authenticator app for admins
 }
 
+/** How staff are grouped: branches and departments, or only one of them. */
+export type UnitMode = "both" | "branch" | "dept";
 export interface OrgConfig {
+  units?: UnitMode; // missing = "both"
   branches: string[];
   departments: string[];
   topics: string[];
@@ -86,7 +89,7 @@ export type TenantPublic = Pick<Tenant, "id" | "slug" | "name" | "status" | "tem
   features: Features;
   signIn: SignIn;
   joinKeyRequired?: boolean; // new players need the private invite link (#/t/<slug>/k/<KEY>)
-  pubCfg: Pick<OrgConfig, "branches" | "departments" | "maskIds" | "lastInitialOnly" | "retentionDays" | "requireAllowlist">;
+  pubCfg: Pick<OrgConfig, "units" | "branches" | "departments" | "maskIds" | "lastInitialOnly" | "retentionDays" | "requireAllowlist">;
 };
 
 /* ---------------- quizzes ---------------- */
