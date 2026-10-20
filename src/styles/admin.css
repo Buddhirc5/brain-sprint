@@ -276,3 +276,14 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .hl-card.bad .hl-v { color: var(--orange-deep, #C23C0C); }
 .hl-card.blue .hl-v { color: var(--blue); }
 .hl-s { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* bulk import */
+.bulk-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.bulk-tabs button { padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; background: var(--paper); }
+.bulk-tabs button.on { background: var(--ink); color: #fff; }
+.bulk-help { display: grid; gap: 6px; }
+.bulk-help .box { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bulk-help .link { justify-self: start; }
+.bulk-prev { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bulk-prev .chip.ok { background: var(--lime-soft); }
+.bulk-prev .chip.warn { background: var(--orange-soft); }

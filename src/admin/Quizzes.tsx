@@ -9,6 +9,7 @@ const CERT_MINUTES = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180]; // exams: 1–18
 import { limitMs, runCorrect } from "../lib/scoring";
 import { cleanText } from "../lib/security";
 import { compressImage } from "../lib/image";
+import { parseImport } from "../lib/importQs";
 import { cleanCert } from "../lib/cert";
 import { CertDesign } from "./CertDesign";
 import { StarterPacks } from "./StarterPacks";
@@ -345,25 +346,13 @@ export function Editor({ gid }: { gid?: string }) {
   const leave = () => (dirty ? approve({ label: "Leave without saving? Your changes to this quiz will be lost.", yes: "Discard changes", danger: true, run: () => setTab("games") }) : setTab("games"));
 
   const importRows = () => {
-    const rows = importText.split(/\r?\n/).map((l) => l.split(l.includes("\t") ? "\t" : "|").map((c) => c.trim())).filter((c) => c.length >= 3 && c.some(Boolean));
-    const out: DraftQ[] = [];
-    let bad = 0;
-    for (const c of rows) {
-      const topic = topics.find((t) => t.toLowerCase() === c[0].toLowerCase()) || topics[0] || "General Knowledge";
-      const extra = live ? { seconds: LIVE.defaultSeconds } : {};
-      if (c.length >= 7) {
-        const opts = c.slice(2, 6).filter(Boolean);
-        const ans = "ABCD".indexOf((c[6] || "").toUpperCase());
-        if (opts.length < 2 || ans < 0 || ans >= opts.length) { bad++; continue; }
-        out.push({ ...blankDraft("mcq", topic, newId("q")), q: cleanText(c[1], 300), options: opts.map((o) => cleanText(o, 140)), answer: ans, explain: cleanText(c[7] || "", 300), ...extra });
-      } else if (/^(true|false)$/i.test(c[2])) {
-        out.push({ ...blankDraft("tf", topic, newId("q")), q: cleanText(c[1], 300), tf: /^true$/i.test(c[2]), explain: cleanText(c[3] || "", 300), ...extra });
-      } else bad++;
-    }
-    const room = Math.max(0, maxQ - n);
-    set({ qs: [...f.qs, ...out.slice(0, room)] });
+    const { drafts: out, skipped } = parseImport(importText, topics, live);
+    // imported rows replace any empty question the editor started with
+    const kept = f.qs.filter((q) => q.q.trim() || q.options.some((o) => o.trim()) || q.type === "match" || q.type === "order");
+    const room = Math.max(0, maxQ - kept.length);
+    set({ qs: [...kept, ...out.slice(0, room)] });
     setImport("");
-    toast(`Added ${Math.min(out.length, room)} question(s)${bad ? ` · ${bad} row(s) skipped` : ""}${out.length > room ? " · quiz limit reached" : ""}`);
+    toast(`Added ${Math.min(out.length, room)} question(s)${skipped.length ? ` · ${skipped.length} row(s) skipped` : ""}${out.length > room ? " · quiz limit reached" : ""}`);
   };
 
   const save = async () => {
@@ -563,13 +552,62 @@ export function Editor({ gid }: { gid?: string }) {
   );
 }
 
+const IMPORT_EXAMPLES: [string, string, string][] = [
+  ["mcq", "Multiple choice", "MCQ | Cyber Security | Which password is strongest? | Summer2026! | P@ssw0rd | river-Lamp-kite-73 | C | Long passphrases are hardest to crack"],
+  ["tf", "True / False", "TF | Cyber Security | You should lock your screen when you leave your desk. | TRUE | It takes one second"],
+  ["match", "Match pairs", "MATCH | Cyber Security | Match each threat to its meaning | Phishing = Fake message | Malware = Harmful software | Vishing = Scam phone call | Why: Naming attacks helps you report them"],
+  ["order", "Put in order", "ORDER | Cyber Security | You clicked a bad link. Put the steps in order | Disconnect from the network | Report it to IT | Change your passwords | Why: Contain, report, recover"],
+];
+
 function BulkImport({ text, setText, onAdd, live }: { text: string; setText: (s: string) => void; onAdd: () => void; live: boolean }) {
+  const { d, toast } = useApp();
+  const [help, setHelp] = useState<string>("mcq");
+  const res = useMemo(() => (text.trim() ? parseImport(text, d.cfg.topics, live) : null), [text, d.cfg.topics, live]);
+  const counts = (res?.drafts || []).reduce<Record<string, number>>((m, q) => ((m[q.type] = (m[q.type] || 0) + 1), m), {});
+  const ex = IMPORT_EXAMPLES.filter((x) => !live || x[0] === "mcq" || x[0] === "tf");
+  const cur = ex.find((x) => x[0] === help) || ex[0];
   return (
-    <section className="panel">
-      <div className="panel-h"><div><h2>Bulk import</h2><p>Paste rows from Excel (tab-separated) or use | between columns{live ? ". Each gets a 20-second timer." : ""}</p></div></div>
-      <code className="box">{"Topic | Question | Option A | Option B | Option C | Option D | Correct letter | Explanation\nTopic | Statement | TRUE or FALSE | Explanation"}</code>
-      <textarea className="inp" rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste rows here" aria-label="Rows to import" />
-      <button className="btn ghost small" style={{ justifySelf: "start" }} disabled={!text.trim()} onClick={onAdd}>Add these questions</button>
+    <section className="panel bulk">
+      <div className="panel-h">
+        <div>
+          <h2>Bulk import</h2>
+          <p>Paste rows from Excel (tab-separated) or use | between columns. Start a row with <b>MCQ</b>, <b>TF</b>{live ? "" : <>, <b>MATCH</b> or <b>ORDER</b></>}{live ? ". Each gets a 20-second timer." : "."}</p>
+        </div>
+      </div>
+      <div className="bulk-tabs" role="tablist" aria-label="Row format">
+        {ex.map(([k, label]) => (
+          <button key={k} type="button" role="tab" aria-selected={cur[0] === k} className={cur[0] === k ? "on" : ""} onClick={() => setHelp(k)}>{label}</button>
+        ))}
+      </div>
+      <div className="bulk-help">
+        <code className="box">{cur[2]}</code>
+        <p className="fine">
+          {cur[0] === "mcq" && "Type | Topic | Question | 2–5 options | correct letter | explanation (optional)."}
+          {cur[0] === "tf" && "Type | Topic | Statement | TRUE or FALSE | explanation (optional)."}
+          {cur[0] === "match" && "Type | Topic | Question | 2–6 pairs written as  term = meaning | Why: explanation (optional)."}
+          {cur[0] === "order" && "Type | Topic | Question | 3–6 steps in the RIGHT order (players get them shuffled) | Why: explanation (optional)."}
+          {" "}Rows without a type word still work the old way.
+        </p>
+        <button type="button" className="link" onClick={() => { setText((text.trim() ? text.replace(/\s*$/, "\n") : "") + cur[2]); toast("Example added — edit it or paste your own rows"); }}>
+          Add this example to the box
+        </button>
+      </div>
+      <textarea className="inp" rows={5} value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste rows here" aria-label="Rows to import" />
+      {res && (
+        <div className="bulk-prev" aria-live="polite">
+          {Object.entries(counts).map(([k, v]) => (
+            <span key={k} className="chip ok">{v} {TYPE_NAME[k as keyof typeof TYPE_NAME].toLowerCase()}</span>
+          ))}
+          {!res.drafts.length && <span className="fine">No questions recognised yet.</span>}
+          {res.skipped.slice(0, 4).map((x) => (
+            <span key={x.line} className="chip warn">Row {x.line}: {x.why}</span>
+          ))}
+          {res.skipped.length > 4 && <span className="fine">+{res.skipped.length - 4} more rows skipped</span>}
+        </div>
+      )}
+      <button className="btn ghost small" style={{ justifySelf: "start" }} disabled={!res?.drafts.length} onClick={onAdd}>
+        {res?.drafts.length ? `Add ${res.drafts.length} question${res.drafts.length === 1 ? "" : "s"}` : "Add these questions"}
+      </button>
     </section>
   );
 }
