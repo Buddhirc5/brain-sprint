@@ -84,11 +84,10 @@ export function Dashboard() {
           period: pLabel,
           quiz: gid === "all" ? (withCert ? "All sprints and certifications" : "All sprints") : d.games[gid]?.title || "Quiz",
           by: user?.email || "admin",
-          unitWord: unitWord(labels, ut),
-          unitsWord: unitsWord(labels, ut),
+
           kpi: { registered: regd, active: people, plays: done, acc: answers.length ? pct(ok, answers.length) : null, avgSec: avgMs / 1000, certPass, certPeople },
           topics: an.topics,
-          units: urows,
+          unitGroups: types.map((t) => ({ word: unitWord(labels, t), words: unitsWord(labels, t), units: byType[t] || [] })),
           leaders: lb.map((r) => ({ name: d.players[r.uid]?.name || "Player", unit: d.players[r.uid]?.unit || "", plays: r.runs, acc: r.acc, points: r.points })),
           missed,
           best,
