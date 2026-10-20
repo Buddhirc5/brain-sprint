@@ -4,6 +4,7 @@ import { Chibi } from "../components/Chibi";
 import { Seg } from "../components/ui";
 import { board, RULES, unitBoard, windowStart, type Window } from "../lib/scoring";
 import type { UnitType } from "../types";
+import { unitTypes } from "../api/engine";
 import { Avatar, pubName, TopBar, unitLabel } from "./common";
 
 type Tab = Window | "units";
@@ -13,7 +14,8 @@ export function Board() {
   const [tab0, setTab] = useState<Tab>("week");
   const tab: Tab = tab0 === "units" && !features.battle ? "week" : tab0;
   const tabs: [Tab, string][] = [["week", "Week"], ["month", "Month"], ["all", "All time"]];
-  if (features.battle) tabs.push(["units", labels.branches]);
+  const ut = unitTypes(d.cfg);
+  if (features.battle) tabs.push(["units", ut.length > 1 ? "Teams" : ut[0] === "dept" ? labels.depts : labels.branches]);
   const [unitWin, setUnitWin] = useState<Window>("week");
   const rows = useMemo(() => (tab === "units" ? [] : board(players, d.dq, windowStart(tab))), [tab, players, d.dq]);
   const units = useMemo(() => (tab === "units" ? unitBoard(players, d.dq, windowStart(unitWin)) : []), [tab, unitWin, players, d.dq]);
@@ -39,6 +41,10 @@ export function Board() {
                     <b>{pubName(p, d.cfg)}</b>
                     <div className="blk num">{k + 1}</div>
                     <span className="sub num">{row.points.toLocaleString()} pts</span>
+                    <span className="pod-stats" title={`${row.runs} quiz${row.runs === 1 ? "" : "zes"} · ${row.acc}% right`}>
+                      <span className="num"><b>{row.runs}</b> quiz{row.runs === 1 ? "" : "zes"}</span>
+                      <span className="num">🎯 {row.acc}%</span>
+                    </span>
                   </div>
                 );
               })}
@@ -81,7 +87,7 @@ export function Board() {
         <>
           <Seg<Window> value={unitWin} onChange={setUnitWin} label={`${labels.battle} period`} options={[["week", "This week"], ["month", "This month"], ["all", "All time"]]} />
           <p className="rules-note">
-            {labels.battle} ranks by <b>average points per active player</b>, so small {labels.branches.toLowerCase()} can beat big ones. A {labels.branch.toLowerCase()} or {labels.dept.toLowerCase()} needs {RULES.branchMin}+ active players to be ranked.
+            {labels.battle} ranks by <b>average points per active player</b>, so small teams can beat big ones. A {ut.length > 1 ? `${labels.branch.toLowerCase()} or ${labels.dept.toLowerCase()}` : ut[0] === "dept" ? labels.dept.toLowerCase() : labels.branch.toLowerCase()} needs {RULES.branchMin}+ active players to be ranked.
           </p>
           <div className="lb">
             {units.map((u, i) => (

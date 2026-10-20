@@ -7,11 +7,13 @@ import { Modal } from "../components/ui";
 import { fmtDT } from "../lib/util";
 import type { Game, LiveSession } from "../types";
 import "../styles/live.css";
+import { StarterPacks } from "../admin/StarterPacks";
 
 const STATE_LABEL: Record<LiveSession["state"], string> = { lobby: "In lobby", question: "Question on", reveal: "Showing answer", board: "Scoreboard", ended: "Ended" };
 
 export function LiveTab() {
   const { api, d, slug, tid, can, run, approve } = useApp();
+  const [packs, setPacks] = useState(false);
   const { setTab } = useAdmin();
   const [pick, setPick] = useState<Game | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -38,12 +40,18 @@ export function LiveTab() {
 
   return (
     <div className="stack">
+      {packs && <StarterPacks kinds={["live"]} onClose={() => setPacks(false)} />}
       <div className="toolbar">
         <h1>Live quiz</h1>
         {can("editor") && (
-          <button type="button" className="btn primary small" onClick={() => setTab("edit", "new:live")}>
-            + Create a live quiz
-          </button>
+          <>
+            <button type="button" className="btn lime small" onClick={() => setPacks(true)}>
+              ✨ Starter packs
+            </button>
+            <button type="button" className="btn primary small" onClick={() => setTab("edit", "new:live")}>
+              + Create a live quiz
+            </button>
+          </>
         )}
       </div>
       <p className="fine" style={{ maxWidth: "70ch" }}>

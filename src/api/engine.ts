@@ -2,7 +2,7 @@
    Pure game logic shared by the demo engine and mirrored 1:1 in SQL
    (supabase/migrations/*_functions.sql). Change both together.
    ===================================================================== */
-import type { Branding, Features, Game, Labels, OrgConfig, Poll, PollResponse, SignIn, Slide, SlideResults, Tenant } from "../types";
+import type { Branding, Features, Game, Labels, OrgConfig, Poll, PollResponse, SignIn, Slide, SlideResults, Tenant, UnitType } from "../types";
 import { answerPoints, shareMs } from "../lib/scoring";
 import { MAX_POLL_IMG_CHARS, MAX_SLIDE_IMG_CHARS, validImg } from "../lib/image";
 
@@ -53,6 +53,15 @@ export function defaultCfg(template: Tenant["template"]): OrgConfig {
     features: { ...DEFAULT_FEATURES },
     signIn: { ...DEFAULT_SIGNIN, adminMfa: template === "bank" },
   };
+}
+
+/** The unit types players can pick: the company's choice (branches, departments or both), skipping an empty list. */
+export function unitTypes(c: Pick<OrgConfig, "units" | "branches" | "departments">): UnitType[] {
+  const m = c.units || "both";
+  const out: UnitType[] = [];
+  if (m !== "dept" && c.branches.length) out.push("branch");
+  if (m !== "branch" && c.departments.length) out.push("dept");
+  return out.length ? out : [m === "dept" ? "dept" : "branch"];
 }
 
 /** Fill in any settings added after a tenant was created. */

@@ -11,6 +11,7 @@ import { cleanText } from "../lib/security";
 import { compressImage } from "../lib/image";
 import { cleanCert } from "../lib/cert";
 import { CertDesign } from "./CertDesign";
+import { StarterPacks } from "./StarterPacks";
 import { fmtDate, fmtMin, newId, pct, todayKey } from "../lib/util";
 import { LIVE } from "../api/engine";
 import type { AnswerKey, CardColor, CertSettings, Game, GameStatus, LibraryItem, QType, QuizKind } from "../types";
@@ -30,6 +31,7 @@ export function Quizzes() {
   const [kind, setKind] = useState<"all" | QuizKind>("all");
   const [picker, setPicker] = useState(false);
   const [lib, setLib] = useState(false);
+  const [packs, setPacks] = useState(false);
   const all = sortGames(Object.values(d.games));
   const gs = all.filter((g) => kind === "all" || (g.kind || "sprint") === kind);
   const count = (k: QuizKind) => all.filter((g) => (g.kind || "sprint") === k).length;
@@ -76,6 +78,11 @@ export function Quizzes() {
         <button className="btn ghost small" onClick={() => setLib(true)}>
           <Icon.book /> Starter library
         </button>
+        {can("editor") && (
+          <button className="btn lime small" onClick={() => setPacks(true)}>
+            ✨ Starter packs
+          </button>
+        )}
         <button className="btn primary" onClick={() => setPicker(true)}>
           New quiz
         </button>
@@ -178,6 +185,7 @@ export function Quizzes() {
       </div>
       {picker && <KindPicker onClose={() => setPicker(false)} onPick={(k) => { setPicker(false); setTab("edit", "new:" + k); }} />}
       {lib && <Library onClose={() => setLib(false)} />}
+      {packs && <StarterPacks kinds={["cert", "live", "poll"]} onClose={() => setPacks(false)} />}
     </>
   );
 }

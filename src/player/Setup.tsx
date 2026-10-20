@@ -8,6 +8,7 @@ import { SPECIALS } from "../components/Specials";
 import { Seg } from "../components/ui";
 import { cleanName, normEmpId, validEmpId, validName } from "../lib/security";
 import type { UnitType } from "../types";
+import { unitTypes } from "../api/engine";
 import { firstName, TopBar, unitLabel } from "./common";
 import { cleanJoinKey, getJoinKey, joinIfNeeded, setJoinKey } from "../app/joinKey";
 
@@ -187,7 +188,9 @@ export function Setup({ editing }: { editing?: boolean }) {
   const { user } = useApi();
   const [empId, setEmp] = useState(me?.empId ?? "");
   const [name, setName] = useState(me?.name ?? "");
-  const [unitType, setUT] = useState<UnitType>(me?.unitType ?? "branch");
+  const types = unitTypes(d.cfg);
+  // the company may only use one kind of unit; a player keeps theirs if it was set before
+  const [unitType, setUT] = useState<UnitType>(me && (types.includes(me.unitType) || editing) ? me.unitType : types[0]);
   const [unit, setUnit] = useState(me?.unit ?? "");
   const [look, setLook] = useState<number>(me?.look ?? Math.floor(Math.random() * LOOKS.length));
   const [filter, setFilter] = useState<"all" | "f" | "m" | "s">("all");
@@ -207,7 +210,7 @@ export function Setup({ editing }: { editing?: boolean }) {
   );
   const email = user && !user.anonymous ? user.email : undefined;
   const uLabel = unitLabel(labels, unitType);
-  const bothUnits = d.cfg.branches.length > 0 && d.cfg.departments.length > 0;
+  const bothUnits = types.length > 1;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

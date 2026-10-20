@@ -18,6 +18,7 @@ import { isDemo } from "../api/demo/guard";
 import { useEffect } from "react";
 import { nav } from "../app/router";
 import { cleanJoinKey, setJoinKey } from "../app/joinKey";
+import { takeReturnTo } from "../app/returnTo";
 
 export function Gone({ title, text }: { title: string; text: string }) {
   return (
@@ -54,6 +55,12 @@ export function TenantApp({ slug, joinKey }: { slug: string; joinKey?: string })
 function PlayerShell() {
   const { d, me, view, pub } = useApp();
   const { api } = useApi();
+  // came here from a live game (QR / PIN) to sign in or register: go back to the game once the card exists
+  useEffect(() => {
+    if (!me) return;
+    const to = takeReturnTo(pub.slug);
+    if (to) location.hash = to;
+  }, [me, pub.slug]);
   let screen: JSX.Element;
   if (!me) {
     if (view.v === "setup") screen = <Setup />;

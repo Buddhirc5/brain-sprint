@@ -80,6 +80,9 @@ export async function resetDemo() {
   }
 }
 
+/** Is this kind of unit (branch / department) enabled for the company? */
+const kindOk = (cfg: OrgConfig, t: UnitType) => (cfg.units || "both") === "both" || cfg.units === t;
+
 class DemoApi implements Api {
   readonly mode = "demo" as const;
   private sess: Sess | null = null;
@@ -406,7 +409,7 @@ class DemoApi implements Api {
     const cfg = normalizeCfg(t.cfg, t.template);
     return { id: t.id, slug: t.slug, name: t.name, status: t.status, template: t.template, branding: t.branding, labels: t.labels, features: cfg.features, signIn: cfg.signIn,
       joinKeyRequired: !!store.read().joinKeys?.[t.id]?.required,
-      pubCfg: { branches: cfg.branches, departments: cfg.departments, maskIds: cfg.maskIds, lastInitialOnly: cfg.lastInitialOnly, retentionDays: cfg.retentionDays, requireAllowlist: cfg.requireAllowlist } };
+      pubCfg: { units: cfg.units || "both", branches: cfg.branches, departments: cfg.departments, maskIds: cfg.maskIds, lastInitialOnly: cfg.lastInitialOnly, retentionDays: cfg.retentionDays, requireAllowlist: cfg.requireAllowlist } };
   }
   async tenantBySlug(slug: string) {
     const t = Object.values(store.read().tenants).find((x) => x.slug === slug.toLowerCase());
@@ -604,7 +607,7 @@ class DemoApi implements Api {
       if (!r || !r.hashes.includes(h)) throw err("forbidden", "This Employee ID isn't on the staff list. Ask your admin.");
     }
     const units = input.unitType === "dept" ? cfg.departments : cfg.branches;
-    if (!units.includes(input.unit)) throw err("invalid", "Pick your unit from the list.");
+    if (!units.includes(input.unit) || !kindOk(cfg, input.unitType)) throw err("invalid", "Pick your unit from the list.");
     return store.tx((db) => {
       const t = this.tenant(db, tid);
       if (t.status !== "active") throw err("suspended", "This company's account is paused.");
@@ -653,6 +656,7 @@ class DemoApi implements Api {
         const units = patch.unitType === "dept" ? cfg.departments : cfg.branches;
         const same = patch.unit === p.unit && patch.unitType === p.unitType; // keep a unit that was later removed from the list
         if (!same && !units.includes(patch.unit)) throw err("invalid", "Pick from the list.");
+        if (patch.unitType !== p.unitType && !kindOk(cfg, patch.unitType)) throw err("invalid", "Pick from the list.");
         p.unit = patch.unit;
         p.unitType = patch.unitType;
       }
@@ -880,7 +884,11 @@ class DemoApi implements Api {
       }
       if (patch.name != null) p.name = cleanName(patch.name);
       if (patch.unit != null) p.unit = patch.unit;
-      if (patch.unitType != null) p.unitType = patch.unitType;
+      if (patch.unitType != null && patch.unitType !== p.unitType) {
+        const t0 = db.tenants[tid];
+        if (!kindOk(normalizeCfg(t0.cfg, t0.template), patch.unitType)) throw err("invalid", "Pick your unit from the list.");
+        p.unitType = patch.unitType;
+      }
       if (patch.email !== undefined) p.email = patch.email ? patch.email.trim().toLowerCase() : undefined;
       if (patch.locked != null) {
         p.locked = patch.locked;
@@ -931,6 +939,10 @@ class DemoApi implements Api {
           continue;
         }
         const uid = "p-" + randHex(8);
+        if (!kindOk(normalizeCfg(db.tenants[tid].cfg, db.tenants[tid].template), r.unitType === "dept" ? "dept" : "branch")) {
+          skipped++;
+          continue;
+        }
         s.players[uid] = { uid, empId, name, unitType: r.unitType === "dept" ? "dept" : "branch", unit: r.unit, look: randInt(16), email: r.email?.trim().toLowerCase() || undefined, consentAt: 0, createdAt: now, updatedAt: now, runs: {} };
         added++;
       }
@@ -1196,6 +1208,8 @@ class DemoApi implements Api {
       return null;
     }
     rl.ok();
+    // the PIN is only shown in the room: it also lets this person into the company (private invite link)
+    if (this.sess) store.tx((db2) => void ((db2.joinPasses ||= {})[`${s.tenantId}:${this.sess!.userId}`] = Date.now()));
     return { sessionId: s.id, tenantId: s.tenantId, slug: db.tenants[s.tenantId].slug, title: s.title, guests: s.guests };
   }
   async liveJoin(sid: string, nick?: string) {

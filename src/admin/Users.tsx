@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { unitTypes } from "../api/engine";
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
 import { Modal, Seg } from "../components/ui";
@@ -225,7 +226,9 @@ function EditPlayer({ p, onClose }: { p: Player; onClose: () => void }) {
         </div>
         <div className="field">
           <span className="flabel">Works in</span>
-          <Seg value={ut} options={[["branch", labels.branch], ["dept", labels.dept]]} onChange={(v) => { setUt(v); setUnit(""); }} className="narrow" label="Unit type" />
+          {(unitTypes(d.cfg).length > 1 || !unitTypes(d.cfg).includes(p.unitType)) && (
+            <Seg value={ut} options={[["branch", labels.branch], ["dept", labels.dept]].filter(([k]) => unitTypes(d.cfg).includes(k as UnitType) || k === p.unitType) as [UnitType, string][]} onChange={(v) => { setUt(v); setUnit(""); }} className="narrow" label="Unit type" />
+          )}
           <select className="inp" value={unit} onChange={(e) => setUnit(e.target.value)} aria-label={unitWord(labels, ut)}>
             <option value="">Select…</option>
             {list.map((x) => <option key={x}>{x}</option>)}
@@ -324,7 +327,9 @@ function ImportPlayers({ onClose }: { onClose: () => void }) {
     return t.map((c, i) => {
       const empId = normEmpId(c[0] || "");
       const name = cleanName(c[1] || "");
-      const ut = unitTypeOf(c[2] || "", labels);
+      // one kind of unit only: the type column may be left out
+      const only = unitTypes(d.cfg).length === 1 ? unitTypes(d.cfg)[0] : null;
+      const ut = unitTypeOf(c[2] || "", labels) || only;
       const unit = (c[3] || "").trim().slice(0, 60);
       const email = (c[4] || "").trim().toLowerCase();
       let problem: string | null = null;
@@ -332,13 +337,14 @@ function ImportPlayers({ onClose }: { onClose: () => void }) {
       else if (seen.has(empId)) problem = "ID already registered";
       else if (!validName(name)) problem = "Name missing or has odd characters";
       else if (!ut) problem = `Type must be ${labels.branch} or ${labels.dept}`;
+      else if (!unitTypes(d.cfg).includes(ut)) problem = `${unitWord(labels, ut)}s are turned off in Settings`;
       else if (!unit) problem = "Unit missing";
       else if (email && !EMAIL.test(email)) problem = "Email looks wrong";
       if (!problem) seen.add(empId);
       const warn = !problem && ut && !known.has(`${ut}|${unit.toLowerCase()}`) ? `new ${unitWord(labels, ut).toLowerCase()}` : null;
       return { row: { empId, name, unitType: ut || "branch", unit, look: 0, email: email || undefined }, problem: problem || null, line: i + 1, warn } as Parsed & { warn: string | null };
     });
-  }, [text, players, labels, d.cfg.branches, d.cfg.departments]);
+  }, [text, players, labels, d.cfg]);
   const good = parsed.filter((x) => !x.problem);
 
   const onFile = (f: File | undefined) => {
