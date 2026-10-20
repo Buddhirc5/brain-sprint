@@ -6,13 +6,14 @@
 import {
   AmbientLight, BoxGeometry, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry,
   DirectionalLight, DodecahedronGeometry, DoubleSide, Euler, Group, HemisphereLight, IcosahedronGeometry, InstancedMesh, Material, Matrix4,
-  Mesh, MeshBasicMaterial, MeshLambertMaterial, OctahedronGeometry, OrthographicCamera, PCFShadowMap, Plane, PlaneGeometry,
+  Mesh, MeshBasicMaterial, MeshLambertMaterial, Object3D, OctahedronGeometry, OrthographicCamera, PCFShadowMap, Plane, PlaneGeometry,
   Quaternion, Raycaster, RepeatWrapping, Scene, SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace, TorusGeometry, Vector2, Vector3, WebGLRenderer,
 } from "three";
 import type { Deco, Land } from "../../lib/arenaMap";
 import { hash, key, type World } from "../../lib/arenaWorld";
 import type { Player } from "../../types";
 import { CHIBI_ASPECT, chibiTexture } from "./chibiTexture";
+import { makeCritters, type Critter } from "./critters";
 
 export interface Anchor { el: HTMLElement; x: number; y: number; z: number; clamp?: number }
 export interface MateInfo { p: Player; u: number; v: number; line: string }
@@ -60,7 +61,9 @@ export class Arena3D {
   private alive = true;
   private visible = true;
   private follow = true;
-  private bubble: { el: HTMLElement; who: Runner; until: number } | null = null;
+  private bubble: { el: HTMLElement; at: () => Vector3; until: number } | null = null;
+  private critters: Critter[] = [];
+  private landOf = new Map<string, number>();
   private plusTags: { el: HTMLElement; x: number; y: number; z: number }[] = [];
   private ro: ResizeObserver;
   private io: IntersectionObserver;
@@ -93,6 +96,11 @@ export class Arena3D {
 
     this.buildWorld();
     this.buildSky();
+    this.critters = makeCritters(
+      this.scene, I.lands,
+      (li) => [...this.walk].filter((k) => this.landOf.get(k) === li).map((k) => k.split(",").map(Number) as [number, number]),
+      this.anim, () => this.target,
+    );
     void this.buildPeople();
 
     const start = I.meAt ? new Vector3(I.meAt.u, 0, I.meAt.v) : new Vector3(0, 0, 0);
@@ -224,7 +232,10 @@ export class Arena3D {
       if (performance.now() > this.bubble.until) {
         this.bubble.el.remove();
         this.bubble = null;
-      } else put(this.bubble.el, this.bubble.who.pos.x, this.bubble.who.pos.y + (this.bubble.who.me ? ME_H : MATE_H) + 0.5, this.bubble.who.pos.z);
+      } else {
+        const a = this.bubble.at();
+        put(this.bubble.el, a.x, a.y, a.z);
+      }
     }
   }
 
@@ -329,20 +340,32 @@ export class Arena3D {
     const ray = new Raycaster();
     ray.camera = this.cam;
     ray.setFromCamera(new Vector2(((px - rect.left) / rect.width) * 2 - 1, -((py - rect.top) / rect.height) * 2 + 1), this.cam);
-    const hit = ray.intersectObjects(this.runners.map((r) => r.sprite))[0];
-    const who = hit && this.runners.find((r) => r.sprite === hit.object);
-    if (!who) return;
-    this.bubble?.el.remove();
-    const el = document.createElement("div");
-    el.className = "am3d-bubble";
-    const b = document.createElement("b");
-    b.textContent = who.me ? "You" : who.p.name;
-    const s = document.createElement("span");
-    s.textContent = who.me ? this.I.meLine : this.I.mates.find((m) => m.p.uid === who.p.uid)?.line || "";
-    el.append(b, s);
-    this.I.layer.appendChild(el);
-    this.bubble = { el, who, until: performance.now() + 3500 };
-    who.hop = 1;
+    const hit = ray.intersectObjects([...this.runners.map((r) => r.sprite), ...this.critters.map((c) => c.obj)], true)[0];
+    if (!hit) return;
+    const who = this.runners.find((r) => r.sprite === hit.object);
+    let o: Object3D | null = hit.object;
+    while (o && !this.critters.some((c) => c.obj === o)) o = o.parent;
+    const pet = o && this.critters.find((c) => c.obj === o);
+    if (!who && !pet) return;
+    const show = (title: string, line: string, at: () => Vector3) => {
+      this.bubble?.el.remove();
+      const el = document.createElement("div");
+      el.className = "am3d-bubble";
+      const b = document.createElement("b");
+      b.textContent = title;
+      const s = document.createElement("span");
+      s.textContent = line;
+      el.append(b, s);
+      this.I.layer.appendChild(el);
+      this.bubble = { el, at, until: performance.now() + 3500 };
+    };
+    if (who) {
+      show(who.me ? "You" : who.p.name, who.me ? this.I.meLine : this.I.mates.find((m) => m.p.uid === who.p.uid)?.line || "", () => new Vector3(who.pos.x, who.pos.y + (who.me ? ME_H : MATE_H) + 0.5, who.pos.z));
+      who.hop = 1;
+    } else if (pet) {
+      show(pet.say, pet.name, () => pet.pos().clone().setY(pet.pos().y + pet.height + 0.35));
+      pet.poke();
+    }
     this.kick();
   }
 
@@ -411,7 +434,10 @@ export class Arena3D {
       }
     }
     this.bounds = { u0: u0 - 1, u1: u1 + 1, v0: v0 - 1, v1: v1 + 1 };
-    for (const t of world.tiles) if (t.kind !== "bridge" && !t.prop && !t.spot) this.walk.add(key(t.u, t.v));
+    for (const t of world.tiles) {
+      this.landOf.set(key(t.u, t.v), t.land);
+      if (t.kind !== "bridge" && !t.prop && !t.spot) this.walk.add(key(t.u, t.v));
+    }
 
     B.build(this.scene, this.anim);
 

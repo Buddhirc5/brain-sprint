@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { CanvasTexture, SRGBColorSpace } from "three";
 import { Chibi } from "../../components/Chibi";
 import type { Equipped } from "../../types";
+// the arm, body and head pivots live in this stylesheet, so the drawn image needs it too
+import chibiCss from "../../styles/chibi.css?raw";
 
 export const CHIBI_ASPECT = 120 / 162; // width / height of the full-body character
 
@@ -24,6 +26,7 @@ async function draw(look: number, equipped: Equipped | undefined, mood: "idle" |
   const W = 180, H = Math.round(W / CHIBI_ASPECT);
   let svg = renderToStaticMarkup(createElement(Chibi, { look, equipped, mood, variant: "full", size: W, still: true }));
   if (!svg.includes("xmlns=")) svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+  svg = svg.replace(/(<svg[^>]*>)/, `$1<style>${chibiCss.replace(/</g, "")}</style>`);
   const img = new Image();
   img.decoding = "async";
   img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
