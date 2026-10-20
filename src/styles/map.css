@@ -150,3 +150,10 @@
 .am3d-sound svg { width: 20px; height: 20px; fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .am3d-sound:not(.on) { color: var(--muted); }
 .am3d-sound:active { transform: translateY(1px); }
+
+/* the card a stop opens */
+.stop-card { display: grid; gap: 10px; justify-items: start; }
+.stop-card-k { font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.stop-card h3 { font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1; text-transform: uppercase; }
+.stop-card .stack { width: 100%; margin-top: 4px; }
+.stop-card-n { font-weight: 700; }

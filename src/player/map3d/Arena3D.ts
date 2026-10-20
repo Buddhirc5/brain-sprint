@@ -281,7 +281,7 @@ export class Arena3D {
       moved += Math.abs(e.clientX - p.x) + Math.abs(e.clientY - p.y);
       p.x = e.clientX;
       p.y = e.clientY;
-      if (g0 && g1 && moved > 6) {
+      if (g0 && g1 && moved > 10) {
         const d = g0.sub(g1);
         d.y = 0;
         this.target.add(d);
@@ -295,8 +295,8 @@ export class Arena3D {
     const up = (e: PointerEvent) => {
       const was = pts.size;
       pts.delete(e.pointerId);
-      if (was === 1 && moved <= 6) this.tap(e.clientX, e.clientY);
-      if (was === 1 && moved > 6 && !this.I.reduced && vel.length() > 0.5 && performance.now() - lastT < 80) {
+      if (was === 1 && moved <= 10) this.tap(e.clientX, e.clientY);
+      if (was === 1 && moved > 10 && !this.I.reduced && vel.length() > 0.5 && performance.now() - lastT < 80) {
         // a little glide after a flick
         const v = vel.clone().multiplyScalar(0.16);
         this.goal = this.target.clone().add(v);
@@ -304,7 +304,7 @@ export class Arena3D {
     };
     // a drag that started on a label must not click it
     const click = (e: MouseEvent) => {
-      if (moved > 6) {
+      if (moved > 10) {
         e.stopPropagation();
         e.preventDefault();
       }
@@ -376,7 +376,9 @@ export class Arena3D {
   /* ---------------- the world ---------------- */
   private buildWorld() {
     const { world, lands } = this.I;
-    const B = new Batch();
+    // one batch per land, so the islands off screen aren't drawn at all (maps can run to hundreds of stops)
+    const batches = new Map<number, Batch>();
+    const batchOf = (li: number) => batches.get(li) || (batches.set(li, new Batch()), batches.get(li)!);
     const at = (u: number, v: number) => world.tiles.find((t) => t.u === u && t.v === v);
     const solid = new Set(world.tiles.filter((t) => t.kind !== "bridge").map((t) => key(t.u, t.v)));
     const pathIdx = new Map(world.path.map((p, i) => [key(p.u, p.v), i]));
@@ -403,6 +405,7 @@ export class Arena3D {
       v0 = Math.min(v0, t.v);
       v1 = Math.max(v1, t.v);
       const th = lands[t.land]?.theme || lands[0].theme;
+      const B = batchOf(Math.max(0, t.land));
       if (t.kind === "bridge") {
         const i = pathIdx.get(key(t.u, t.v)) ?? 0;
         const n = world.path[i + 1] || world.path[i - 1];
@@ -434,7 +437,7 @@ export class Arena3D {
       if (grass && !t.spot && t.kind === "ground" && !t.prop && hash(t.u, t.v, 21) < 0.35) {
         // tufts of grass for texture
         const gc = new Color(grass);
-        for (let i = 0; i < 3; i++) B.add("tuft", new ConeGeometry(0.035, 0.16, 3).translate(0, 0.08, 0), lambert, mat(t.u + (hash(t.u, t.v, 30 + i) - 0.5) * 0.7, 0, t.v + (hash(t.u, t.v, 40 + i) - 0.5) * 0.7), gc, {});
+        for (let i = 0; i < 3; i++) B.add("tuft", G.tuft, lambert, mat(t.u + (hash(t.u, t.v, 30 + i) - 0.5) * 0.7, 0, t.v + (hash(t.u, t.v, 40 + i) - 0.5) * 0.7), gc, {});
       }
     }
     this.bounds = { u0: u0 - 1, u1: u1 + 1, v0: v0 - 1, v1: v1 + 1 };
@@ -443,7 +446,8 @@ export class Arena3D {
       if (t.kind !== "bridge" && !t.prop && !t.spot) this.walk.add(key(t.u, t.v));
     }
 
-    B.build(this.scene, this.anim);
+    const near = (c: Vector3, r: number) => Math.abs(c.x - this.target.x) + Math.abs(c.z - this.target.z) < r + 16;
+    for (const b of batches.values()) b.build(this.scene, this.anim, near);
 
     // stops, castles and chests
     for (const s of world.spots) this.spotMesh(s.spot, s.u, s.v);
@@ -484,12 +488,12 @@ export class Arena3D {
         B.add("rock", G.rock, mat, m(x, 0.08, z, s * 0.9, s * 0.65, r * 6), new Color(r < 0.5 ? "#9A958B" : "#8A857C"), { cast: true, recv: true });
         return;
       case "crystal":
-        B.add("crystal", G.crystal, new MeshLambertMaterial({ flatShading: true, emissive: "#6A4CF0", emissiveIntensity: 0.55 }), m(x, 0.3 * s, z, s * 0.8, s * 1.6, r * 6, 0.15), new Color("#C9B8FF"), { cast: true, glow: true });
-        B.add("crystal", G.crystal, new MeshLambertMaterial({ flatShading: true, emissive: "#6A4CF0", emissiveIntensity: 0.55 }), m(x + 0.16, 0.18 * s, z + 0.08, s * 0.5, s * 1.1, r * 3, -0.3), new Color("#B39CFF"), { cast: true, glow: true });
+        B.add("crystal", G.crystal, M.crystal, m(x, 0.3 * s, z, s * 0.8, s * 1.6, r * 6, 0.15), new Color("#C9B8FF"), { cast: true, glow: true });
+        B.add("crystal", G.crystal, M.crystal, m(x + 0.16, 0.18 * s, z + 0.08, s * 0.5, s * 1.1, r * 3, -0.3), new Color("#B39CFF"), { cast: true, glow: true });
         return;
       case "lava":
         B.add("rock", G.rock, mat, m(x, 0.08, z, s, s * 0.6, r * 6), new Color("#4A3633"), { cast: true });
-        B.add("ember", G.bloom, new MeshBasicMaterial({ color: "#FF7A1A" }), m(x, 0.18, z, s * 1.4), new Color("#FF8A1F"), { glow: true });
+        B.add("ember", G.bloom, M.ember, m(x, 0.18, z, s * 1.4), new Color("#FF8A1F"), { glow: true });
         return;
     }
   }
@@ -628,7 +632,7 @@ export class Arena3D {
     const white = new MeshLambertMaterial({ color: "#FFFFFF", emissive: "#FFFFFF", emissiveIntensity: 0.45, flatShading: true });
     const puff = new IcosahedronGeometry(1, 1);
     const clouds: { g: Group; speed: number }[] = [];
-    const n = Math.max(8, Math.round((u1 - u0 + v1 - v0) / 5));
+    const n = 18;
     for (let i = 0; i < n; i++) {
       const g = new Group();
       for (let k = 0; k < 4; k++) {
@@ -639,8 +643,9 @@ export class Arena3D {
         g.add(m);
       }
       const side = hash(i, 9) < 0.5 ? -1 : 1;
-      const along = u0 + hash(i, 1) * (u1 - u0);
-      g.position.set(along + side * 6, -2.6 - hash(i, 2) * 3, along - side * 6 + (hash(i, 6) - 0.5) * 8);
+      const along = (hash(i, 1) - 0.5) * 24; // spread around where the player starts
+      const st = this.I.meAt || { u: 0, v: 0 };
+      g.position.set(st.u + along + side * 6, -2.6 - hash(i, 2) * 3, st.v + along - side * 6 + (hash(i, 6) - 0.5) * 8);
       this.scene.add(g);
       clouds.push({ g, speed: 0.12 + hash(i, 7) * 0.15 });
     }
@@ -661,9 +666,13 @@ export class Arena3D {
       for (const c of clouds) {
         c.g.position.x += dt * c.speed;
         c.g.position.z -= dt * c.speed;
-        if (c.g.position.x > u1 + 10) {
-          c.g.position.x -= u1 - u0 + 20;
-          c.g.position.z += u1 - u0 + 20;
+        // recycle: a cloud that drifted off, or that the camera left behind, comes back in near the view
+        const S = c.g.position.x + c.g.position.z, D = c.g.position.x - c.g.position.z;
+        const tS = this.target.x + this.target.z, tD = this.target.x - this.target.z;
+        if (D - tD > 26 || Math.abs(S - tS) > 34) {
+          const nS = tS + (Math.random() - 0.5) * 44, nD = tD - 24 + Math.random() * 6;
+          c.g.position.x = (nS + nD) / 2;
+          c.g.position.z = (nS - nD) / 2;
         }
       }
     });
@@ -900,6 +909,11 @@ const G = {
   cactusArm: new CapsuleGeometry(0.06, 0.18, 4, 6).translate(0, 0.1, 0).rotateZ(0.6),
   rock: new DodecahedronGeometry(0.22, 0),
   crystal: new OctahedronGeometry(0.16, 0),
+  tuft: new ConeGeometry(0.035, 0.16, 3).translate(0, 0.08, 0),
+};
+const M = {
+  crystal: new MeshLambertMaterial({ flatShading: true, emissive: "#6A4CF0", emissiveIntensity: 0.55 }),
+  ember: new MeshBasicMaterial({ color: "#FF7A1A" }),
 };
 
 /** Collects many copies of the same shape and draws them as one InstancedMesh each. */
@@ -911,7 +925,7 @@ class Batch {
     if (!it) this.items.set(id, (it = { geo, mat, list: [], o }));
     it.list.push({ m, c });
   }
-  build(scene: Scene, anim: ((t: number, dt: number) => void)[]) {
+  build(scene: Scene, anim: ((t: number, dt: number) => void)[], near: (c: Vector3, r: number) => boolean) {
     for (const it of this.items.values()) {
       const mesh = new InstancedMesh(it.geo, it.mat, it.list.length);
       it.list.forEach((x, i) => {
@@ -920,13 +934,17 @@ class Batch {
       });
       mesh.castShadow = !!it.o.cast;
       mesh.receiveShadow = !!it.o.recv;
-      mesh.frustumCulled = false;
+      // culled as a whole when this land's batch is off screen
+      mesh.computeBoundingSphere();
+      mesh.frustumCulled = true;
       scene.add(mesh);
+      const sphere = mesh.boundingSphere!;
       if (it.o.sway) {
         // trees and leaves lean gently in the wind
         const base = it.list.map((x) => x.m.clone());
         const tmp = new Matrix4(), rot = new Matrix4();
         anim.push((t) => {
+          if (!near(sphere.center, sphere.radius)) return; // only lands near the camera sway
           base.forEach((b, i) => {
             const ph = b.elements[12] * 0.7 + b.elements[14] * 0.4;
             rot.makeRotationZ(Math.sin(t * 1.4 + ph) * 0.045);
