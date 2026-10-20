@@ -7,6 +7,7 @@ import { isOpen } from "../lib/games";
 import { board, gameBoard, RULES, runCoins, runMs, runPoints, windowStart } from "../lib/scoring";
 import { dayKey, pct, reducedMotion } from "../lib/util";
 import { runKey, type Game, type Run } from "../types";
+import { Celebrate } from "./Celebrate";
 import { Avatar, certHref, certInfo, CoinPill, finishCache, fmtLongDate, pubName, scorePct, TopBar } from "./common";
 
 export function Results({ gid, fresh }: { gid: string; fresh?: boolean }) {
@@ -156,17 +157,21 @@ function SprintResult({ g, fresh }: { g: Game; fresh?: boolean }) {
   const gid = g.id;
   const run = me?.runs?.[gid] || (me ? finishCache.get(`${tid}|${me.uid}|${gid}`)?.run : undefined);
   const coinsRef = useRef<HTMLDivElement>(null);
+  // Celebration 2.0 covers the scorecard right after a play; the coin burst waits until it closes
+  const [celebrate, setCelebrate] = useState(!!fresh);
+  const scorecardRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!fresh || !run) return;
-    const acc = pct(run.ans.filter((a) => a.ok).length, run.ans.length);
-    const t1 = setTimeout(() => acc >= 50 && confetti(), 250);
-    const t2 = setTimeout(() => features.coins && coinBurst(coinsRef.current, 10), 900);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [fresh, !!run]);
+    if (!fresh || !run || celebrate) return;
+    const t = setTimeout(() => features.coins && coinBurst(coinsRef.current, 10), 400);
+    return () => clearTimeout(t);
+  }, [fresh, !!run, celebrate]);
+
+  const closeTo = (el: HTMLElement | null) => {
+    setCelebrate(false);
+    // after the overlay unmounts and releases the page scroll lock
+    setTimeout(() => el?.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" }), 60);
+  };
 
   if (!run || !me || run.status !== "done")
     return (
@@ -218,7 +223,25 @@ function SprintResult({ g, fresh }: { g: Game; fresh?: boolean }) {
         </div>
       </section>
 
-      <section className="card" aria-label="Scorecard">
+      {celebrate && (
+        <Celebrate
+          name={me.name}
+          look={me.look}
+          equipped={me.equipped}
+          points={pts.total}
+          correct={correct}
+          total={run.total}
+          acc={acc}
+          coins={features.coins ? coins.total + streakBonus : null}
+          streak={features.streaks ? s?.streak.current || 0 : 0}
+          rank={rank}
+          perfect={!!pts.perfect}
+          onRank={() => closeTo(document.querySelector<HTMLElement>(".climb") || scorecardRef.current)}
+          onScorecard={() => closeTo(scorecardRef.current)}
+        />
+      )}
+
+      <section className="card" aria-label="Scorecard" ref={scorecardRef}>
         <div className="label" style={{ marginBottom: 4 }}>
           Scorecard
         </div>
@@ -294,7 +317,8 @@ function SprintResult({ g, fresh }: { g: Game; fresh?: boolean }) {
         )}
       </section>
 
-      <Climb gid={gid} animate={!!fresh} />
+      {/* remounts when the celebration closes so the climb animation plays where it can be seen */}
+      <Climb key={celebrate ? "behind" : "shown"} gid={gid} animate={!!fresh} />
 
       <div className="res-stats">
         <div>
