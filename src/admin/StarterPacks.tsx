@@ -1,14 +1,17 @@
-/* Starter packs: add a ready-made certification, live quiz or live poll as a draft in one click. */
-import { useState } from "react";
+/* Starter library: ready-made content added as drafts. Daily sprints come from the shared library
+   (pick several, copy them in one go); certifications, live quizzes and live polls are one-click packs. */
+import { useEffect, useState } from "react";
 import { useApp } from "../app/ctx";
 import { Modal, Seg } from "../components/ui";
 import { sealQuestion, type DraftQ } from "../lib/answers";
 import { newId, randHex } from "../lib/util";
 import { blankPoll, LIVE } from "../api/engine";
 import { STARTER_PACKS, type PackQ, type QuizPack, type StarterPack } from "../data/starterPacks";
-import type { AnswerKey, Game, Poll } from "../types";
+import type { AnswerKey, Game, LibraryItem, Poll } from "../types";
 
 const KIND_LABEL: Record<StarterPack["kind"], string> = { cert: "Certification", live: "Live quiz", poll: "Live poll" };
+type Tab = "sprint" | StarterPack["kind"];
+const TAB_LABEL: Record<Tab, string> = { sprint: "Daily sprints", cert: "Certifications", live: "Live quizzes", poll: "Live polls" };
 
 function toDraft(q: PackQ, i: number, topic: string, live: boolean): DraftQ {
   const base = { id: `q${i + 1}-${randHex(3)}`, topic, explain: "", options: ["", "", "", ""], answer: 0, tf: true, pairs: [], steps: [], ...(live ? { seconds: LIVE.defaultSeconds } : {}) };
@@ -33,12 +36,40 @@ function quizFrom(p: QuizPack): { game: Game; key: AnswerKey } {
   return { game, key: { gid: id, answers: Object.fromEntries(sealed.map((s) => [s.q.id, s.canon])), updatedAt: now } };
 }
 
-export function StarterPacks({ kinds, onClose }: { kinds: StarterPack["kind"][]; onClose: () => void }) {
-  const { api, tid, run, toast, pub, features } = useApp();
+export function StarterPacks({ kinds, onClose }: { kinds: Tab[]; onClose: () => void }) {
+  const { pub } = useApp();
+  const [tab, setTab] = useState<Tab>(kinds[0]);
   const [ind, setInd] = useState<"all" | "bank" | "any">("all");
+  return (
+    <Modal label="Starter library" onClose={onClose} wide>
+      <div className="stack">
+        <div className="panel-h">
+          <div>
+            <h3>Starter library</h3>
+            <p className="fine">Ready-made content for {pub.name}. Everything is added as a draft — edit anything before it goes live.</p>
+          </div>
+          <Seg value={ind} onChange={setInd} label="Industry" options={[["all", "All"], ["bank", "Banking"], ["any", "General"]]} />
+        </div>
+        {kinds.length > 1 && (
+          <div className="chips-row" role="group" aria-label="Type">
+            {kinds.map((k) => (
+              <button key={k} type="button" className={`chip-tg ${tab === k ? "on" : ""}`} aria-pressed={tab === k} onClick={() => setTab(k)}>
+                {TAB_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        )}
+        {tab === "sprint" ? <LibraryList ind={ind} onClose={onClose} /> : <PackGrid kind={tab} ind={ind} onClose={onClose} />}
+      </div>
+    </Modal>
+  );
+}
+
+function PackGrid({ kind, ind, onClose }: { kind: StarterPack["kind"]; ind: "all" | "bank" | "any"; onClose: () => void }) {
+  const { api, tid, run, toast, features } = useApp();
   const [busy, setBusy] = useState("");
   const on = (k: StarterPack["kind"]) => (k === "cert" ? features.cert : k === "live" ? features.live : features.polls);
-  const packs = STARTER_PACKS.filter((p) => kinds.includes(p.kind) && (ind === "all" || p.industry === ind));
+  const packs = STARTER_PACKS.filter((p) => p.kind === kind && (ind === "all" || p.industry === ind));
   const add = async (p: StarterPack) => {
     setBusy(p.id);
     const ok = await run(async () => {
@@ -52,15 +83,8 @@ export function StarterPacks({ kinds, onClose }: { kinds: StarterPack["kind"][];
     if (ok) toast(`“${p.title}” added as a draft — review it, then ${p.kind === "poll" ? "open it" : "publish"}`);
   };
   return (
-    <Modal label="Starter packs" onClose={onClose} wide>
-      <div className="stack">
-        <div className="panel-h">
-          <div>
-            <h3>Starter packs</h3>
-            <p className="fine">Ready-made content you can add in one click. Each is added as a draft for {pub.name} — edit anything before it goes live.</p>
-          </div>
-          <Seg value={ind} onChange={setInd} label="Industry" options={[["all", "All"], ["bank", "Banking"], ["any", "General"]]} />
-        </div>
+    <>
+      {packs.length ? (
         <div className="sp-grid">
           {packs.map((p) => {
             const n = p.kind === "poll" ? p.slides.length : p.questions.length;
@@ -81,10 +105,66 @@ export function StarterPacks({ kinds, onClose }: { kinds: StarterPack["kind"][];
             );
           })}
         </div>
-        <div className="row end">
-          <button type="button" className="btn ghost small" onClick={onClose}>Done</button>
-        </div>
+      ) : (
+        <p className="fine">Nothing here for this filter.</p>
+      )}
+      <div className="row end">
+        <button type="button" className="btn ghost small" onClick={onClose}>Done</button>
       </div>
-    </Modal>
+    </>
+  );
+}
+
+/** Daily sprints from the shared library (kept up to date by the super admin). */
+function LibraryList({ ind, onClose }: { ind: "all" | "bank" | "any"; onClose: () => void }) {
+  const { api, tid, run, toast } = useApp();
+  const [items, setItems] = useState<LibraryItem[] | null>(null);
+  const [sel, setSel] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let live = true;
+    api.library().then((x) => live && setItems(x), () => live && setItems([]));
+    return () => {
+      live = false;
+    };
+  }, [api]);
+  const shown = (items || []).filter((x) => ind === "all" || x.industry === ind);
+  const toggle = (id: string) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const copy = async () => {
+    setBusy(true);
+    const n = await run(() => api.importLibrary(tid, sel));
+    setBusy(false);
+    if (n != null) {
+      onClose();
+      toast(`${n} quiz${n === 1 ? "" : "zes"} copied as drafts — review, then publish`);
+    }
+  };
+  return (
+    <>
+      {!items ? (
+        <p className="fine">Loading…</p>
+      ) : !shown.length ? (
+        <p className="fine">Nothing here for this filter.</p>
+      ) : (
+        <div className="lib-list">
+          {shown.map((x) => (
+            <label key={x.id} className={`lib-item ${sel.includes(x.id) ? "on" : ""}`}>
+              <input type="checkbox" checked={sel.includes(x.id)} onChange={() => toggle(x.id)} />
+              <span>
+                <b>{x.title}</b>
+                <span className="fine">{x.topic} · {x.questions.length} questions</span>
+              </span>
+              <span className={`chip ${x.industry === "bank" ? "bank" : ""}`}>{x.industry === "bank" ? "Banking" : "General"}</span>
+            </label>
+          ))}
+        </div>
+      )}
+      <div className="row end">
+        <button type="button" className="btn ghost small" onClick={onClose}>Cancel</button>
+        <button type="button" className="btn primary small" disabled={!sel.length || busy} onClick={copy}>
+          {busy ? "Copying…" : `Copy ${sel.length || ""} as draft${sel.length === 1 ? "" : "s"}`}
+        </button>
+      </div>
+    </>
   );
 }

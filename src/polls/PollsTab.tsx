@@ -61,7 +61,7 @@ export function PollsTab() {
         {can("editor") && (
           <>
             <button className="btn lime small" onClick={() => setPacks(true)}>
-              ✨ Starter packs
+              ✨ Starter library
             </button>
             <button className="btn primary small" onClick={() => setEditing(blankPoll(newId("poll"), tid, ""))}>
               <Ico.plus /> New poll
@@ -79,7 +79,7 @@ export function PollsTab() {
         <div className="empty stack" style={{ justifyItems: "center" }}>
           <Mascot mood="idle" size={100} />
           <b>No polls yet.</b>
-          {can("editor") && <span>Create one with “New poll”, or add a ready-made one from “Starter packs”.</span>}
+          {can("editor") && <span>Create one with “New poll”, or add a ready-made one from “Starter library”.</span>}
         </div>
       ) : (
         <div className="gcards">

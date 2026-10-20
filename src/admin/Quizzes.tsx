@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useApp } from "../app/ctx";
 import { useApi } from "../app/ApiCtx";
 import { Icon, Modal, Seg } from "../components/ui";
@@ -15,7 +15,7 @@ import { CertDesign } from "./CertDesign";
 import { StarterPacks } from "./StarterPacks";
 import { fmtDate, fmtMin, newId, pct, todayKey } from "../lib/util";
 import { LIVE } from "../api/engine";
-import type { AnswerKey, CardColor, CertSettings, Game, GameStatus, LibraryItem, QType, QuizKind } from "../types";
+import type { AnswerKey, CardColor, CertSettings, Game, GameStatus, QType, QuizKind } from "../types";
 import { useAdmin } from "./Admin";
 import { KIND } from "./common";
 
@@ -31,7 +31,6 @@ export function Quizzes() {
   const { setTab } = useAdmin();
   const [kind, setKind] = useState<"all" | QuizKind>("all");
   const [picker, setPicker] = useState(false);
-  const [lib, setLib] = useState(false);
   const [packs, setPacks] = useState(false);
   const all = sortGames(Object.values(d.games));
   const gs = all.filter((g) => kind === "all" || (g.kind || "sprint") === kind);
@@ -76,12 +75,9 @@ export function Quizzes() {
     <>
       <div className="toolbar">
         <h1>Quizzes</h1>
-        <button className="btn ghost small" onClick={() => setLib(true)}>
-          <Icon.book /> Starter library
-        </button>
         {can("editor") && (
           <button className="btn lime small" onClick={() => setPacks(true)}>
-            ✨ Starter packs
+            ✨ Starter library
           </button>
         )}
         <button className="btn primary" onClick={() => setPicker(true)}>
@@ -185,8 +181,7 @@ export function Quizzes() {
         )}
       </div>
       {picker && <KindPicker onClose={() => setPicker(false)} onPick={(k) => { setPicker(false); setTab("edit", "new:" + k); }} />}
-      {lib && <Library onClose={() => setLib(false)} />}
-      {packs && <StarterPacks kinds={["cert", "live", "poll"]} onClose={() => setPacks(false)} />}
+      {packs && <StarterPacks kinds={["sprint", "cert", "live", "poll"]} onClose={() => setPacks(false)} />}
     </>
   );
 }
@@ -211,69 +206,6 @@ function KindPicker({ onClose, onPick }: { onClose: () => void; onPick: (k: Quiz
         </div>
         <div className="row end">
           <button type="button" className="btn ghost small" onClick={onClose}>Cancel</button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function Library({ onClose }: { onClose: () => void }) {
-  const { api, tid, run, pub, toast } = useApp();
-  const [items, setItems] = useState<LibraryItem[] | null>(null);
-  const [ind, setInd] = useState<"all" | "any" | "bank">(pub.template === "bank" ? "all" : "any");
-  const [sel, setSel] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    let live = true;
-    api.library().then((x) => live && setItems(x), () => live && setItems([]));
-    return () => {
-      live = false;
-    };
-  }, [api]);
-  const shown = (items || []).filter((x) => ind === "all" || x.industry === ind);
-  const toggle = (id: string) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  const go = async () => {
-    setBusy(true);
-    const n = await run(() => api.importLibrary(tid, sel));
-    setBusy(false);
-    if (n != null) {
-      onClose();
-      toast(`${n} quiz${n === 1 ? "" : "zes"} copied as drafts — review, then publish`);
-    }
-  };
-  return (
-    <Modal label="Starter library" onClose={onClose} wide>
-      <div className="stack">
-        <div className="panel-h">
-          <div>
-            <h3>Starter library</h3>
-            <p className="fine">Ready-made quizzes you can copy and edit. They're added as drafts — nothing goes live until you publish it.</p>
-          </div>
-          <Seg value={ind} onChange={setInd} label="Industry" options={[["all", "All"], ["any", "Any industry"], ["bank", "Banking"]]} />
-        </div>
-        {!items ? (
-          <p className="fine">Loading…</p>
-        ) : !shown.length ? (
-          <p className="fine">Nothing in the library for this filter.</p>
-        ) : (
-          <div className="lib-list">
-            {shown.map((x) => (
-              <label key={x.id} className={`lib-item ${sel.includes(x.id) ? "on" : ""}`}>
-                <input type="checkbox" checked={sel.includes(x.id)} onChange={() => toggle(x.id)} />
-                <span>
-                  <b>{x.title}</b>
-                  <span className="fine">{x.topic} · {x.questions.length} questions</span>
-                </span>
-                <span className={`chip ${x.industry === "bank" ? "bank" : ""}`}>{x.industry === "bank" ? "Banking" : "Any industry"}</span>
-              </label>
-            ))}
-          </div>
-        )}
-        <div className="row end">
-          <button type="button" className="btn ghost small" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn primary small" disabled={!sel.length || busy} onClick={go}>
-            {busy ? "Copying…" : `Copy ${sel.length || ""} as draft${sel.length === 1 ? "" : "s"}`}
-          </button>
         </div>
       </div>
     </Modal>
