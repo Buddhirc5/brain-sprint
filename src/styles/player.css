@@ -53,12 +53,27 @@
 .stat { background: #fff; border-radius: 999px; padding: 7px 10px 7px 7px; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .stat .ic { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; }
 .stat .ic svg { width: 18px; height: 18px; }
-.stat b { display: block; font-size: 15px; line-height: 1.1; }
+.stat b { display: block; font-size: 15px; line-height: 1.1; white-space: nowrap; }
 .stat small { display: block; font-size: 11px; color: var(--muted); font-weight: 700; }
 .quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .quick button { background: #fff; border-radius: var(--r-md); padding: 12px 8px; display: grid; justify-items: center; gap: 4px; font-weight: 800; font-size: 13px; box-shadow: var(--shadow); }
 .quick button svg { width: 22px; height: 22px; }
 .quick button.hl { background: var(--ink); color: #fff; }
+/* narrow phones: slimmer stat pills and shortcut tiles so labels stay on one line */
+@media (max-width: 400px) {
+  .stat { gap: 6px; padding: 6px 8px 6px 6px; }
+  .stat .ic { width: 26px; height: 26px; }
+  .stat .ic svg { width: 15px; height: 15px; }
+  .stat .ic .coin-ic { transform: scale(.85); }
+  .quick { gap: 6px; }
+  .quick button { padding: 10px 4px; font-size: 12px; line-height: 1.2; text-align: center; }
+  .me .me-char { margin-bottom: -30px; }
+  .xp-cap { position: relative; z-index: 1; }
+}
+@media (max-width: 340px) {
+  .stat { justify-content: center; padding: 6px 8px; }
+  .stat .ic { display: none; }
+}
 
 /* ---------- quiz cards ---------- */
 .games { display: grid; gap: 12px; }
@@ -169,6 +184,41 @@
 .reveal .pts { margin-left: auto; font-family: var(--display); font-size: 34px; animation: float-up .9s ease-out; }
 .reveal .ans b { font-weight: 900; }
 .reveal .why { font-size: 14px; opacity: .9; }
+/* phones: the answer result is a bottom sheet so "Next question" is always on screen (Play.tsx pads the page by its height) */
+@media (max-width: 600px) {
+  .play.has-sheet { padding-bottom: var(--sheet-h, 0px); }
+  .reveal.sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; margin: 0 auto; width: min(502px, 100%);
+    max-height: 72vh; max-height: 72dvh; overflow-y: auto; overscroll-behavior: contain;
+    border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 16px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -14px 34px -16px rgba(0,0,0,.45); animation: sheet-up .28s cubic-bezier(.2,.9,.3,1.1);
+  }
+  .reveal.sheet > .btn { position: sticky; bottom: 0; }
+  .reveal.sheet .top .chibi { width: 56px; height: auto; }
+  .reveal.sheet .big { font-size: 32px; }
+  .reveal.sheet .pts { font-size: 28px; }
+  .reveal.saved.sheet .big { font-size: 26px; }
+}
+@keyframes sheet-up { from { transform: translateY(100%); } }
+
+/* short phones (iPhone SE/8, small Androids with browser bars): tighter quiz screen so all answers fit */
+@media (max-height: 700px) and (max-width: 600px) {
+  body:has(.play) { padding-top: 10px; }
+  .play { gap: 10px; }
+  .play .icon-btn { width: 38px; height: 38px; }
+  .play .gtimer { padding: 5px 12px; }
+  .play .qcard { padding: 14px; gap: 10px; }
+  .play .qtext { font-size: 18px; line-height: 1.25; }
+  .play .opts { gap: 8px; }
+  .play .opt { min-height: 48px; padding: 7px 12px; font-size: 15px; }
+  .play .opt .k { width: 26px; height: 26px; }
+  .play .tf .opt { min-height: 64px; font-size: 22px; }
+  .play .mi { min-height: 46px; }
+  .play .oi { min-height: 44px; }
+}
+/* match / order: keep the Check button reachable while the list is long */
+.play .qcard > .btn.block { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 2; }
+
 @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 @keyframes float-up { 0% { transform: translateY(12px) scale(.6); opacity: 0; } 60% { transform: translateY(-4px) scale(1.1); opacity: 1; } 100% { transform: none; } }
 

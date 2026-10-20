@@ -57,7 +57,7 @@ export function Lobby() {
       </div>
 
       <section className="me" aria-label="Your player card">
-        <h1 className="me-name" style={{ fontSize: `min(clamp(44px, 13vw, 64px), ${Math.max(28, Math.floor(380 / Math.max(1, firstName(me.name).length)))}px)` }}>
+        <h1 className="me-name" style={{ fontSize: nameSize(firstName(me.name).length) }}>
           {firstName(me.name)}
         </h1>
         <div className="me-lvl">Level {lv.level}</div>
@@ -343,4 +343,11 @@ function GameCard({ g, today }: { g: Game; today?: boolean }) {
       </div>
     </article>
   );
+}
+
+/* The name sits beside the 132px character, so on narrow phones it also shrinks to fit that column
+   (the display font is about 0.52em per letter) instead of breaking a letter onto the next line. */
+function nameSize(len: number) {
+  const n = Math.max(1, len);
+  return `max(22px, min(clamp(44px, 13vw, 64px), ${Math.max(28, Math.floor(380 / n))}px, calc((min(100vw - 32px, 470px) - 176px) / ${(n * 0.52).toFixed(2)})))`;
 }
