@@ -46,7 +46,7 @@ export function LiveTab() {
         {can("editor") && (
           <>
             <button type="button" className="btn lime small" onClick={() => setPacks(true)}>
-              ✨ Starter packs
+              ✨ Starter library
             </button>
             <button type="button" className="btn primary small" onClick={() => setTab("edit", "new:live")}>
               + Create a live quiz
