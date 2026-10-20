@@ -16,16 +16,23 @@ export interface MapChest { kind: "chest"; open: boolean; full: boolean }
 export interface MapGate { kind: "gate" }
 export type MapItem = MapStop | MapCastle | MapChest | MapGate;
 
-export interface Theme { name: string; sky: string; ground: string; hill: string; hill2: string; deco: Deco[]; ink: string }
-export type Deco = "tree" | "pine" | "flower" | "palm" | "wave" | "cactus" | "rock" | "crystal" | "snow" | "smoke";
+export interface Theme {
+  name: string;
+  /** island top (two tones for a tiled look), grass lip, earth and rock layers of the side walls */
+  top: string; top2: string; lip: string; side: string; side2: string;
+  deco: Deco[];
+  ink: string; // text on this land's banner and summary card
+  soft: string; // summary card background
+}
+export type Deco = "tree" | "pine" | "flower" | "palm" | "cactus" | "rock" | "crystal" | "snowpine" | "lava";
 
 export const THEMES: Theme[] = [
-  { name: "Rookie Meadow", sky: "#ECFBC2", ground: "#D2F27A", hill: "#B7E04A", hill2: "#9CCB2C", deco: ["tree", "flower", "tree"], ink: "#3E5A06" },
-  { name: "Coral Coast", sky: "#D9F4F7", ground: "#A5E3EC", hill: "#7FD2DF", hill2: "#5BBFD0", deco: ["palm", "wave", "palm"], ink: "#0D5563" },
-  { name: "Sunset Canyon", sky: "#FFE9D6", ground: "#FFC79E", hill: "#F7A877", hill2: "#EB8E57", deco: ["cactus", "rock", "cactus"], ink: "#7A3209" },
-  { name: "Crystal Caves", sky: "#ECE7FF", ground: "#CFC4FA", hill: "#B3A3F2", hill2: "#9886E6", deco: ["crystal", "rock", "crystal"], ink: "#3C2A8C" },
-  { name: "Frost Peaks", sky: "#EEF5FF", ground: "#D3E4FB", hill: "#B6D0F4", hill2: "#97B9EA", deco: ["pine", "snow", "pine"], ink: "#1F4A86" },
-  { name: "Volcano Summit", sky: "#FFE3DA", ground: "#F9B9A5", hill: "#EE9478", hill2: "#DB7254", deco: ["rock", "smoke", "rock"], ink: "#7A1E07" },
+  { name: "Rookie Meadow", top: "#8DD64B", top2: "#82CD41", lip: "#6CB832", side: "#9A6A3E", side2: "#7A5230", deco: ["tree", "tree", "flower", "rock", "tree"], ink: "#3E5A06", soft: "#D9F59A" },
+  { name: "Coral Coast", top: "#F3DEA6", top2: "#EED699", lip: "#DFC07B", side: "#C99A5B", side2: "#A57841", deco: ["palm", "rock", "palm", "flower"], ink: "#0D5563", soft: "#BDEBF2" },
+  { name: "Sunset Canyon", top: "#F2A86E", top2: "#EC9F63", lip: "#D9864F", side: "#BF673A", side2: "#9B502A", deco: ["cactus", "rock", "cactus", "rock"], ink: "#7A3209", soft: "#FFD3B0" },
+  { name: "Crystal Caves", top: "#B9A9F5", top2: "#B0A0F1", lip: "#9A87E5", side: "#6D5AB6", side2: "#554496", deco: ["crystal", "rock", "crystal"], ink: "#3C2A8C", soft: "#E1DAFF" },
+  { name: "Frost Peaks", top: "#F5F9FF", top2: "#EAF2FD", lip: "#D3E2F6", side: "#8DA8C9", side2: "#728EB2", deco: ["snowpine", "snowpine", "rock"], ink: "#1F4A86", soft: "#DCEAFE" },
+  { name: "Volcano Summit", top: "#6E5652", top2: "#654E4A", lip: "#574340", side: "#3E302D", side2: "#2C2220", deco: ["lava", "rock", "rock"], ink: "#7A1E07", soft: "#FFD7CB" },
 ];
 
 export interface Land { idx: number; theme: Theme; name: string; items: MapItem[]; stops: MapStop[]; stars: number; done: number }
