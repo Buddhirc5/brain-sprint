@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ApiError, type AnswerResult } from "../api/Api";
 import { errMsg } from "../app/ApiCtx";
 import { useApp } from "../app/ctx";
@@ -225,6 +225,35 @@ export function Play({ gid }: { gid: string }) {
     }
   };
 
+  // On phones the answer result is a bottom sheet (player.css): pad the page by its height so nothing
+  // hides behind it, and nudge the answers into view above it. Toasts move to the top while playing.
+  const pageRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  const sheetOpen = phase === "reveal" || (phase === "saving" && !!last);
+  useEffect(() => {
+    document.body.classList.add("in-play");
+    return () => document.body.classList.remove("in-play");
+  }, []);
+  useLayoutEffect(() => {
+    const page = pageRef.current, sheet = sheetRef.current;
+    if (!page) return;
+    if (!sheetOpen || !sheet || getComputedStyle(sheet).position !== "fixed") {
+      page.style.removeProperty("--sheet-h");
+      return;
+    }
+    const fit = () => page.style.setProperty("--sheet-h", `${sheet.offsetHeight}px`);
+    fit();
+    const card = page.querySelector(".qcard");
+    if (card) {
+      const r = card.getBoundingClientRect();
+      const hidden = r.bottom - (window.innerHeight - sheet.offsetHeight) + 8;
+      if (hidden > 0) window.scrollBy({ top: Math.min(hidden, Math.max(0, r.top - 8)), behavior: "smooth" });
+    }
+    const ro = new ResizeObserver(fit);
+    ro.observe(sheet);
+    return () => ro.disconnect();
+  }, [sheetOpen, qi]);
+
   if (!g || !me)
     return (
       <div className="phone">
@@ -261,7 +290,7 @@ export function Play({ gid }: { gid: string }) {
   const unanswered = n - run.ans.length;
 
   return (
-    <div className="phone" onCopy={(e) => e.preventDefault()} onContextMenu={(e) => e.preventDefault()}>
+    <div ref={pageRef} className={`phone play ${rv ? "has-sheet" : ""}`} onCopy={(e) => e.preventDefault()} onContextMenu={(e) => e.preventDefault()}>
       <div className="play-top">
         <button type="button" className="icon-btn" aria-label={cert ? "Leave exam" : "Leave quiz"} onClick={() => setQuit(true)}>
           <Icon.close />
@@ -300,7 +329,7 @@ export function Play({ gid }: { gid: string }) {
       </section>
 
       {rv && last && cert && (
-        <section className="reveal saved">
+        <section ref={sheetRef} className="reveal saved sheet">
           <div className="top">
             <span className="saved-ic" aria-hidden="true">
               <Icon.check />
@@ -315,7 +344,7 @@ export function Play({ gid }: { gid: string }) {
       )}
 
       {rv && last && !cert && (
-        <section className={`reveal ${last.ok ? "ok" : "no"}`}>
+        <section ref={sheetRef} className={`reveal sheet ${last.ok ? "ok" : "no"}`}>
           <div className="top">
             <Chibi look={me.look} equipped={me.equipped} variant="full" size={72} mood={last.ok ? "happy" : "sad"} />
             <div>
