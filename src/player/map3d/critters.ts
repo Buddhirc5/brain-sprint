@@ -72,6 +72,18 @@ export function makeCritters(scene: Scene, lands: Land[], tilesOf: (land: number
   lands.forEach((land, li) => {
     const tiles = tilesOf(li);
     if (tiles.length < 4) return;
+    // this land's animals only move while their island is near the camera (long maps have many lands)
+    const from = anim.length;
+    const cu = tiles.reduce((s, [u]) => s + u, 0) / tiles.length, cv = tiles.reduce((s, [, v]) => s + v, 0) / tiles.length;
+    const wrap = () => {
+      for (let i = from; i < anim.length; i++) {
+        const f = anim[i];
+        anim[i] = (t, dt) => {
+          const c = center();
+          if (Math.abs(c.x - cu) + Math.abs(c.z - cv) < 40) f(t, dt);
+        };
+      }
+    };
     const kind = land.theme.name.replace(/ [IVX]+$/, "");
     const n = (k: number) => Math.min(k, Math.max(1, Math.floor(tiles.length / 10)));
 
@@ -94,8 +106,8 @@ export function makeCritters(scene: Scene, lands: Land[], tilesOf: (land: number
       for (let i = 0; i < n(2); i++) add(lizard(tiles, anim, "#D9432B"), "Salamander", "Hot hot hot!", 0.25);
       add(dragon(tiles, anim), "Dragon", "Roar! 🔥", 0.2, 2.4);
     }
+    wrap();
   });
-  void center;
   return out;
 }
 

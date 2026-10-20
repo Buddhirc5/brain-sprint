@@ -53,6 +53,17 @@ export function starsFor(correct: number, total: number): 0 | 1 | 2 | 3 {
   return correct / total >= 0.6 ? 2 : 1;
 }
 
+/** 2 → "II", 14 → "XIV": names for lands once all six themes have been used. */
+function roman(n: number) {
+  let out = "";
+  for (const [v, r] of [[50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]] as const)
+    while (n >= v) {
+      out += r;
+      n -= v;
+    }
+  return out;
+}
+
 const dayOf = (g: Game) => g.date || new Date(g.createdAt || 0).toISOString().slice(0, 10);
 
 export function buildMap(games: Game[], me: Player, players: Player[], dq: Disqualified | null | undefined, today: string, certPassed: (g: Game) => CastleState): ArenaMap {
@@ -78,7 +89,7 @@ export function buildMap(games: Game[], me: Player, players: Player[], dq: Disqu
     const lap = Math.floor(i / THEMES.length);
     const full = own.length === LAND_SIZE;
     lands.push({
-      idx: i, theme, name: theme.name + (lap ? ` ${"I".repeat(lap + 1)}` : ""), stops: own,
+      idx: i, theme, name: theme.name + (lap ? ` ${roman(lap + 1)}` : ""), stops: own,
       items: [{ kind: "gate" }, ...own, { kind: "chest", full, open: full && own.every((s) => s.state === "done" || s.state === "missed") && own.some((s) => s.state === "done") }],
       stars: own.reduce((s, x) => s + x.stars, 0), done: own.filter((s) => s.state === "done").length,
     });

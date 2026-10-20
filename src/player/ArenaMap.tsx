@@ -4,15 +4,14 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
-import { Icon } from "../components/ui";
+import { Icon, Modal } from "../components/ui";
 import { buildMap, starsFor, type ArenaMap as MapData, type CastleState, type Deco, type Land, type MapStop, type Theme } from "../lib/arenaMap";
 import { buildWorld, hash, key, type Spot, type Tile, type World } from "../lib/arenaWorld";
 import { isOpen } from "../lib/games";
-import { runCorrect } from "../lib/scoring";
-import { LS } from "../lib/util";
+import { limitMs, runCorrect } from "../lib/scoring";
 import type { Arena3D } from "./map3d/Arena3D";
 import { mapSound } from "./map3d/mapSound";
-import { fmtDate, todayKey } from "../lib/util";
+import { fmtDate, fmtMin, LS, todayKey } from "../lib/util";
 import type { Player } from "../types";
 import { Avatar, certInfo, CoinPill, TopBar } from "./common";
 import "../styles/map.css";
@@ -67,6 +66,8 @@ export function ArenaMap() {
 
   const scene3d = useRef<Arena3D | null>(null);
   const [gl] = useState(webglOk);
+  const [picked, setPicked] = useState<{ stop: MapStop; land: Land } | null>(null);
+  const pickStop: Pick = (stop, land) => setPicked({ stop, land });
 
   if (!me || !map || !world) return null;
   const curLand = map.lands.find((l) => l.stops.some((s) => s.g.id === map.current)) || map.lands[0];
@@ -96,7 +97,7 @@ export function ArenaMap() {
       </section>
 
       {gl ? (
-        <Map3D map={map} world={world} me={me} curLand={curLand} sceneRef={scene3d} go={go} toast={toast} />
+        <Map3D map={map} world={world} me={me} curLand={curLand} sceneRef={scene3d} go={go} toast={toast} pick={pickStop} />
       ) : (
       <div className="am" ref={wrap} style={{ height: geo?.H || 600 }}>
         {geo && (
@@ -154,7 +155,7 @@ export function ArenaMap() {
 
             {world.spots.map(({ spot, land, u, v }) => {
               const p = geo.at(u, v);
-              return <SpotUi key={key(u, v)} spot={spot} land={land} x={p.x} y={p.y} W={W} current={map.current} mates={map.mates} me={me} go={go} toast={toast} />;
+              return <SpotUi key={key(u, v)} spot={spot} land={land} x={p.x} y={p.y} W={W} current={map.current} mates={map.mates} me={me} go={go} toast={toast} pick={pickStop} />;
             })}
 
             <div className="am-start" style={{ left: geo.at(0, 0).x, top: geo.at(0, 0).y + 30 }}>
@@ -164,7 +165,59 @@ export function ArenaMap() {
         )}
       </div>
       )}
+      {picked && <StopCard stop={picked.stop} land={picked.land} me={me} onClose={() => setPicked(null)} />}
     </div>
+  );
+}
+
+type Pick = (stop: MapStop, land: Land) => void;
+
+/** What a stop is, and the one button that starts it. */
+function StopCard({ stop, land, me, onClose }: { stop: MapStop; land: Land; me: Player; onClose: () => void }) {
+  const { go } = useApp();
+  const g = stop.g;
+  const run = me.runs?.[g.id];
+  const head = `Stop ${stop.n} · ${land.name}`;
+  const facts = `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${fmtMin(limitMs(g) / 60000)}`;
+  let note = "", action: JSX.Element | null = null;
+  if (stop.state === "play")
+    action = (
+      <button type="button" className="btn primary block" onClick={() => go({ v: "play", gid: g.id })} data-autofocus>
+        Start quiz
+      </button>
+    );
+  else if (stop.state === "done") {
+    note = run ? `You got ${runCorrect(run)} of ${run.total || run.ans.length} right.` : "You've played this one.";
+    action = (
+      <button type="button" className="btn primary block" onClick={() => go({ v: "results", gid: g.id })} data-autofocus>
+        See my scorecard
+      </button>
+    );
+  } else if (stop.state === "locked") note = `Opens ${g.date ? fmtDate(g.date) : "soon"}.`;
+  else note = isOpen(g) ? "You've moved past this stop — keep going on the next one!" : "This quiz has closed — keep going on the next stop!";
+  return (
+    <Modal label={g.title} onClose={onClose}>
+      <div className="stop-card">
+        <span className="stop-card-k">{head}</span>
+        <h3>{g.title}</h3>
+        {g.desc && <p className="fine">{g.desc}</p>}
+        <span className="chip">{facts}</span>
+        {stop.state === "done" && (
+          <span className="am-stars" aria-label={`${stop.stars} of 3 stars`}>
+            {[1, 2, 3].map((i) => (
+              <Star key={i} on={i <= stop.stars} />
+            ))}
+          </span>
+        )}
+        {note && <p className="stop-card-n">{note}</p>}
+        <div className="stack" style={{ gap: 8 }}>
+          {action}
+          <button type="button" className="btn ghost block" onClick={onClose} data-autofocus={action ? undefined : true}>
+            {action ? "Not now" : "OK"}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -178,7 +231,7 @@ function webglOk() {
 }
 
 /* ---------------- the 3D map ---------------- */
-function Map3D({ map, world, me, curLand, sceneRef, go, toast }: { map: MapData; world: World; me: Player; curLand: Land; sceneRef: React.MutableRefObject<Arena3D | null>; go: ReturnType<typeof useApp>["go"]; toast: (m: string) => void }) {
+function Map3D({ map, world, me, curLand, sceneRef, go, toast, pick }: { map: MapData; world: World; me: Player; curLand: Land; sceneRef: React.MutableRefObject<Arena3D | null>; go: ReturnType<typeof useApp>["go"]; toast: (m: string) => void; pick: Pick }) {
   const { tid } = useApp();
   const host = useRef<HTMLDivElement>(null);
   const labels = useRef<HTMLDivElement>(null);
@@ -280,7 +333,7 @@ function Map3D({ map, world, me, curLand, sceneRef, go, toast }: { map: MapData;
         ))}
         {world.spots.map(({ spot, land, u, v }) => (
           <div key={key(u, v)} className="am-pin" data-at={`${u},${spot.kind === "stop" ? 0.25 : 0},${v}`}>
-            <SpotUi spot={spot} land={land} x={0} y={spot.kind === "stop" ? 6 : spot.kind === "castle" ? -20 : 0} W={0} current={map.current} mates={map.mates} me={me} go={go} toast={toast} flat={false} />
+            <SpotUi spot={spot} land={land} x={0} y={spot.kind === "stop" ? 6 : spot.kind === "castle" ? -20 : 0} W={0} current={map.current} mates={map.mates} me={me} go={go} toast={toast} pick={pick} flat={false} />
           </div>
         ))}
         <div className="am-pin" data-at="0,0,0">
@@ -313,7 +366,7 @@ function Map3D({ map, world, me, curLand, sceneRef, go, toast }: { map: MapData;
 }
 
 /* ---------------- HTML on the map ---------------- */
-function SpotUi({ spot, land, x, y, W, current, mates, me, go, toast, flat = true }: { spot: Spot; land: Land; x: number; y: number; W: number; current: string | null; mates: Record<string, Player[]>; me: Player; go: ReturnType<typeof useApp>["go"]; toast: (m: string) => void; flat?: boolean }) {
+function SpotUi({ spot, land, x, y, W, current, mates, me, go, toast, pick, flat = true }: { spot: Spot; land: Land; x: number; y: number; W: number; current: string | null; mates: Record<string, Player[]>; me: Player; go: ReturnType<typeof useApp>["go"]; toast: (m: string) => void; pick: Pick; flat?: boolean }) {
   const inward = x > W / 2 ? "l" : "r";
 
   if (spot.kind === "chest") {
@@ -341,13 +394,8 @@ function SpotUi({ spot, land, x, y, W, current, mates, me, go, toast, flat = tru
 
   const cur = spot.g.id === current;
   const here = mates[spot.g.id] || [];
-  const click = () => {
-    if (spot.state === "done") go({ v: "results", gid: spot.g.id });
-    else if (spot.state === "play") go({ v: "play", gid: spot.g.id });
-    else if (spot.state === "locked") toast(`Opens ${spot.g.date ? fmtDate(spot.g.date) : "soon"}`);
-    else if (isOpen(spot.g)) toast("You've moved past this stop — keep going on the next one!");
-    else toast(`“${spot.g.title}” has closed — keep going on the next stop!`);
-  };
+  // a tap only opens the stop's card; the quiz starts from its Start button, never by accident
+  const click = () => pick(spot, land);
   const what = { done: `finished, ${spot.stars} stars`, play: "ready to play", missed: "missed", locked: "locked" }[spot.state];
   const top = y - (cur ? 40 : 34);
   return (
