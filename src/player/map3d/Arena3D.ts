@@ -29,6 +29,8 @@ export interface Arena3DInput {
   mates: MateInfo[]; // teammates, each at their furthest stop
   overflow: { u: number; v: number; n: number }[]; // "+N" where a stop has more teammates than shown
   reduced: boolean;
+  /** "pop" (a character), "arrive" (you reached your stop) or an animal's name */
+  onSound?: (what: string) => void;
 }
 
 const OFF = new Vector3(10, 8.2, 10); // camera direction: 2:1 isometric, looking toward −u −v
@@ -360,9 +362,11 @@ export class Arena3D {
       this.bubble = { el, at, until: performance.now() + 3500 };
     };
     if (who) {
+      this.I.onSound?.("pop");
       show(who.me ? "You" : who.p.name, who.me ? this.I.meLine : this.I.mates.find((m) => m.p.uid === who.p.uid)?.line || "", () => new Vector3(who.pos.x, who.pos.y + (who.me ? ME_H : MATE_H) + 0.5, who.pos.z));
       who.hop = 1;
     } else if (pet) {
+      this.I.onSound?.(pet.name);
       show(pet.say, pet.name, () => pet.pos().clone().setY(pet.pos().y + pet.height + 0.35));
       pet.poke();
     }
@@ -804,7 +808,10 @@ export class Arena3D {
         }
         if (!r.route.length) {
           r.idleUntil = t + 2 + Math.random() * 5;
-          if (r.me) r.hop = 1;
+          if (r.me) {
+            r.hop = 1;
+            this.I.onSound?.("arrive");
+          }
         }
         if (r.me && this.follow) this.goal = r.pos.clone();
       } else if (!r.me && !this.I.reduced && t > r.idleUntil) {

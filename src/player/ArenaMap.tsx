@@ -11,6 +11,7 @@ import { isOpen } from "../lib/games";
 import { runCorrect } from "../lib/scoring";
 import { LS } from "../lib/util";
 import type { Arena3D } from "./map3d/Arena3D";
+import { mapSound } from "./map3d/mapSound";
 import { fmtDate, todayKey } from "../lib/util";
 import type { Player } from "../types";
 import { Avatar, certInfo, CoinPill, TopBar } from "./common";
@@ -184,6 +185,17 @@ function Map3D({ map, world, me, curLand, sceneRef, go, toast }: { map: MapData;
   const layer = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [hint, setHint] = useState(true);
+  const [soundOn, setSoundOn] = useState(mapSound.on);
+
+  // the calm background plays while the map is open and visible (it starts on the first touch)
+  useEffect(() => {
+    const vis = () => (document.hidden ? mapSound.stop() : mapSound.unlock());
+    document.addEventListener("visibilitychange", vis);
+    return () => {
+      document.removeEventListener("visibilitychange", vis);
+      mapSound.stop();
+    };
+  }, []);
 
   useEffect(() => {
     let dead = false;
@@ -217,6 +229,7 @@ function Map3D({ map, world, me, curLand, sceneRef, go, toast }: { map: MapData;
           host: host.current, layer: layer.current, world, lands: map.lands, me,
           meAt: cur ? { u: cur.u, v: cur.v } : null, meFrom: fromI, meLine: curStop ? `${curLand.name} · Stop ${curStop.n}` : curLand.name,
           mates, overflow, reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
+          onSound: (w) => (w === "pop" ? mapSound.pop() : w === "arrive" ? mapSound.arrive() : mapSound.animal(w)),
         });
         sceneRef.current = sc;
         const pins = [...(labels.current?.querySelectorAll<HTMLElement>("[data-at]") || [])].map((el) => {
@@ -239,7 +252,13 @@ function Map3D({ map, world, me, curLand, sceneRef, go, toast }: { map: MapData;
   if (failed) return <div className="empty">The 3D map couldn't load on this device.</div>;
   const end = world.path[world.path.length - 1];
   return (
-    <div className="am am3d" onPointerDown={() => setHint(false)}>
+    <div
+      className="am am3d"
+      onPointerDown={() => {
+        setHint(false);
+        mapSound.unlock();
+      }}
+    >
       <div className="am3d-host" ref={host} aria-hidden="true" />
       <div className="am3d-labels" ref={labels}>
         <div className="am-pin" data-at={`${end.u},1.6,${end.v}`} data-clamp="130">
@@ -271,7 +290,24 @@ function Map3D({ map, world, me, curLand, sceneRef, go, toast }: { map: MapData;
         </div>
       </div>
       <div className="am3d-layer" ref={layer} aria-hidden="true" />
-      {hint && <span className="am3d-hint">Drag to explore · pinch to zoom · tap a player</span>}
+      {hint && <span className="am3d-hint">Drag to explore · pinch to zoom · tap players and animals</span>}
+      <button
+        type="button"
+        className={`am3d-sound ${soundOn ? "on" : ""}`}
+        aria-pressed={soundOn}
+        aria-label={soundOn ? "Sound on — tap to mute" : "Sound off — tap to turn on"}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => {
+          mapSound.set(!soundOn);
+          setSoundOn(!soundOn);
+        }}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9h4l5-4v14l-5-4H4z" />
+          {soundOn ? <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" /> : <path d="M17 9l5 6M22 9l-5 6" fill="none" />}
+        </svg>
+        <span>{soundOn ? "Sound on" : "Sound off"}</span>
+      </button>
     </div>
   );
 }
