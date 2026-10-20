@@ -12,11 +12,11 @@ export interface ReportData {
   period: string;
   quiz: string;
   by: string;
-  unitWord: string;
-  unitsWord: string;
+
   kpi: { registered: number; active: number; plays: number; acc: number | null; avgSec: number; certPass: number; certPeople: number };
   topics: { k: string; n: number; acc: number }[];
-  units: UnitStat[];
+  /** one section per kind of unit the company uses (branches, departments or both) */
+  unitGroups: { word: string; words: string; units: UnitStat[] }[];
   leaders: { name: string; unit: string; plays: number; acc: number; points: number }[];
   missed: QStat[];
   best: QStat[];
@@ -56,7 +56,7 @@ function tips(r: ReportData): string[] {
   for (const t of weak) out.push(`Run a refresher sprint on ${t.k} — only ${t.acc}% of answers were right.`);
   const m = r.missed[0];
   if (m?.q && m.topWrong) out.push(`Clear up a common mistake: “${m.q.q}” — ${m.n - m.ok} of ${m.n} answered “${m.topWrong}”.`);
-  const low = r.units.filter((u) => u.registered >= 3).map((u) => ({ u, rate: u.players / u.registered })).sort((a, b) => a.rate - b.rate)[0];
+  const low = r.unitGroups.flatMap((g) => g.units).filter((u) => u.registered >= 3).map((u) => ({ u, rate: u.players / u.registered })).sort((a, b) => a.rate - b.rate)[0];
   if (low && low.rate < 0.6) out.push(`Boost participation in ${low.u.name}: ${low.u.players} of ${low.u.registered} registered staff played.`);
   const strong = r.topics.filter((t) => t.n >= 3 && t.acc >= 85).slice(-1)[0];
   if (strong) out.push(`Celebrate ${strong.k} — ${strong.acc}% accuracy. Share it in the next team update.`);
@@ -75,8 +75,8 @@ export function ReportView({ data: r, onClose, onDownload }: { data: ReportData;
     };
   }, [onClose]);
   const active = r.kpi.registered ? Math.round((r.kpi.active / r.kpi.registered) * 100) : 0;
-  const units = r.units.filter((u) => u.registered || u.players).slice().sort((a, b) => (a.acc ?? 101) - (b.acc ?? 101));
   const medal = ["gold", "silver", "bronze"];
+  const qMax = r.unitGroups.length > 1 ? 4 : 5; // both unit tables on page 2: keep it to one A4 sheet
   return createPortal(
     <div className="rp-overlay" role="dialog" aria-modal="true" aria-label="Knowledge report preview">
       <div className="rp-bar">
@@ -168,33 +168,40 @@ export function ReportView({ data: r, onClose, onDownload }: { data: ReportData;
             </div>
           </div>
 
-          <div className="rp-card">
-            <h2>By {r.unitWord.toLowerCase()} <small>weakest first</small></h2>
-            {units.length ? (
-              <table className="rp-tbl">
-                <thead><tr><th>{r.unitWord}</th><th>Played</th><th>Accuracy</th><th>Weakest topic</th><th>Strongest topic</th></tr></thead>
-                <tbody>
-                  {units.slice(0, 12).map((u) => (
-                    <tr key={u.name}>
-                      <td><b>{u.name}</b></td>
-                      <td>{u.players}/{u.registered}</td>
-                      <td>
-                        <span className="rp-mini"><i style={{ width: `${u.acc ?? 0}%`, background: u.acc == null ? "#ccc" : SEV_HEX[sevOf(u.acc)] }} /></span>
-                        {u.acc == null ? "—" : `${u.acc}%`}
-                      </td>
-                      <td>{u.weak ? `${u.weak.k} (${u.weak.acc}%)` : "—"}</td>
-                      <td>{u.strong ? `${u.strong.k} (${u.strong.acc}%)` : "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : <p className="rp-empty">No {r.unitsWord.toLowerCase()} set up yet.</p>}
-          </div>
+          {r.unitGroups.map((grp) => {
+            const units = grp.units.filter((u) => u.registered || u.players).slice().sort((a, b) => (a.acc ?? 101) - (b.acc ?? 101));
+            // with both kinds on one page, keep each table short enough to fit
+            const max = r.unitGroups.length > 1 ? 5 : 12;
+            return (
+              <div className="rp-card" key={grp.word}>
+                <h2>By {grp.word.toLowerCase()} <small>weakest first{units.length > max ? ` · ${max} of ${units.length}` : ""}</small></h2>
+                {units.length ? (
+                  <table className="rp-tbl">
+                    <thead><tr><th>{grp.word}</th><th>Played</th><th>Accuracy</th><th>Weakest topic</th><th>Strongest topic</th></tr></thead>
+                    <tbody>
+                      {units.slice(0, max).map((u) => (
+                        <tr key={u.name}>
+                          <td><b>{u.name}</b></td>
+                          <td>{u.players}/{u.registered}</td>
+                          <td>
+                            <span className="rp-mini"><i style={{ width: `${u.acc ?? 0}%`, background: u.acc == null ? "#ccc" : SEV_HEX[sevOf(u.acc)] }} /></span>
+                            {u.acc == null ? "—" : `${u.acc}%`}
+                          </td>
+                          <td>{u.weak ? `${u.weak.k} (${u.weak.acc}%)` : "—"}</td>
+                          <td>{u.strong ? `${u.strong.k} (${u.strong.acc}%)` : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : <p className="rp-empty">No {grp.words.toLowerCase()} with players yet.</p>}
+              </div>
+            );
+          })}
 
           <div className="rp-row">
             <div className="rp-card rp-grow rp-q bad">
               <h2>Most-missed questions</h2>
-              {r.missed.length ? r.missed.slice(0, 5).map((q) => (
+              {r.missed.length ? r.missed.slice(0, qMax).map((q) => (
                 <div key={q.gid + q.qid} className="rp-qi">
                   <b>{q.acc}%</b>
                   <p>{q.q?.q || "(question removed)"}{q.topWrong && <small>Most picked wrong answer: “{q.topWrong}”</small>}</p>
@@ -203,7 +210,7 @@ export function ReportView({ data: r, onClose, onDownload }: { data: ReportData;
             </div>
             <div className="rp-card rp-grow rp-q good">
               <h2>Already mastered</h2>
-              {r.best.length ? r.best.slice(0, 5).map((q) => (
+              {r.best.length ? r.best.slice(0, qMax).map((q) => (
                 <div key={q.gid + q.qid} className="rp-qi">
                   <b>{q.acc}%</b>
                   <p>{q.q?.q || "(question removed)"}</p>

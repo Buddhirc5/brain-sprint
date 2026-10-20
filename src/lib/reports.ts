@@ -1,5 +1,6 @@
 /* CSV report builders (pure functions — easy to unit test). Each report opens with a summary block. */
 import type { AuditEntry, Disqualified, Game, Labels, OrgConfig, Player, Run } from "../types";
+import { unitTypes } from "../api/engine";
 import { analyze, PERIODS, scope, SEV_LABEL, sevOf, unitStats, type Period } from "./analytics";
 import { choiceText, TYPE_NAME } from "./answers";
 import { isOpen, isScheduled, sortGames } from "./games";
@@ -54,7 +55,8 @@ export function fullReport(c: RCtx, gid: string, period: Period): Rows {
   R.push([], ["2. KNOWLEDGE GAPS BY TOPIC (weakest first)"], ["Topic", "Answers", "Correct", "Wrong", "Timed out", "Accuracy %", "Gap level"]);
   an.topics.forEach((t) => R.push([t.k, t.n, t.ok, t.n - t.ok - t.to, t.to, t.acc, SEV_LABEL[sevOf(t.acc)]]));
   R.push(["TOTAL", answers.length, ok, answers.length - ok - to, to, pct(ok, answers.length), ""], []);
-  (["branch", "dept"] as const).forEach((type, ix) => {
+  const kinds = unitTypes(c.cfg);
+  kinds.forEach((type, ix) => {
     const rows = unitStats(type, type === "dept" ? c.cfg.departments : c.cfg.branches, c.players, runs, answers);
     const L = unitWord(c, type);
     R.push([`${3 + ix}. GAPS BY ${L.toUpperCase()} (weakest first)`]);
@@ -67,18 +69,18 @@ export function fullReport(c: RCtx, gid: string, period: Period): Rows {
     rows.forEach((u) => R.push([u.name, ...tcols.map((t) => (u.topic[t] ? `${pct(u.topic[t].ok, u.topic[t].n)}% (${u.topic[t].n})` : "—"))]));
     R.push([]);
   });
-  R.push(["5. QUESTION ANALYSIS (most missed first)"], ["Quiz", "Question", "Topic", "Type", "Answered", "Correct", "Wrong", "Accuracy %", "Most common wrong answer", "Times chosen"]);
+  R.push([`${3 + kinds.length}. QUESTION ANALYSIS (most missed first)`], ["Quiz", "Question", "Topic", "Type", "Answered", "Correct", "Wrong", "Accuracy %", "Most common wrong answer", "Times chosen"]);
   an.questions
     .slice()
     .sort((a, b) => a.acc - b.acc)
     .forEach((q) => R.push([c.games[q.gid]?.title || q.gid, q.q?.q || q.qid, q.q?.topic || "", q.q ? TYPE_NAME[q.q.type] : "", q.n, q.ok, q.n - q.ok, q.acc, q.topWrong, q.topWrongN || ""]));
-  R.push([], ["6. LEADERBOARD (period)"], ["Rank", "Employee ID", "Name", `${LB(c).branch} / ${LB(c).dept}`, "Completed plays", "Correct", "Answered", "Accuracy %", "Points"]);
+  R.push([], [`${4 + kinds.length}. LEADERBOARD (period)`], ["Rank", "Employee ID", "Name", kinds.length > 1 ? `${LB(c).branch} / ${LB(c).dept}` : unitWord(c, kinds[0]), "Completed plays", "Correct", "Answered", "Accuracy %", "Points"]);
   const from = period === "7" ? Date.now() - 7 * 864e5 : period === "30" ? Date.now() - 30 * 864e5 : period === "today" ? new Date().setHours(0, 0, 0, 0) : 0;
   board(c.players, c.dq, from).forEach((r, i) => {
     const p = c.players.find((x) => x.uid === r.uid);
     R.push([i + 1, idOf(c, p), p?.name || "", p?.unit || "", r.runs, r.correct, r.answered, r.acc, r.points]);
   });
-  R.push([], ["7. QUIZZES"], ["Quiz", "Type", "Date", "Status", "Questions", "Time limit (min)", "Completed plays", "Avg points", "Accuracy %"]);
+  R.push([], [`${5 + kinds.length}. QUIZZES`], ["Quiz", "Type", "Date", "Status", "Questions", "Time limit (min)", "Completed plays", "Avg points", "Accuracy %"]);
   sortGames(Object.values(c.games).filter((g) => g.kind !== "live")).forEach((g) => {
     const done = runs.filter((r) => r.gid === g.id && r.done);
     const n = done.reduce((s, r) => s + r.answered, 0);
