@@ -7,6 +7,7 @@ import { Chibi } from "../components/Chibi";
 import { Icon } from "../components/ui";
 import { buildMap, starsFor, type ArenaMap as MapData, type CastleState, type Deco, type Land, type MapStop, type Theme } from "../lib/arenaMap";
 import { buildWorld, hash, key, type Spot, type Tile, type World } from "../lib/arenaWorld";
+import { isOpen } from "../lib/games";
 import { runCorrect } from "../lib/scoring";
 import { LS } from "../lib/util";
 import type { Arena3D } from "./map3d/Arena3D";
@@ -308,6 +309,7 @@ function SpotUi({ spot, land, x, y, W, current, mates, me, go, toast, flat = tru
     if (spot.state === "done") go({ v: "results", gid: spot.g.id });
     else if (spot.state === "play") go({ v: "play", gid: spot.g.id });
     else if (spot.state === "locked") toast(`Opens ${spot.g.date ? fmtDate(spot.g.date) : "soon"}`);
+    else if (isOpen(spot.g)) toast("You've moved past this stop — keep going on the next one!");
     else toast(`“${spot.g.title}” has closed — keep going on the next stop!`);
   };
   const what = { done: `finished, ${spot.stars} stars`, play: "ready to play", missed: "missed", locked: "locked" }[spot.state];
