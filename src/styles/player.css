@@ -59,6 +59,16 @@
 .quick button { background: #fff; border-radius: var(--r-md); padding: 12px 8px; display: grid; justify-items: center; gap: 4px; font-weight: 800; font-size: 13px; box-shadow: var(--shadow); }
 .quick button svg { width: 22px; height: 22px; }
 .quick button.hl { background: var(--ink); color: #fff; }
+.map-cta {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 12px 14px 18px; border-radius: var(--r-lg); text-align: left;
+  background: linear-gradient(135deg, #D2F27A, #A5E3EC); box-shadow: 0 5px 0 rgba(0,0,0,.10), var(--shadow);
+}
+.map-cta:active { transform: translateY(2px); }
+.map-cta-l { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.map-cta-l small { font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #3E5A06; }
+.map-cta-l b { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; text-transform: uppercase; }
+.map-cta-l .num { font-size: 13px; font-weight: 800; }
+.map-cta-art { width: 112px; flex: none; }
 /* narrow phones: slimmer stat pills and shortcut tiles so labels stay on one line */
 @media (max-width: 400px) {
   .stat { gap: 6px; padding: 6px 8px 6px 6px; }

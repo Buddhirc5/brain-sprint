@@ -6,6 +6,7 @@ import { DARK_CARDS, isOpen, isScheduled, sortGames } from "../lib/games";
 import { board, limitMs, runCorrect, runPoints, windowStart } from "../lib/scoring";
 import { fmtDate, fmtMin, todayKey } from "../lib/util";
 import type { Game } from "../types";
+import { buildMap } from "../lib/arenaMap";
 import { Avatar, certInfo, firstName, pubName } from "./common";
 
 export function Lobby() {
@@ -31,6 +32,14 @@ export function Lobby() {
   const certOpen = certs.filter((g) => isOpen(g, t));
   const certPassed = certs.filter((g) => certInfo(me, g).passed).length;
   const certTodo = certOpen.filter((g) => !certInfo(me, g).passed).length;
+
+  const mapInfo = (() => {
+    if (!features.sprint) return null;
+    const m = buildMap(Object.values(d.games), me, [], d.dq, t, () => "locked");
+    const at = m.lands.flatMap((l) => l.stops).find((x) => x.g.id === m.current);
+    const land = m.lands.find((l) => l.stops.includes(at!)) || m.lands[0];
+    return { total: m.total, at: at?.n || 1, stars: m.stars, land: land.name };
+  })();
 
   const statCount = 1 + (features.streaks ? 1 : 0) + (features.coins ? 1 : 0);
   const quick: { k: string; label: string; icon: JSX.Element; hl?: boolean; on: () => void }[] = [
@@ -120,6 +129,25 @@ export function Lobby() {
           </button>
         ))}
       </nav>
+
+      {mapInfo && mapInfo.total > 0 && (
+        <button type="button" className="map-cta" onClick={() => go({ v: "map" })}>
+          <span className="map-cta-l">
+            <small>Arena Map</small>
+            <b>{mapInfo.land}</b>
+            <span className="num">
+              Stop {mapInfo.at} of {mapInfo.total} · ★ {mapInfo.stars}
+            </span>
+          </span>
+          <svg className="map-cta-art" viewBox="0 0 120 70" aria-hidden="true">
+            <path d="M6 62 C30 62 26 36 52 36 S78 10 112 10" fill="none" stroke="#FFF6DD" strokeWidth="12" strokeLinecap="round" />
+            <path d="M6 62 C30 62 26 36 52 36 S78 10 112 10" fill="none" stroke="#FF5A1F" strokeWidth="4" strokeDasharray="0.1 9" strokeLinecap="round" />
+            <circle cx="14" cy="61" r="9" fill="#C6F432" stroke="#fff" strokeWidth="3" />
+            <circle cx="52" cy="36" r="9" fill="#C6F432" stroke="#fff" strokeWidth="3" />
+            <circle cx="100" cy="12" r="11" fill="#FF5A1F" stroke="#fff" strokeWidth="3" />
+          </svg>
+        </button>
+      )}
 
       {features.live && (
         <a className="live-cta" href="#/join">

@@ -1,0 +1,99 @@
+/* Arena Map (src/player/ArenaMap.tsx) */
+.am-page { gap: 14px; }
+
+/* summary card */
+.am-hud { display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 18px; border-radius: var(--r-lg); background: var(--sky); box-shadow: var(--shadow); }
+.am-hud-l { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.am-hud-k { font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-l); opacity: .8; }
+.am-hud-n { font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 1; text-transform: uppercase; color: var(--ink-l); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.am-hud-bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,.7); overflow: hidden; margin-top: 4px; }
+.am-hud-bar span { display: block; height: 100%; border-radius: 999px; background: var(--ink); }
+.am-hud-s { font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; }
+.am-hud-s .am-star { width: 15px; height: 15px; }
+.am-me { flex: none; display: grid; justify-items: center; gap: 2px; padding: 6px 8px 8px; border-radius: 18px; background: #fff; font-size: 12px; font-weight: 900; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.am-me:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+
+/* the map itself */
+.am { position: relative; overflow: hidden; border-radius: 28px; box-shadow: var(--shadow); background: #fff; user-select: none; -webkit-user-select: none; }
+@media (max-width: 502px) { .am { margin-inline: -16px; border-radius: 0; box-shadow: none; } }
+.am-svg { position: absolute; inset: 0; display: block; }
+.am-fogtext { position: absolute; left: 50%; transform: translateX(-50%); width: min(280px, 80%); text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); display: grid; gap: 2px; }
+.am-fogtext b { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: .02em; text-transform: uppercase; color: var(--ink-2); }
+
+/* everything on the map is centred on its point */
+.am-gate, .am-node, .am-chest, .am-castle, .am-start { position: absolute; transform: translate(-50%, -50%); }
+
+/* land gate: a ribbon across the road */
+.am-gate { display: grid; justify-items: center; gap: 2px; z-index: 2; text-align: center; color: var(--ink-l); }
+.am-gate b {
+  position: relative; display: block; padding: 8px 26px 9px; border-radius: 12px; background: #fff; color: var(--ink-l); white-space: nowrap;
+  font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1; text-transform: uppercase; letter-spacing: .02em;
+  box-shadow: 0 5px 0 var(--rib), 0 10px 18px -8px rgba(0,0,0,.35);
+}
+.am-gate b::before, .am-gate b::after { content: ""; position: absolute; top: 10px; width: 22px; height: 100%; background: var(--rib); z-index: -1; }
+.am-gate b::before { left: -14px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 40% 50%); }
+.am-gate b::after { right: -14px; clip-path: polygon(0 0, 100% 0, 60% 50%, 100% 100%, 0 100%); }
+.am-gate-k { font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; background: var(--ink-l); color: #fff; padding: 3px 10px; border-radius: 999px; }
+.am-gate-s { margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 900; background: rgba(255,255,255,.85); padding: 3px 10px; border-radius: 999px; }
+.am-gate-s .am-star { width: 14px; height: 14px; }
+
+/* quiz stops */
+.am-node { z-index: 3; display: grid; justify-items: center; gap: 6px; padding: 0; }
+.am-disc {
+  width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; position: relative;
+  font-family: var(--display); font-size: 26px; line-height: 1; transition: transform .12s;
+}
+.am-node:active .am-disc { transform: translateY(3px); }
+.am-node.s-done .am-disc { background: var(--lime); color: var(--ink); box-shadow: inset 0 -5px 0 rgba(0,0,0,.12), 0 5px 0 var(--lime-deep), 0 0 0 4px #fff; }
+.am-node.s-play .am-disc { background: var(--orange); color: #fff; box-shadow: inset 0 -5px 0 rgba(0,0,0,.15), 0 5px 0 var(--orange-deep), 0 0 0 4px #fff; }
+.am-node.s-missed .am-disc { background: #EFEDE7; color: #A19E94; box-shadow: 0 4px 0 #CFCCC2, 0 0 0 4px rgba(255,255,255,.8); }
+.am-node.s-locked .am-disc { background: rgba(255,255,255,.75); color: var(--muted); box-shadow: 0 4px 0 rgba(0,0,0,.12), inset 0 0 0 3px rgba(0,0,0,.08); }
+.am-node.s-locked .am-disc svg { width: 24px; height: 24px; }
+.am-node.cur .am-disc { width: 78px; height: 78px; font-size: 32px; }
+.am-node.cur.s-play .am-disc::after {
+  content: ""; position: absolute; inset: -12px; border-radius: 50%; border: 4px solid var(--orange); opacity: 0; animation: am-ping 1.8s ease-out infinite;
+}
+@keyframes am-ping { 0% { transform: scale(.85); opacity: .9; } 100% { transform: scale(1.3); opacity: 0; } }
+
+.am-stars { display: flex; gap: 1px; padding: 3px 6px; border-radius: 999px; background: #fff; box-shadow: 0 2px 0 rgba(0,0,0,.08); }
+.am-star { width: 16px; height: 16px; fill: #D9D6CC; }
+.am-star.on { fill: #FFC21A; stroke: #C99A12; stroke-width: 1.2; stroke-linejoin: round; }
+.am-tag { font-size: 11px; font-weight: 900; letter-spacing: .04em; padding: 3px 9px; border-radius: 999px; background: #fff; color: var(--ink-2); white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.08); }
+.am-tag.go { background: var(--ink); color: #fff; letter-spacing: .1em; }
+
+/* the player standing on their stop */
+.am-hero { position: absolute; z-index: 4; transform: translate(-50%, -100%); pointer-events: none; display: grid; justify-items: center; animation: am-bob 1.8s ease-in-out infinite; }
+.am-hero .chibi { filter: drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
+.am-here { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 10px; font-weight: 900; background: #fff; color: var(--ink); padding: 2px 7px; border-radius: 999px; box-shadow: 0 2px 4px rgba(0,0,0,.15); }
+.am-hero.l .am-you { right: auto; left: -18px; transform: rotate(-8deg); }
+.am-you { position: absolute; top: -4px; right: -18px; background: var(--ink); color: #fff; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; transform: rotate(8deg); }
+@keyframes am-bob { 50% { transform: translate(-50%, calc(-100% - 6px)); } }
+
+/* teammates on their furthest stop */
+.am-mates { position: absolute; z-index: 3; display: flex; align-items: center; transform: translateY(-50%); }
+.am-mates.r { margin-left: 50px; }
+.am-mates.l { flex-direction: row-reverse; transform: translate(-100%, -50%); margin-left: -50px; }
+.am-mate { display: grid; width: 34px; height: 34px; border-radius: 50%; background: #fff; place-items: center; box-shadow: 0 2px 6px rgba(0,0,0,.18); overflow: hidden; }
+.am-mates.r .am-mate + .am-mate { margin-left: -10px; }
+.am-mates.l .am-mate + .am-mate { margin-right: -10px; }
+.am-more { margin: 0 4px; font-size: 11px; font-weight: 900; background: var(--ink); color: #fff; padding: 3px 7px; border-radius: 999px; }
+
+/* chest & castle */
+.am-chest, .am-castle { z-index: 3; display: grid; justify-items: center; gap: 2px; padding: 0; }
+.am-chest-art { width: 74px; height: auto; display: block; }
+.am-chest.open .am-chest-art { animation: am-hop 2.4s ease-in-out infinite; }
+@keyframes am-hop { 0%, 80%, 100% { transform: none; } 88% { transform: translateY(-6px) rotate(-3deg); } 94% { transform: translateY(0) rotate(2deg); } }
+.am-chest:not(.open) { filter: saturate(.7); }
+.am-castle-art { width: 98px; height: auto; display: block; }
+.am-castle-t { max-width: 150px; font-size: 11px; font-weight: 800; color: var(--ink-2); text-align: center; line-height: 1.2; background: rgba(255,255,255,.75); padding: 2px 8px; border-radius: 8px; }
+.am-castle.c-open .am-tag { background: var(--blue); color: #fff; }
+.am-castle.c-passed .am-tag { background: var(--good); color: #fff; }
+.am-glow { animation: am-pulse 2s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes am-pulse { 50% { opacity: .2; transform: scale(1.08); } }
+
+.am-start { left: 50%; z-index: 3; }
+.am-start span { display: inline-block; font-family: var(--display); font-size: 18px; letter-spacing: .08em; padding: 6px 16px; border-radius: 10px; background: var(--ink); color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+
+@media (prefers-reduced-motion: reduce) {
+  .am-hero, .am-glow, .am-chest.open .am-chest-art, .am-node.cur.s-play .am-disc::after { animation: none; }
+}

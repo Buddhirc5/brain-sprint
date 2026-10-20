@@ -11,6 +11,7 @@ import { Store } from "../player/Store";
 import { Guide } from "../player/Guide";
 import { Login, EmailLogin } from "../player/Login";
 import { Certs } from "../player/Certs";
+import { ArenaMap } from "../player/ArenaMap";
 import { Loading } from "../App";
 import { useTenantPub } from "./useTenantPub";
 import { useApi } from "../app/ApiCtx";
@@ -92,6 +93,9 @@ function PlayerShell() {
         break;
       case "certs":
         screen = <Certs />;
+        break;
+      case "map":
+        screen = <ArenaMap />;
         break;
       default:
         screen = <Lobby />;
