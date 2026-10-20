@@ -141,3 +141,12 @@
 .am3d .am-node.s-locked .am-disc svg { width: 18px; height: 18px; }
 .am3d .am-node .am-tag { top: calc(100% + 30px); }
 .am3d .am-node.cur .am-tag { top: calc(100% + 26px); }
+
+/* sound on/off over the 3D map */
+.am3d-sound {
+  position: absolute; top: 12px; right: 12px; z-index: 5; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px 7px 9px;
+  border-radius: 999px; background: rgba(255,255,255,.92); color: var(--ink); font-size: 12px; font-weight: 900; box-shadow: 0 3px 0 rgba(0,0,0,.12);
+}
+.am3d-sound svg { width: 20px; height: 20px; fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.am3d-sound:not(.on) { color: var(--muted); }
+.am3d-sound:active { transform: translateY(1px); }
