@@ -1,121 +1,22 @@
 /* Arena Map: the player's journey through the company's quizzes (see lib/arenaMap.ts for how it's built).
-   Drawn as 3D isometric floating islands: one island per land, a stone path that zigzags up across
-   them and wooden bridges between. The world is one SVG; stops, tags and characters are HTML on top. */
-import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
+   Real 3D with three.js where the device supports WebGL (map3d/Arena3D.ts, loaded only when the map
+   opens); otherwise the same world drawn as a flat isometric SVG. Stops, tags and signs are HTML. */
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
 import { Icon } from "../components/ui";
-import { buildMap, type CastleState, type Deco, type Land, type MapCastle, type MapChest, type MapStop, type Theme } from "../lib/arenaMap";
+import { buildMap, starsFor, type ArenaMap as MapData, type CastleState, type Deco, type Land, type MapStop, type Theme } from "../lib/arenaMap";
+import { buildWorld, hash, key, type Spot, type Tile, type World } from "../lib/arenaWorld";
+import { runCorrect } from "../lib/scoring";
+import { LS } from "../lib/util";
+import type { Arena3D } from "./map3d/Arena3D";
 import { fmtDate, todayKey } from "../lib/util";
 import type { Player } from "../types";
 import { Avatar, certInfo, CoinPill, TopBar } from "./common";
 import "../styles/map.css";
 
-const XB = 5; // the path stays within |u − v| ≤ XB, turning at the edges
-const XI = 3; // stops sit only where |u − v| ≤ XI, away from the turns
-const GAP = 7; // path tiles between stops, at least
-const BRIDGE = 8;
 const TOP = 210; // clouds over the lands still to come
 const BOTTOM = 80;
-
-type Spot = MapStop | MapCastle | MapChest;
-interface Tile { u: number; v: number; kind: "ground" | "path" | "bridge"; land: number; spot?: Spot; prop?: Deco }
-interface World {
-  tiles: Tile[];
-  spots: { spot: Spot; land: Land; u: number; v: number }[];
-  banners: { land: Land; u: number; v: number }[];
-  start: { u: number; v: number };
-  steps: number;
-}
-
-/** Small stable hash so scenery stays put between visits. */
-const hash = (u: number, v: number, s = 0) => {
-  let h = (u * 374761393 + v * 668265263 + s * 2147483647) | 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-};
-const key = (u: number, v: number) => `${u},${v}`;
-
-function buildWorld(lands: Land[]): World {
-  let u = 0, v = 0, dir = -1, step = 0;
-  const path: { u: number; v: number; step: number; seg: "start" | "bridge" | "land" | "tail"; land: number }[] = [{ u, v, step, seg: "start", land: -1 }];
-  const go = (seg: (typeof path)[number]["seg"], land: number) => {
-    const xi = u - v;
-    if (dir < 0 && xi - 1 < -XB) dir = 1;
-    else if (dir > 0 && xi + 1 > XB) dir = -1;
-    if (dir < 0) u -= 1;
-    else v -= 1;
-    step += 1;
-    const t = { u, v, step, seg, land };
-    path.push(t);
-    return t;
-  };
-  go("start", -1);
-  const spots: World["spots"] = [];
-  const banners: World["banners"] = [];
-  const range: [number, number][] = [];
-  lands.forEach((land, li) => {
-    for (let i = 0; i < BRIDGE; i++) {
-      const t = go("bridge", li);
-      if (i === Math.floor(BRIDGE / 2)) banners.push({ land, u: t.u, v: t.v });
-    }
-    const from = step + 1;
-    let since = -2;
-    for (const item of land.items) {
-      if (item.kind === "gate") continue;
-      for (;;) {
-        const t = go("land", li);
-        since += 1;
-        // where the path doubles back, the next stop must sit well above or well to the side of the last one
-        const prev = spots[spots.length - 1];
-        const apart = !prev || -(t.u + t.v) + (prev.u + prev.v) >= 9 || Math.abs(t.u - t.v - (prev.u - prev.v)) >= 4;
-        if (since >= GAP && Math.abs(t.u - t.v) <= XI && apart) {
-          spots.push({ spot: item, land, u: t.u, v: t.v });
-          since = 0;
-          break;
-        }
-      }
-    }
-    go("land", li);
-    go("land", li);
-    range.push([from, step]);
-  });
-  for (let i = 0; i < 7; i++) go("tail", lands.length);
-
-  const tiles = new Map<string, Tile>();
-  const add = (t: Tile) => {
-    const k = key(t.u, t.v);
-    if (!tiles.has(k) || t.kind !== "ground") tiles.set(k, t);
-  };
-  // islands: the land's path widened by one tile, and by two in places for an uneven coastline
-  const grow = (own: (typeof path)[number][], li: number, lo: number, hi: number) => {
-    for (const t of own) {
-      const r = hash(t.u, t.v, 7) < 0.45 ? 2 : 1;
-      for (let du = -r; du <= r; du++)
-        for (let dv = -r; dv <= r; dv++) {
-          if (Math.abs(du) + Math.abs(dv) > r + 1) continue;
-          const a = t.u + du, b = t.v + dv, s = -(a + b);
-          if (Math.abs(a - b) > XB + 1 || s < lo || s > hi) continue;
-          add({ u: a, v: b, kind: "ground", land: li });
-        }
-    }
-  };
-  grow(path.filter((t) => t.seg === "start"), 0, -1, 2);
-  lands.forEach((_, li) => grow(path.filter((t) => t.seg === "land" && t.land === li), li, range[li][0] - 1, range[li][1] + 1));
-  for (const t of path) add({ u: t.u, v: t.v, kind: t.seg === "bridge" || t.seg === "tail" ? "bridge" : "path", land: Math.max(0, Math.min(lands.length - 1, t.land)) });
-  for (const s of spots) tiles.get(key(s.u, s.v))!.spot = s.spot;
-
-  // scenery on open ground, kept clear of stops
-  const onPath = new Set(path.map((t) => key(t.u, t.v)));
-  const near = (a: number, b: number) =>
-    spots.some((s) => Math.abs(s.u - a) <= 2 && Math.abs(s.v - b) <= 2) || [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([du, dv]) => onPath.has(key(a + du, b + dv)));
-  for (const t of tiles.values()) {
-    if (t.kind !== "ground" || near(t.u, t.v) || hash(t.u, t.v, 3) > 0.34) continue;
-    const deco = lands[t.land]?.theme.deco || ["tree"];
-    t.prop = deco[Math.floor(hash(t.u, t.v, 5) * deco.length)];
-  }
-  return { tiles: [...tiles.values()].sort((a, b) => a.u + a.v - (b.u + b.v) || a.u - b.u), spots, banners, start: { u: 0, v: 0 }, steps: step };
-}
 
 export function ArenaMap() {
   const { d, me, players, go, toast } = useApp();
@@ -162,9 +63,13 @@ export function ArenaMap() {
     if (el) window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + scrollY - innerHeight * 0.55) });
   }, [geo]);
 
+  const scene3d = useRef<Arena3D | null>(null);
+  const [gl] = useState(webglOk);
+
   if (!me || !map || !world) return null;
   const curLand = map.lands.find((l) => l.stops.some((s) => s.g.id === map.current)) || map.lands[0];
-  const findMe = () => wrap.current?.querySelector<HTMLElement>(".am-node.cur")?.scrollIntoView({ block: "center", behavior: "smooth" });
+  const findMe = () =>
+    gl ? scene3d.current?.focusMe() : wrap.current?.querySelector<HTMLElement>(".am-node.cur")?.scrollIntoView({ block: "center", behavior: "smooth" });
   const has = new Set(world.tiles.filter((t) => t.kind !== "bridge").map((t) => key(t.u, t.v)));
   const hasAny = new Set(world.tiles.map((t) => key(t.u, t.v)));
 
@@ -188,6 +93,9 @@ export function ArenaMap() {
         </button>
       </section>
 
+      {gl ? (
+        <Map3D map={map} world={world} me={me} curLand={curLand} sceneRef={scene3d} go={go} toast={toast} />
+      ) : (
       <div className="am" ref={wrap} style={{ height: geo?.H || 600 }}>
         {geo && (
           <>
@@ -253,12 +161,122 @@ export function ArenaMap() {
           </>
         )}
       </div>
+      )}
+    </div>
+  );
+}
+
+function webglOk() {
+  try {
+    const c = document.createElement("canvas");
+    return !!(c.getContext("webgl2") || c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
+/* ---------------- the 3D map ---------------- */
+function Map3D({ map, world, me, curLand, sceneRef, go, toast }: { map: MapData; world: World; me: Player; curLand: Land; sceneRef: React.MutableRefObject<Arena3D | null>; go: ReturnType<typeof useApp>["go"]; toast: (m: string) => void }) {
+  const { tid } = useApp();
+  const host = useRef<HTMLDivElement>(null);
+  const labels = useRef<HTMLDivElement>(null);
+  const layer = useRef<HTMLDivElement>(null);
+  const [failed, setFailed] = useState(false);
+  const [hint, setHint] = useState(true);
+
+  useEffect(() => {
+    let dead = false;
+    const memo = `bsx.map.${tid}.${me.uid}`;
+    const spotOf = (gid: string | null) => world.spots.find((s) => s.spot.kind === "stop" && s.spot.g.id === gid);
+    const cur = spotOf(map.current);
+    const lastGid = LS.get(memo) || "";
+    const last = spotOf(lastGid);
+    // first visit: a short run in from a few tiles back; later visits: from where you stood last time
+    const curI = cur ? world.path.findIndex((p) => p.u === cur.u && p.v === cur.v) : -1;
+    const fromI = last && last !== cur ? world.path.findIndex((p) => p.u === last.u && p.v === last.v) : !lastGid && curI > 0 ? Math.max(0, curI - 6) : -1;
+    const mates = Object.entries(map.mates).flatMap(([gid, ps]) => {
+      const sp = spotOf(gid);
+      if (!sp || sp.spot.kind !== "stop") return [];
+      const n = sp.spot.n;
+      return ps.map((p) => {
+        const run = p.runs?.[gid];
+        const st = run ? starsFor(runCorrect(run), run.total || run.ans.length) : 0;
+        return { p, u: sp.u, v: sp.v, line: `${p.unit ? p.unit + " · " : ""}Stop ${n} · ${"★".repeat(st)}${"☆".repeat(3 - st)}` };
+      });
+    });
+    const per = new Map<string, number>();
+    mates.forEach((m) => per.set(key(m.u, m.v), (per.get(key(m.u, m.v)) || 0) + 1));
+    const overflow = [...per].filter(([, n]) => n > 4).map(([k, n]) => ({ u: +k.split(",")[0], v: +k.split(",")[1], n: n - 4 }));
+    const curStop = cur?.spot.kind === "stop" ? cur.spot : null;
+
+    import("./map3d/Arena3D")
+      .then(({ Arena3D }) => {
+        if (dead || !host.current || !layer.current) return;
+        const sc = new Arena3D({
+          host: host.current, layer: layer.current, world, lands: map.lands, me,
+          meAt: cur ? { u: cur.u, v: cur.v } : null, meFrom: fromI, meLine: curStop ? `${curLand.name} · Stop ${curStop.n}` : curLand.name,
+          mates, overflow, reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
+        });
+        sceneRef.current = sc;
+        const pins = [...(labels.current?.querySelectorAll<HTMLElement>("[data-at]") || [])].map((el) => {
+          const [x, y, z] = el.dataset.at!.split(",").map(Number);
+          return { el, x, y, z, clamp: Number(el.dataset.clamp || 0) };
+        });
+        sc.setAnchors(pins);
+        if (map.current) LS.set(memo, map.current);
+      })
+      .catch(() => !dead && setFailed(true));
+    return () => {
+      dead = true;
+      sceneRef.current?.dispose();
+      sceneRef.current = null;
+    };
+    // the scene is rebuilt only when the map itself changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, world]);
+
+  if (failed) return <div className="empty">The 3D map couldn't load on this device.</div>;
+  const end = world.path[world.path.length - 1];
+  return (
+    <div className="am am3d" onPointerDown={() => setHint(false)}>
+      <div className="am3d-host" ref={host} aria-hidden="true" />
+      <div className="am3d-labels" ref={labels}>
+        <div className="am-pin" data-at={`${end.u},1.6,${end.v}`} data-clamp="130">
+          <p className="am-fogtext">
+            <b>More lands ahead</b>
+            New stops appear as new quizzes go live.
+          </p>
+        </div>
+        {world.banners.map(({ land, u, v }) => (
+          <div key={land.idx} className="am-pin" data-at={`${u},1.5,${v}`} data-clamp="112">
+            <div className="am-gate" style={{ left: 0, top: 0, ["--ink-l" as string]: land.theme.ink, ["--rib" as string]: land.theme.side }}>
+              <span className="am-gate-k">Land {land.idx + 1}</span>
+              <b>{land.name}</b>
+              <span className="am-gate-s num">
+                <Star on /> {land.stars}/{land.stops.length * 3} · {land.done}/{land.stops.length} done
+              </span>
+            </div>
+          </div>
+        ))}
+        {world.spots.map(({ spot, land, u, v }) => (
+          <div key={key(u, v)} className="am-pin" data-at={`${u},${spot.kind === "stop" ? 0.25 : 0},${v}`}>
+            <SpotUi spot={spot} land={land} x={0} y={spot.kind === "stop" ? 6 : spot.kind === "castle" ? -20 : 0} W={0} current={map.current} mates={map.mates} me={me} go={go} toast={toast} flat={false} />
+          </div>
+        ))}
+        <div className="am-pin" data-at="0,0,0">
+          <div className="am-start" style={{ left: 0, top: 34 }}>
+            <span>START</span>
+          </div>
+        </div>
+      </div>
+      <div className="am3d-layer" ref={layer} aria-hidden="true" />
+      {hint && <span className="am3d-hint">Drag to explore · pinch to zoom · tap a player</span>}
     </div>
   );
 }
 
 /* ---------------- HTML on the map ---------------- */
-function SpotUi({ spot, land, x, y, W, current, mates, me, go, toast }: { spot: Spot; land: Land; x: number; y: number; W: number; current: string | null; mates: Record<string, Player[]>; me: Player; go: ReturnType<typeof useApp>["go"]; toast: (m: string) => void }) {
+function SpotUi({ spot, land, x, y, W, current, mates, me, go, toast, flat = true }: { spot: Spot; land: Land; x: number; y: number; W: number; current: string | null; mates: Record<string, Player[]>; me: Player; go: ReturnType<typeof useApp>["go"]; toast: (m: string) => void; flat?: boolean }) {
   const inward = x > W / 2 ? "l" : "r";
 
   if (spot.kind === "chest") {
@@ -309,14 +327,14 @@ function SpotUi({ spot, land, x, y, W, current, mates, me, go, toast }: { spot: 
         {spot.state === "missed" && <span className="am-tag">Missed</span>}
         {spot.state === "locked" && spot.g.date && <span className="am-tag">{fmtDate(spot.g.date)}</span>}
       </button>
-      {cur && (
+      {flat && cur && (
         <div className={`am-hero ${inward}`} style={{ left: Math.min(W - 34, Math.max(34, x + (inward === "r" ? 62 : -62))), top: y + 10 }} aria-hidden="true">
           <Chibi look={me.look} equipped={me.equipped} variant="full" size={58} mood={spot.state === "play" ? "happy" : "idle"} />
           <span className="am-you">You</span>
           {here.length > 0 && <span className="am-here num">+{here.length} here</span>}
         </div>
       )}
-      {!cur && here.length > 0 && (
+      {flat && !cur && here.length > 0 && (
         <div className={`am-mates ${inward}`} style={{ left: x, top }} title={here.map((m) => m.name).join(", ")}>
           {here.slice(0, 3).map((m) => (
             <span key={m.uid} className="am-mate">

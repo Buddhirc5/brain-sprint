@@ -102,3 +102,42 @@
 @media (prefers-reduced-motion: reduce) {
   .am-hero, .am-glow, .am-chest-art.open, .am-node.cur.s-play .am-disc::after { animation: none; }
 }
+
+/* ---------- 3D map (map3d/Arena3D.ts) ---------- */
+.am3d {
+  height: max(440px, calc(100vh - 250px)); height: max(440px, calc(100dvh - 250px));
+  touch-action: none; cursor: grab;
+  background: radial-gradient(120% 70% at 50% 0%, #FFFFFF 0, #DDF0FF 35%, #B5DDFB 75%, #9CCFF5 100%);
+}
+.am3d:active { cursor: grabbing; }
+.am3d-host, .am3d-labels, .am3d-layer { position: absolute; inset: 0; }
+.am3d-host canvas, .am3d-canvas { width: 100% !important; height: 100% !important; display: block; }
+.am3d-labels, .am3d-layer { pointer-events: none; overflow: hidden; }
+.am3d-labels button { pointer-events: auto; }
+/* every label sits on a pin that the scene moves over its 3D point each frame */
+.am-pin, .am3d-name, .am3d-you, .am3d-plus, .am3d-bubble { position: absolute; left: 0; top: 0; will-change: transform; }
+.am3d .am-gate { position: absolute; transform: translate(-50%, -100%); }
+.am3d .am-start { position: absolute; }
+.am3d .am-fogtext { top: 0; width: 240px; transform: translate(-50%, -100%); }
+.am3d-name, .am3d-you, .am3d-plus { margin: 0; white-space: nowrap; font-weight: 900; border-radius: 999px; }
+.am3d-name { font-size: 10px; padding: 2px 7px; background: rgba(255,255,255,.92); color: var(--ink-2); translate: -50% -100%; box-shadow: 0 2px 4px rgba(0,0,0,.12); }
+.am3d-you { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; background: var(--ink); color: #fff; translate: -50% -100%; }
+.am3d-plus { font-size: 11px; padding: 3px 8px; background: var(--ink); color: #fff; translate: -50% -50%; }
+.am3d-bubble {
+  translate: -50% -100%; display: grid; gap: 1px; padding: 8px 12px; border-radius: 14px; background: #fff; text-align: center; white-space: nowrap;
+  box-shadow: 0 8px 20px -8px rgba(0,0,0,.35); animation: pop .2s ease-out;
+}
+.am3d-bubble b { font-size: 14px; }
+.am3d-bubble span { font-size: 12px; font-weight: 700; color: var(--muted); }
+.am3d-hint {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 7px 14px; border-radius: 999px; white-space: nowrap;
+  background: rgba(22,21,18,.78); color: #fff; font-size: 12px; font-weight: 800; pointer-events: none; animation: am-fade 6s ease-in forwards;
+}
+@keyframes am-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+@media (max-width: 502px) { .am3d { margin-inline: -16px; border-radius: 0; } }
+/* in 3D the pedestal shows the stop, so its button can be smaller and hide less of the world */
+.am3d .am-disc { width: 40px; height: 40px; font-size: 19px; }
+.am3d .am-node.cur .am-disc { width: 50px; height: 50px; font-size: 24px; }
+.am3d .am-node.s-locked .am-disc svg { width: 18px; height: 18px; }
+.am3d .am-node .am-tag { top: calc(100% + 30px); }
+.am3d .am-node.cur .am-tag { top: calc(100% + 26px); }
