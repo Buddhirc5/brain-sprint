@@ -67,6 +67,9 @@ export function buildMap(games: Game[], me: Player, players: Player[], dq: Disqu
     const state: StopState = played ? "done" : isOpen(g, today) ? "play" : g.status === "live" && !!g.date && g.date > today ? "locked" : "missed";
     return { kind: "stop", g, n: i + 1, state, stars: played && run ? starsFor(runCorrect(run), run.total || run.ans.length) : 0 };
   });
+  // the journey only moves forward: once a later quiz is played, earlier ones left unplayed are behind you
+  const furthest = stops.reduce((m, s, i) => (s.state === "done" ? i : m), -1);
+  for (let i = 0; i < furthest; i++) if (stops[i].state === "play") stops[i].state = "missed";
 
   const lands: Land[] = [];
   for (let i = 0; i < Math.max(1, Math.ceil(stops.length / LAND_SIZE)); i++) {
