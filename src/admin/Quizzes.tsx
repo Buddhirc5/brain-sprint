@@ -17,6 +17,7 @@ import { fmtDate, fmtMin, newId, pct, todayKey } from "../lib/util";
 import { LIVE } from "../api/engine";
 import type { AnswerKey, CardColor, CertSettings, Game, GameStatus, QType, QuizKind } from "../types";
 import { useAdmin } from "./Admin";
+import { BucketEdit, StoryEdit, SwipeEdit } from "./QTypeEditors";
 import { KIND } from "./common";
 
 const MAX_Q_HARD = 50; // backend limit
@@ -280,7 +281,7 @@ export function Editor({ gid }: { gid?: string }) {
   const importRows = () => {
     const { drafts: out, skipped } = parseImport(importText, topics, live);
     // imported rows replace any empty question the editor started with
-    const kept = f.qs.filter((q) => q.q.trim() || q.options.some((o) => o.trim()) || q.type === "match" || q.type === "order");
+    const kept = f.qs.filter((q) => (q.type !== "mcq" && q.type !== "tf") || q.q.trim() || q.options.some((o) => o.trim()));
     const room = Math.max(0, maxQ - kept.length);
     set({ qs: [...kept, ...out.slice(0, room)] });
     setImport("");
@@ -314,6 +315,19 @@ export function Editor({ gid }: { gid?: string }) {
           options: q.options.map((o) => cleanText(o, 140).trim()),
           pairs: q.pairs.map(([a, b]) => [cleanText(a, 80).trim(), cleanText(b, 120).trim()] as [string, string]),
           steps: q.steps.map((s) => cleanText(s, 140).trim()),
+          ...(q.sides ? { sides: q.sides.map((x) => cleanText(x, 40).trim()) as [string, string] } : {}),
+          ...(q.cards ? { cards: q.cards.map((c) => ({ ...c, t: cleanText(c.t, 140).trim() })) } : {}),
+          ...(q.buckets ? { buckets: q.buckets.map((x) => cleanText(x, 40).trim()) } : {}),
+          ...(q.things ? { things: q.things.map((x) => ({ ...x, t: cleanText(x.t, 100).trim() })) } : {}),
+          ...(q.story
+            ? {
+                story: {
+                  intro: cleanText(q.story.intro, 400).trim(),
+                  scenes: q.story.scenes.map((c) => ({ ...c, name: cleanText(c.name, 30).trim(), say: cleanText(c.say, 300).trim(), choices: c.choices.map((x) => ({ ...x, t: cleanText(x.t, 160).trim(), then: cleanText(x.then, 200).trim() })) })),
+                  endings: q.story.endings.map((e) => cleanText(e, 200).trim()) as [string, string, string],
+                },
+              }
+            : {}),
           seconds: live ? Math.max(5, Math.min(120, q.seconds || LIVE.defaultSeconds)) : undefined,
         };
         return sealQuestion(clean, orig?.questions.find((x) => x.id === q.id));
@@ -399,6 +413,7 @@ export function Editor({ gid }: { gid?: string }) {
               <p className="fine">
                 {n} question{n === 1 ? "" : "s"} in {fmtMin(f.minutes)} → about <b>{per}s per question</b>.
                 {cert ? " Exams hide right/wrong until the end and score 1 point per right answer." : " Recommended: 1–5 questions in 1–2 minutes. The clock pauses while players read each answer."}
+                {f.qs.some((q) => q.type === "story") && " Case studies take longer to read — allow about a minute for each."}
               </p>
             </>
           )}
@@ -474,6 +489,9 @@ export function Editor({ gid }: { gid?: string }) {
           <button className="btn ghost small" onClick={() => addQ("tf")}>+ True / False</button>
           {!live && <button className="btn ghost small" onClick={() => addQ("match")}>+ Match pairs</button>}
           {!live && <button className="btn ghost small" onClick={() => addQ("order")}>+ Put in order</button>}
+          {!live && <button className="btn ghost small" onClick={() => addQ("swipe")}>+ Swipe sort</button>}
+          {!live && <button className="btn ghost small" onClick={() => addQ("bucket")}>+ Buckets</button>}
+          {!live && <button className="btn ghost small" onClick={() => addQ("story")}>+ Case study</button>}
         </div>
       </section>
       <div className="toolbar">
@@ -489,11 +507,71 @@ const IMPORT_EXAMPLES: [string, string, string][] = [
   ["tf", "True / False", "TF | Cyber Security | You should lock your screen when you leave your desk. | TRUE | It takes one second"],
   ["match", "Match pairs", "MATCH | Cyber Security | Match each threat to its meaning | Phishing = Fake message | Malware = Harmful software | Vishing = Scam phone call | Why: Naming attacks helps you report them"],
   ["order", "Put in order", "ORDER | Cyber Security | You clicked a bad link. Put the steps in order | Disconnect from the network | Report it to IT | Change your passwords | Why: Contain, report, recover"],
+  ["swipe", "Swipe sort", "SWIPE | Cyber Security | Swipe each card: risky or safe? | Risky / Safe | Sharing your OTP with a caller = Risky | Locking your screen = Safe | Clicking a link in an urgent SMS = L | Reporting a phishing email = R | Why: Anything that hands over codes is risky"],
+  ["bucket", "Buckets", "BUCKET | Data Privacy | Sort each document by how sensitive it is | Public / Internal / Confidential | Press release = Public | Org chart = Internal | Salary list = Confidential | Product brochure = A | Customer contracts = C | Why: Label documents so everyone knows how to share them"],
+  [
+    "story",
+    "Case study",
+    [
+      "STORY | Customer Experience | The blocked card",
+      "INTRO | Monday, 9:05 am. The branch has just opened. A customer hurries to your counter.",
+      "SCENE | customer | Nimal | My card got blocked and I fly in two hours! Fix it NOW!",
+      "CHOICE | Best | I'm sorry — let's sort this out. May I see your ID? | Nimal takes a breath and hands it over.",
+      "CHOICE | Okay | Please call our hotline. | Nimal sighs: “I'm already standing here…”",
+      "CHOICE | Poor | Cards aren't my department. | Nimal asks for your manager.",
+      "SCENE | narrator | The system shows three wrong PIN tries last night.",
+      "CHOICE | Best | Explain, verify him and reset the PIN | Nimal relaxes: “That was me!”",
+      "CHOICE | Poor | Unblock it, no questions | It works — but you skipped the checks.",
+      "ENDING | Best | Nimal makes his flight — and leaves a 5-star review.",
+      "WHY | Calm the customer, verify identity, then fix it.",
+      "END",
+    ].join("\n"),
+  ],
 ];
+const IMPORT_HELP: Record<string, string> = {
+  mcq: "Type | Topic | Question | 2–5 options | correct letter | explanation (optional).",
+  tf: "Type | Topic | Statement | TRUE or FALSE | explanation (optional).",
+  match: "Type | Topic | Question | 2–6 pairs written as  term = meaning | Why: explanation (optional).",
+  order: "Type | Topic | Question | 3–6 steps in the RIGHT order (players get them shuffled) | Why: explanation (optional).",
+  swipe: "Type | Topic | Question | Left / Right side names | 4–12 cards written as  card = side  (the side's name, or L / R) | Why: explanation (optional).",
+  bucket: "Type | Topic | Question | 2–3 bucket names split by / | 3–12 items written as  item = bucket  (its name, or A / B / C) | Why: explanation (optional).",
+  story:
+    "One row per line, from STORY to END. SCENE | customer, manager, colleague or narrator | name (optional) | what's said. Then 2–3 CHOICE rows: Best, Okay or Poor | the reply | what happens. 2–5 scenes. ENDING | Best, Good or Learn | text is optional; WHY is the lesson.",
+};
+
+/** One CSV line → tab-separated cells (handles "quoted, cells" and "" escapes). */
+function csvToTabs(line: string) {
+  const out: string[] = [];
+  let cur = "", q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (q && ch === '"' && line[i + 1] === '"') {
+      cur += '"';
+      i++;
+    } else if (ch === '"') q = !q;
+    else if (ch === "," && !q) {
+      out.push(cur);
+      cur = "";
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out.map((c) => c.replace(/\t/g, " ")).join("\t");
+}
 
 function BulkImport({ text, setText, onAdd, live }: { text: string; setText: (s: string) => void; onAdd: () => void; live: boolean }) {
   const { d, toast } = useApp();
   const [help, setHelp] = useState<string>("mcq");
+  const file = useRef<HTMLInputElement>(null);
+  const load = async (f: File | undefined) => {
+    if (!f) return;
+    if (f.size > 1_000_000) return toast("That file is too big — 1 MB at most.");
+    const t = (await f.text()).replace(/^\uFEFF/, "");
+    // CSV saved from Excel: commas between columns (quoted cells kept whole) → tabs
+    const rows = /\.csv$/i.test(f.name) && !t.includes("\t") && !t.includes("|") ? t.split(/\r?\n/).map(csvToTabs).join("\n") : t;
+    setText((text.trim() ? text.replace(/\s*$/, "\n") : "") + rows);
+    toast(`Loaded ${f.name} — check the preview, then add the questions`);
+    if (file.current) file.current.value = "";
+  };
   const res = useMemo(() => (text.trim() ? parseImport(text, d.cfg.topics, live) : null), [text, d.cfg.topics, live]);
   const counts = (res?.drafts || []).reduce<Record<string, number>>((m, q) => ((m[q.type] = (m[q.type] || 0) + 1), m), {});
   const ex = IMPORT_EXAMPLES.filter((x) => !live || x[0] === "mcq" || x[0] === "tf");
@@ -503,7 +581,11 @@ function BulkImport({ text, setText, onAdd, live }: { text: string; setText: (s:
       <div className="panel-h">
         <div>
           <h2>Bulk import</h2>
-          <p>Paste rows from Excel (tab-separated) or use | between columns. Start a row with <b>MCQ</b>, <b>TF</b>{live ? "" : <>, <b>MATCH</b> or <b>ORDER</b></>}{live ? ". Each gets a 20-second timer." : "."}</p>
+          <p>
+            Paste rows from Excel (tab-separated), upload a .csv or .txt file, or use | between columns. Start a row with <b>MCQ</b>, <b>TF</b>
+            {live ? "" : <>, <b>MATCH</b>, <b>ORDER</b>, <b>SWIPE</b>, <b>BUCKET</b> or a <b>STORY</b> block</>}
+            {live ? ". Each gets a 20-second timer." : "."}
+          </p>
         </div>
       </div>
       <div className="bulk-tabs" role="tablist" aria-label="Row format">
@@ -512,19 +594,26 @@ function BulkImport({ text, setText, onAdd, live }: { text: string; setText: (s:
         ))}
       </div>
       <div className="bulk-help">
-        <code className="box">{cur[2]}</code>
+        <code className="box" style={{ whiteSpace: "pre-wrap" }}>{cur[2]}</code>
         <p className="fine">
-          {cur[0] === "mcq" && "Type | Topic | Question | 2–5 options | correct letter | explanation (optional)."}
-          {cur[0] === "tf" && "Type | Topic | Statement | TRUE or FALSE | explanation (optional)."}
-          {cur[0] === "match" && "Type | Topic | Question | 2–6 pairs written as  term = meaning | Why: explanation (optional)."}
-          {cur[0] === "order" && "Type | Topic | Question | 3–6 steps in the RIGHT order (players get them shuffled) | Why: explanation (optional)."}
-          {" "}Rows without a type word still work the old way.
+          {IMPORT_HELP[cur[0]]} Rows without a type word still work the old way.
         </p>
         <button type="button" className="link" onClick={() => { setText((text.trim() ? text.replace(/\s*$/, "\n") : "") + cur[2]); toast("Example added — edit it or paste your own rows"); }}>
           Add this example to the box
         </button>
       </div>
       <textarea className="inp" rows={5} value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste rows here" aria-label="Rows to import" />
+      <div className="row">
+        <input ref={file} type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" className="sr" tabIndex={-1} aria-hidden="true" onChange={(e) => void load(e.target.files?.[0])} />
+        <button type="button" className="btn ghost tiny" onClick={() => file.current?.click()}>
+          Upload a .csv or .txt file
+        </button>
+        {text.trim() && (
+          <button type="button" className="link" onClick={() => setText("")}>
+            Clear
+          </button>
+        )}
+      </div>
       {res && (
         <div className="bulk-prev" aria-live="polite">
           {Object.entries(counts).map(([k, v]) => (
@@ -557,8 +646,8 @@ function QEditor({ q, i, n, topics, live, setQ, move, remove }: { q: DraftQ; i: 
       </div>
       {badType && <p className="err">Live quizzes can't use this question type — remove it or change the quiz type.</p>}
       <div className="field">
-        <label htmlFor={`q${i}t`}>{q.type === "tf" ? "Statement" : "Question"}</label>
-        <textarea className="inp" id={`q${i}t`} rows={2} maxLength={300} value={q.q} onChange={(e) => setQ(i, { q: e.target.value })} />
+        <label htmlFor={`q${i}t`}>{q.type === "tf" ? "Statement" : q.type === "story" ? "Case study title" : "Question"}</label>
+        <textarea className="inp" id={`q${i}t`} rows={q.type === "story" ? 1 : 2} maxLength={q.type === "story" ? 80 : 300} value={q.q} placeholder={q.type === "story" ? "e.g. The blocked card" : undefined} onChange={(e) => setQ(i, { q: e.target.value })} />
       </div>
       <QImage img={q.img} i={i} onChange={(img) => setQ(i, { img })} />
       {q.type === "mcq" && (
@@ -574,6 +663,9 @@ function QEditor({ q, i, n, topics, live, setQ, move, remove }: { q: DraftQ; i: 
           {q.options.length < (live ? 4 : 5) && <button type="button" className="link" style={{ justifySelf: "start" }} onClick={() => setQ(i, { options: [...q.options, ""] })}>+ Add option</button>}
         </div>
       )}
+      {q.type === "swipe" && <SwipeEdit q={q} i={i} setQ={setQ} />}
+      {q.type === "bucket" && <BucketEdit q={q} i={i} setQ={setQ} />}
+      {q.type === "story" && <StoryEdit q={q} i={i} setQ={setQ} />}
       {q.type === "tf" && (
         <div className="field">
           <span className="flabel">Right answer</span>
@@ -624,8 +716,8 @@ function QEditor({ q, i, n, topics, live, setQ, move, remove }: { q: DraftQ; i: 
         )}
       </div>
       <div className="field">
-        <label htmlFor={`q${i}e`}>Why? (shown after answering)</label>
-        <textarea className="inp" id={`q${i}e`} rows={2} maxLength={300} value={q.explain} placeholder="One or two lines that teach the point" onChange={(e) => setQ(i, { explain: e.target.value })} />
+        <label htmlFor={`q${i}e`}>{q.type === "story" ? "The lesson (shown with the ending)" : "Why? (shown after answering)"}</label>
+        <textarea className="inp" id={`q${i}e`} rows={2} maxLength={300} value={q.explain} placeholder={q.type === "story" ? "Calm the customer first, verify identity, then fix it." : "One or two lines that teach the point"} onChange={(e) => setQ(i, { explain: e.target.value })} />
       </div>
     </div>
   );

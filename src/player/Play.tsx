@@ -9,8 +9,10 @@ import { limitMs, RULES } from "../lib/scoring";
 import { fmtClock, shuffle } from "../lib/util";
 import { runKey, type Question, type Run } from "../types";
 import { finishCache } from "./common";
+import { BucketQ, ENDINGS, endingOf, sortSummary, StoryQ, SwipeQ } from "./qtypes";
+import { partialScore } from "../lib/answers";
 
-interface QState {
+export interface QState {
   optOrder: number[]; // mcq display order (stored indices)
   rightOrder: number[]; // match: right side display order
   pool: number[]; // order: display order of stored items
@@ -18,7 +20,7 @@ interface QState {
   sel: number | null; // match: selected left
   picked: number[]; // order: stored indices in the player's order
 }
-function freshQ(q: Question): QState {
+export function freshQ(q: Question): QState {
   const n = (q.type === "match" ? q.right : q.items)?.length ?? 0;
   return {
     optOrder: shuffle((q.options || []).map((_, i) => i)),
@@ -31,7 +33,7 @@ function freshQ(q: Question): QState {
 }
 
 /** What the player sees after answering. `ok`/`canon` are null in certification exams (hidden). */
-interface Last {
+export interface Last {
   ok: boolean | null;
   canon: string | null;
   choice: string | null;
@@ -42,6 +44,7 @@ interface Last {
 
 const HEADS_OK = ["Nailed it!", "Spot on!", "Sharp!", "That's it!"];
 const HEADS_NO = ["Not quite…", "Close one!", "Good try!"];
+const HEADS_PART = ["So close!", "Almost there!"]; // swipe / bucket / case study, partly right
 
 /* Server-scored play. The flow per question:
      showQuestion(i)  → the server stamps when question i was shown (the clock)
@@ -225,34 +228,8 @@ export function Play({ gid }: { gid: string }) {
     }
   };
 
-  // On phones the answer result is a bottom sheet (player.css): pad the page by its height so nothing
-  // hides behind it, and nudge the answers into view above it. Toasts move to the top while playing.
-  const pageRef = useRef<HTMLDivElement>(null);
-  const sheetRef = useRef<HTMLElement>(null);
   const sheetOpen = phase === "reveal" || (phase === "saving" && !!last);
-  useEffect(() => {
-    document.body.classList.add("in-play");
-    return () => document.body.classList.remove("in-play");
-  }, []);
-  useLayoutEffect(() => {
-    const page = pageRef.current, sheet = sheetRef.current;
-    if (!page) return;
-    if (!sheetOpen || !sheet || getComputedStyle(sheet).position !== "fixed") {
-      page.style.removeProperty("--sheet-h");
-      return;
-    }
-    const fit = () => page.style.setProperty("--sheet-h", `${sheet.offsetHeight}px`);
-    fit();
-    const card = page.querySelector(".qcard");
-    if (card) {
-      const r = card.getBoundingClientRect();
-      const hidden = r.bottom - (window.innerHeight - sheet.offsetHeight) + 8;
-      if (hidden > 0) window.scrollBy({ top: Math.min(hidden, Math.max(0, r.top - 8)), behavior: "smooth" });
-    }
-    const ro = new ResizeObserver(fit);
-    ro.observe(sheet);
-    return () => ro.disconnect();
-  }, [sheetOpen, qi]);
+  const { pageRef, sheetRef } = useRevealSheet(sheetOpen, qi);
 
   if (!g || !me)
     return (
@@ -348,7 +325,7 @@ export function Play({ gid }: { gid: string }) {
           <div className="top">
             <Chibi look={me.look} equipped={me.equipped} variant="full" size={72} mood={last.ok ? "happy" : "sad"} />
             <div>
-              <div className="big">{last.timeUp ? "Time's up!" : last.ok ? HEADS_OK[qi % 4] : HEADS_NO[qi % 3]}</div>
+              <div className="big">{last.timeUp ? "Time's up!" : last.ok ? HEADS_OK[qi % 4] : last.pts > 0 ? HEADS_PART[qi % 2] : HEADS_NO[qi % 3]}</div>
               {last.ok && last.pts > RULES.base ? (
                 <div className="fine" style={{ color: "inherit", fontWeight: 700 }}>
                   +{last.pts - RULES.base} speed bonus
@@ -357,7 +334,7 @@ export function Play({ gid }: { gid: string }) {
             </div>
             <span className="pts num">+{last.pts}</span>
           </div>
-          <RightAnswer q={q} right={last.canon} ok={!!last.ok} />
+          <RightAnswer q={q} right={last.canon} ok={!!last.ok} choice={last.choice} />
           {last.explain && <p className="why">{last.explain}</p>}
           {last.timeUp && unanswered > 0 && (
             <p className="why">
@@ -390,8 +367,55 @@ export function Play({ gid }: { gid: string }) {
   );
 }
 
-function RightAnswer({ q, right, ok }: { q?: Question; right: string | null; ok: boolean }) {
+/** On phones the answer result is a bottom sheet (player.css): pad the page by its height so nothing
+    hides behind it, and nudge the answers into view above it. Toasts move to the top while playing. */
+export function useRevealSheet(sheetOpen: boolean, qi: number) {
+  const pageRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    document.body.classList.add("in-play");
+    return () => document.body.classList.remove("in-play");
+  }, []);
+  useLayoutEffect(() => {
+    const page = pageRef.current, sheet = sheetRef.current;
+    if (!page) return;
+    if (!sheetOpen || !sheet || getComputedStyle(sheet).position !== "fixed") {
+      page.style.removeProperty("--sheet-h");
+      return;
+    }
+    const fit = () => page.style.setProperty("--sheet-h", `${sheet.offsetHeight}px`);
+    fit();
+    const card = page.querySelector(".qcard");
+    if (card) {
+      const r = card.getBoundingClientRect();
+      const hidden = r.bottom - (window.innerHeight - sheet.offsetHeight) + 8;
+      if (hidden > 0) window.scrollBy({ top: Math.min(hidden, Math.max(0, r.top - 8)), behavior: "smooth" });
+    }
+    const ro = new ResizeObserver(fit);
+    ro.observe(sheet);
+    return () => ro.disconnect();
+  }, [sheetOpen, qi]);
+  return { pageRef, sheetRef };
+}
+
+export function RightAnswer({ q, right, ok, choice }: { q?: Question; right: string | null; ok: boolean; choice?: string | null }) {
   if (!q || right == null) return null;
+  if (q.type === "story") {
+    const e = endingOf(partialScore("story", right, choice ?? null) ?? 0);
+    return (
+      <p className="ans">
+        Ending: <b>{ENDINGS[e][0]} {ENDINGS[e][1]}</b> — your scenes are reviewed above.
+      </p>
+    );
+  }
+  if (q.type === "swipe" || q.type === "bucket") {
+    const s = sortSummary(q, right, choice ?? null);
+    return s ? (
+      <p className="ans">
+        <b>{s.right} of {s.of}</b> {q.type === "swipe" ? "cards" : "items"} in the right place{s.right < s.of ? " — fixes are shown above." : "!"}
+      </p>
+    ) : null;
+  }
   if (q.type === "mcq")
     return (
       <p className="ans">
@@ -408,8 +432,12 @@ function RightAnswer({ q, right, ok }: { q?: Question; right: string | null; ok:
   return <p className="ans">{q.type === "match" ? "The correct pairs are shown above." : "The correct order is shown above."}</p>;
 }
 
-function QBody({ q, qs, setQs, rv, busy, last, onSubmit }: { q: Question; qs: QState; setQs: (s: QState) => void; rv: boolean; busy: boolean; last: Last | null; onSubmit: (c: string) => void }) {
+export function QBody({ q, qs, setQs, rv, busy, last, onSubmit }: { q: Question; qs: QState; setQs: (s: QState) => void; rv: boolean; busy: boolean; last: Last | null; onSubmit: (c: string) => void }) {
   const right = rv ? last?.canon ?? null : null;
+  if (q.type === "swipe" || q.type === "bucket" || q.type === "story") {
+    const C = q.type === "swipe" ? SwipeQ : q.type === "bucket" ? BucketQ : StoryQ;
+    return <C q={q} rv={rv} busy={busy} canon={right} choice={rv ? last?.choice ?? null : null} onSubmit={onSubmit} />;
+  }
   const mine = rv ? last?.choice ?? null : null;
   const hidden = rv && right == null; // certification: show what you picked, not whether it was right
   const lock = rv || busy;

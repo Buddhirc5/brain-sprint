@@ -15,6 +15,7 @@ export type PView =
   | { v: "lobby" }
   | { v: "play"; gid: string }
   | { v: "results"; gid: string; fresh?: boolean }
+  | { v: "retry"; gid: string }
   | { v: "board" }
   | { v: "store" }
   | { v: "guide" }

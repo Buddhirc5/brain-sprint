@@ -1,5 +1,6 @@
 /* Demo world: two fictional companies, a super admin, and a year of play history.
    Loaded lazily (dynamic import) so it never ships in the production chunk. */
+import { showcaseQuiz } from "../../data/showcase";
 import seed from "../../demo/seed.json";
 import library from "../../data/library.json";
 import type { AnswerKey, Game, LibraryItem, Player, Poll, PollResponse, Tenant } from "../../types";
@@ -97,6 +98,10 @@ export async function buildDemoDB(): Promise<DB> {
   const live = fromLibrary({ ...liveSrc, questions: liveQs }, "g-live-townhall", { kind: "live", title: "Town Hall Cyber Showdown", desc: "Live game for the monthly town hall.", color: "orange", minutes: 0 });
   hs.games[live.g.id] = live.g;
   hs.keys[live.g.id] = live.k;
+  // the newest question types: swipe sort, buckets and a case study
+  const hShow = showcaseQuiz("bank", "g-new-types", { date: dk(0), order: 0 });
+  hs.games[hShow.g.id] = hShow.g;
+  hs.keys[hShow.g.id] = hShow.k;
   hs.members = [
     { email: DEMO_ACCOUNTS.harbor, role: "owner", invitedAt: now - 120 * DAY },
     { email: DEMO_ACCOUNTS.harborHost, role: "host", invitedAt: now - 60 * DAY },
@@ -124,6 +129,9 @@ export async function buildDemoDB(): Promise<DB> {
   const nl = fromLibrary({ ...fun, questions: fun.questions.filter((q) => q.type === "mcq" || q.type === "tf") }, "g-nw-live", { kind: "live", title: "Friday Fun Live", color: "pink", minutes: 0 });
   ns.games[nl.g.id] = nl.g;
   ns.keys[nl.g.id] = nl.k;
+  const nShow = showcaseQuiz("any", "g-nw-new-types", { date: dk(0), order: 0 });
+  ns.games[nShow.g.id] = nShow.g;
+  ns.keys[nShow.g.id] = nShow.k;
   const nwPlayers: [string, string, string, number][] = [
     ["NW-001", "Ava Thompson", "Head Office", 1], ["NW-002", "Liam Carter", "North Office", 9], ["NW-003", "Maya Patel", "South Office", 3], ["NW-004", "Noah Kim", "Remote", 12],
   ];

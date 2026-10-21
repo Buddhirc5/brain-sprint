@@ -5,7 +5,16 @@
    on the server (Postgres functions), or inside the demo engine.
    ===================================================================== */
 
-export type QType = "mcq" | "tf" | "match" | "order";
+export type QType = "mcq" | "tf" | "match" | "order" | "swipe" | "bucket" | "story";
+/** Who speaks in a case-study scene (each has its own character on screen). */
+export type StoryWho = "customer" | "manager" | "colleague" | "narrator";
+/** A case study (question type "story"): an intro, then scenes where the player picks a reply.
+ *  Which reply is best is NOT here — it lives in the answer key on the server. */
+export interface Story {
+  intro: string; // the setting: "Monday, 9:05. A customer storms in…"
+  steps: { who: StoryWho; name?: string; say: string; choices: { t: string; then: string }[] }[];
+  endings?: [string, string, string]; // optional custom endings: best, good, learn
+}
 export type UnitType = "branch" | "dept"; // labelled per tenant (Branch/Department, Location/Department…)
 export type GameStatus = "draft" | "pending" | "live" | "closed";
 export type QuizKind = "sprint" | "live" | "cert";
@@ -103,7 +112,9 @@ export interface Question {
   options?: string[]; // mcq
   left?: string[]; // match: terms in display order
   right?: string[]; // match: meanings, stored shuffled
-  items?: string[]; // order: steps, stored shuffled
+  items?: string[]; // order: steps, stored shuffled · swipe: the cards · bucket: the things to sort
+  // swipe: options = [left label, right label] · bucket: options = the 2–3 bucket names
+  story?: Story; // story: the case study
   seconds?: number; // live quiz: time for this question (default 20)
   img?: string; // optional picture: data: URL (PNG/JPEG/WebP/GIF, ≤ 350k chars), compressed in the browser
 }
@@ -160,6 +171,10 @@ export interface Ans {
   c: string | null;
   pts: number;
   sk?: 1;
+  f?: number; // swipe / bucket / story: the share right (0–1) when not fully right; pts = 100 × f, no speed bonus
+  rt?: 1; // second chance used on this question
+  rc?: string | null; // second chance: the choice
+  rp?: number; // second chance: points earned (capped, see scoring.retryPoints)
 }
 
 export interface Run {
