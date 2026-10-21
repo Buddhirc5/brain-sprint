@@ -376,3 +376,25 @@
 .pod-stats > span { font-size: 11px; font-weight: 800; line-height: 1; padding: 4px 7px; border-radius: 999px; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); white-space: nowrap; }
 .pod-stats b { font-weight: 900; }
 .pod.p1 .pod-stats > span:first-child { background: var(--lime); box-shadow: none; }
+
+/* pets & rides (components/Companions.tsx) */
+.kit { position: relative; display: inline-block; flex: none; }
+.kit-me { position: absolute; left: 0; line-height: 0; z-index: 1; }
+.kit-ride { position: absolute; bottom: 0; line-height: 0; z-index: 2; }
+.kit-ride:first-child { z-index: 0; }
+.kit-pet { position: absolute; bottom: 2px; line-height: 0; z-index: 3; }
+.pet:not(.still) { animation: pet-hop 2.2s ease-in-out infinite; transform-origin: 50% 100%; }
+.pet:not(.still) .tail { animation: pet-wag .5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 100% 100%; }
+.pet:not(.still) .wing { animation: pet-flap .45s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+.ride:not(.still) .wheel { animation: ride-spin 1.2s linear infinite; transform-box: fill-box; transform-origin: center; }
+.ride:not(.still) .glow { animation: ride-glow .8s ease-in-out infinite alternate; }
+@keyframes pet-hop { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-7px) scaleY(1.03); } 90% { transform: translateY(0) scaleY(.95); } }
+@keyframes pet-wag { from { transform: rotate(-10deg); } to { transform: rotate(14deg); } }
+@keyframes pet-flap { from { transform: scaleY(1); } to { transform: scaleY(.7); } }
+@keyframes ride-spin { to { transform: rotate(360deg); } }
+@keyframes ride-glow { to { opacity: .35; } }
+.store-top .kit, .store-top .chibi { justify-self: end; }
+.item-art { display: grid; place-items: center; width: 100%; min-height: 96px; border-radius: 16px; background: var(--paper); }
+@media (prefers-reduced-motion: reduce) { .pet, .pet *, .ride * { animation: none !important; } }
+/* with a ride, the character rides along the progress bar instead of standing over it */
+.me .me-char:has(.kit) { margin-bottom: -16px; }
