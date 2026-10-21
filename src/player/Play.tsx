@@ -404,7 +404,7 @@ export function RightAnswer({ q, right, ok, choice }: { q?: Question; right: str
     const e = endingOf(partialScore("story", right, choice ?? null) ?? 0);
     return (
       <p className="ans">
-        Ending: <b>{ENDINGS[e][0]} {ENDINGS[e][1]}</b> — your scenes are reviewed above.
+        Ending: <b>{ENDINGS[e][0]} {ENDINGS[e][1]}</b> — see the replay above.
       </p>
     );
   }

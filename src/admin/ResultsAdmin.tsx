@@ -5,7 +5,7 @@ import { analyze, scope } from "../lib/analytics";
 import { choiceText } from "../lib/answers";
 import { sortGames } from "../lib/games";
 import { answersReport, playerReport, quizReport, runsOf } from "../lib/reports";
-import { dqKey, runMs, runPoints } from "../lib/scoring";
+import { dqKey, retryLabel, retryPoints, retryStats, runMs, runPoints } from "../lib/scoring";
 import { dayKey, fmtDT, pct } from "../lib/util";
 import type { Player, Run } from "../types";
 import { useAdmin } from "./Admin";
@@ -61,6 +61,12 @@ export function ResultsAdmin() {
 
   const doneAll = people.flatMap((x) => x.runs.filter((r) => r.r.status === "done"));
   const passedN = people.filter((x) => x.passed).length;
+  const retries = doneAll.map((x) => retryStats(x.r));
+  const retryUsers = retries.filter((x) => x.used).length;
+  const retryFixed = retries.reduce((s, x) => s + x.fixed, 0);
+  const retryTried = retries.reduce((s, x) => s + x.used, 0);
+  // per question: how many people fixed it on their second chance
+  const fixedByQ = (i: number) => doneAll.filter((x) => x.r.ans[i]?.rt && (x.r.ans[i]?.rp || 0) > 0).length;
   const avgPct = doneAll.length ? Math.round(doneAll.reduce((s, x) => s + pct(x.r.correct, x.r.total), 0) / doneAll.length) : 0;
 
   return (
@@ -96,6 +102,7 @@ export function ResultsAdmin() {
               <div className="kpi hl"><span className="label" style={{ color: "var(--ink)" }}>Average score</span><b className="num">{doneAll.length ? `${avgPct}%` : "—"}</b><span className="sub" style={{ color: "var(--ink-2)" }}>right answers</span></div>
               <div className="kpi bl"><span className="label">Top points</span><b className="num">{doneAll.length ? Math.max(...doneAll.map((x) => runPoints(x.r).total)) : "—"}</b></div>
               <div className="kpi pk"><span className="label">Perfect runs</span><b className="num">{doneAll.filter((x) => runPoints(x.r).perfect).length}</b></div>
+              <div className="kpi"><span className="label">Second chances</span><b className="num">{retryUsers}</b><span className="sub">{retryTried ? `${retryFixed} of ${retryTried} misses fixed` : "players who retried misses"}</span></div>
             </>
           )}
         </div>
@@ -106,7 +113,7 @@ export function ResultsAdmin() {
           <div className="panel-h"><div><h2>Question breakdown</h2><p>{g.title} · {KIND[g.kind || "sprint"].label}</p></div></div>
           <div className="scroll-x">
             <table className="tbl">
-              <thead><tr><th>#</th><th>Question</th><th>Topic</th><th className="r">Answered</th><th className="r">Right</th><th className="r">Accuracy</th><th>Most common wrong answer</th></tr></thead>
+              <thead><tr><th>#</th><th>Question</th><th>Topic</th><th className="r">Answered</th><th className="r">Right</th><th className="r">Accuracy</th>{!cert && <th className="r">Fixed on 2nd try</th>}<th>Most common wrong answer</th></tr></thead>
               <tbody>
                 {g.questions.map((q, i) => {
                   const s = an.questions.find((x) => x.qid === q.id);
@@ -118,6 +125,7 @@ export function ResultsAdmin() {
                       <td className="r num">{s?.n || 0}</td>
                       <td className="r num">{s?.ok || 0}</td>
                       <td className="r num"><b>{s ? `${s.acc}%` : "—"}</b></td>
+                      {!cert && <td className="r num">{fixedByQ(i) || "—"}</td>}
                       <td className="wrap">{s?.topWrong ? <>{s.topWrong} <span className="sub">({s.topWrongN}×)</span></> : "—"}</td>
                     </tr>
                   );
@@ -137,7 +145,7 @@ export function ResultsAdmin() {
                 {cert ? (
                   <tr><th>Name</th><th>ID</th><th>{labels.branch} / {labels.dept}</th><th className="r">Best score</th><th className="r">Attempts</th><th>Result</th><th>Last attempt</th><th /></tr>
                 ) : (
-                  <tr><th>#</th><th>Name</th><th>ID</th><th>{labels.branch} / {labels.dept}</th><th className="r">Points</th><th className="r">Right</th><th className="r">Time</th><th className="r">Left screen</th><th>Status</th><th>Finished</th><th /></tr>
+                  <tr><th>#</th><th>Name</th><th>ID</th><th>{labels.branch} / {labels.dept}</th><th className="r">Points</th><th className="r">Right</th><th>Second chance</th><th className="r">Time</th><th className="r">Left screen</th><th>Status</th><th>Finished</th><th /></tr>
                 )}
               </thead>
               <tbody>
@@ -170,6 +178,7 @@ export function ResultsAdmin() {
                       <td>{p.unit}</td>
                       <td className="r num"><b>{runPoints(best.r).total}</b></td>
                       <td className="r num">{best.r.ans.filter((a) => a.ok).length}/{best.r.total}</td>
+                      <td><RetryCell r={best.r} /></td>
                       <td className="r num">{Math.round(runMs(best.r) / 1000)}s</td>
                       <td className="r num">{best.r.blur || 0}</td>
                       <td>
@@ -181,7 +190,7 @@ export function ResultsAdmin() {
                     </tr>
                   );
                 })}
-                {!people.length && <tr><td colSpan={11} className="fine">No plays yet for this quiz.</td></tr>}
+                {!people.length && <tr><td colSpan={12} className="fine">No plays yet for this quiz.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -227,7 +236,8 @@ function Drill({ p, gid, initial, onClose }: { p: Player; gid: string; initial: 
           <>
             <p className="fine">
               {r.status === "done" ? `Finished ${fmtDT(r.finishedAt)}` : "Still playing"} · {r.ans.filter((a) => a.ok).length}/{r.total} right
-              {g.kind === "cert" ? ` · ${r.passed ? "passed" : r.status === "done" ? "failed" : ""}` : ` · ${runPoints(r).total} points`} · {Math.round(runMs(r) / 1000)}s answering · left the screen {r.blur || 0}×
+              {g.kind === "cert" ? ` · ${r.passed ? "passed" : r.status === "done" ? "failed" : ""}` : ` · ${runPoints(r).total} points`}
+              {g.kind !== "cert" && retryStats(r).used ? ` · second chance: fixed ${retryStats(r).fixed} of ${retryStats(r).used} (+${retryStats(r).pts})` : ""} · {Math.round(runMs(r) / 1000)}s answering · left the screen {r.blur || 0}×
             </p>
             <div className="scroll-x">
               <table className="tbl drill">
@@ -239,10 +249,17 @@ function Drill({ p, gid, initial, onClose }: { p: Player; gid: string; initial: 
                       <tr key={q.id}>
                         <td className="num">{i + 1}</td>
                         <td className="wrap">{q.q}</td>
-                        <td className="wrap">{a ? <><span className={`sev ${a.ok ? "good" : "bad"}`}>{a.ok ? "Right" : a.sk ? "Skipped" : "Wrong"}</span> {a.ok ? "" : choiceText(q, a.c)}</> : <span className="sub">not reached</span>}</td>
+                        <td className="wrap">
+                          {a ? <><span className={`sev ${a.ok ? "good" : "bad"}`}>{a.ok ? "Right" : a.sk ? "Skipped" : "Wrong"}</span> {a.ok ? "" : choiceText(q, a.c)}</> : <span className="sub">not reached</span>}
+                          {a?.rt && (
+                            <span className="retry-note">
+                              <span className={`sev ${(a.rp || 0) > 0 ? "good" : "warn"}`}>2nd chance · {retryLabel(a)}</span> {choiceText(q, a.rc)}
+                            </span>
+                          )}
+                        </td>
                         <td className="wrap">{canon[q.id] ? choiceText(q, canon[q.id]) : "—"}</td>
                         <td className="r num">{a ? `${(a.ms / 1000).toFixed(1)}s` : ""}</td>
-                        <td className="r num">{a ? a.pts : ""}</td>
+                        <td className="r num">{a ? a.pts + retryPoints(a) : ""}{a?.rt && retryPoints(a) ? <span className="sub"> ({a.pts}+{retryPoints(a)})</span> : null}</td>
                       </tr>
                     );
                   })}
@@ -256,5 +273,18 @@ function Drill({ p, gid, initial, onClose }: { p: Player; gid: string; initial: 
         <div className="row end"><button className="btn primary small" onClick={onClose}>Close</button></div>
       </div>
     </Modal>
+  );
+}
+
+/** Players table: how this play used its second chance. */
+function RetryCell({ r }: { r: Run }) {
+  if (r.status !== "done") return <span className="sub">—</span>;
+  const s = retryStats(r);
+  if (!s.misses) return <span className="sev good">Flawless</span>;
+  if (!s.used) return <span className="sub">Not used · {s.misses} miss{s.misses > 1 ? "es" : ""}</span>;
+  return (
+    <span className={`sev ${s.fixed ? "good" : "warn"}`} title={`${s.used} of ${s.misses} misses retried`}>
+      Fixed {s.fixed}/{s.used} · +{s.pts}
+    </span>
   );
 }
