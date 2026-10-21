@@ -9,7 +9,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'sha256-frpjay2icDcwvXXd0AKyak1XTGZ8DgK61g245CDNZt0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self' https://teams.microsoft.com https://*.teams.microsoft.com https://*.office.com; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self' 'sha256-4/5fbiE43pD5Ckg5ivCuBhtb+PTox0ljxYbDRUyprJM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self' https://teams.microsoft.com https://*.teams.microsoft.com https://*.office.com; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
         },
         {
           "key": "Strict-Transport-Security",
@@ -53,12 +53,31 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
+    },
+    {
+      "source": "/(.*\\.(?:png|webp|svg|webmanifest))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(t|super|join|vote|signin|sign-in|login|admin)(/.*)?",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/)[^.]*)",
+      "source": "/((?!assets/|features$|how-it-works$|use-cases$|security$|faq$)[^.]*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "cleanUrls": true
 }

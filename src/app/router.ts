@@ -2,6 +2,7 @@
    Routes:
      #/                         product landing page
      #/features|how-it-works|use-cases|security|faq   landing page, scrolled to that section
+     /features … /faq           (real paths, no #) a page of its own for each section, for search engines
      #/experience               try it: guided demo sandbox
      #/signin                   join a game, vote, company & admin sign-in
      #/join[/:pin]              live quiz — players
@@ -15,7 +16,7 @@
 import { useEffect, useState } from "react";
 
 export type Route =
-  | { r: "home"; section?: Section }
+  | { r: "home"; section?: Section; page?: Section }
   | { r: "experience" }
   | { r: "signin" }
   | { r: "contact" }
@@ -84,6 +85,30 @@ export function href(r: Route): string {
   }
 }
 
+/** /features, /faq … (also /features.html): the section pages that search engines index. */
+export function pagePath(pathname: string): Section | undefined {
+  const m = /^\/([a-z-]+?)(?:\.html)?\/?$/i.exec(pathname);
+  const s = m?.[1].toLowerCase();
+  return s && (SECTIONS as readonly string[]).includes(s) ? (s as Section) : undefined;
+}
+
+// the build renders each public page without a browser (scripts/prerender.mjs)
+let ssrPath = "/";
+export function setSsrPath(p: string) {
+  ssrPath = p;
+}
+
+/** The route for the current address: the #hash when there is one, else a section page path. */
+export function currentRoute(): Route {
+  if (typeof location === "undefined") {
+    const page = pagePath(ssrPath);
+    return page ? { r: "home", page } : { r: "home" };
+  }
+  if (location.hash && location.hash !== "#") return parse(location.hash);
+  const page = pagePath(location.pathname);
+  return page ? { r: "home", page } : parse("");
+}
+
 /** Absolute link for sharing (QR codes, emails). */
 export function absUrl(r: Route): string {
   const base = (import.meta.env.VITE_APP_URL as string | undefined) || location.href.split("#")[0];
@@ -98,11 +123,15 @@ export function nav(r: Route, replace = false) {
 }
 
 export function useRoute(): Route {
-  const [route, setRoute] = useState(() => parse(typeof location === "undefined" ? "" : location.hash));
+  const [route, setRoute] = useState(currentRoute);
   useEffect(() => {
-    const f = () => setRoute(parse(location.hash));
+    const f = () => setRoute(currentRoute());
     window.addEventListener("hashchange", f);
-    return () => window.removeEventListener("hashchange", f);
+    window.addEventListener("popstate", f);
+    return () => {
+      window.removeEventListener("hashchange", f);
+      window.removeEventListener("popstate", f);
+    };
   }, []);
   return route;
 }
@@ -112,7 +141,7 @@ export function useRoute(): Route {
 export function pathToHash() {
   if (typeof location === "undefined" || location.protocol === "file:") return;
   const path = location.pathname.replace(/\/index\.html$/, "/");
-  if (path === "/" || path === "") return;
+  if (path === "/" || path === "" || pagePath(path)) return; // section pages keep their real address
   const hash = location.hash && location.hash !== "#" && location.hash !== "#/" ? location.hash : "#" + path.replace(/\/+$/, "");
   history.replaceState(null, "", "/" + location.search + hash);
 }

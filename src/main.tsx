@@ -6,7 +6,7 @@ import "./styles/player.css";
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App";
-import { parse, pathToHash } from "./app/router";
+import { currentRoute, pathToHash } from "./app/router";
 
 // /signin, /t/acme … (no #) → #/signin, #/t/acme
 pathToHash();
@@ -18,7 +18,7 @@ const app = (
   </StrictMode>
 );
 // The landing page is pre-rendered at build time (scripts/prerender.mjs): hydrate it instead of re-drawing.
-if (root.firstElementChild && parse(location.hash).r === "home") hydrateRoot(root, app);
+if (root.firstElementChild && currentRoute().r === "home") hydrateRoot(root, app);
 else {
   root.textContent = "";
   createRoot(root).render(app);

@@ -101,7 +101,8 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   const cols: [string, [string, string][]][] = [
-    ["Product", [["#/features", "Features"], ["#/how-it-works", "How it works"], ["#/use-cases", "Who it's for"], ["#/security", "Security"], ["#/faq", "FAQ"]]],
+    // real addresses (not #/…) so search engines can follow them to each section's own page
+    ["Product", [["/features", "Features"], ["/how-it-works", "How it works"], ["/use-cases", "Who it's for"], ["/security", "Security"], ["/faq", "FAQ"]]],
     ["Try it", [["#/experience", "Live demo"], ["#/join", "Join a live game"], ["#/vote", "Vote in a poll"]]],
     ["Account", [["#/signin", "Sign in"], ["#/signin", "Company admin sign-in"], ["#/super", "Super admin"]]],
   ];

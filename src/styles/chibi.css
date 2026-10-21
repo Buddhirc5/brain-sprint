@@ -12,6 +12,8 @@
 .chibi.m-think .head { transform-box: view-box; transform-origin: 50% 56%; animation: tilt 2.6s ease-in-out infinite; }
 .chibi.m-cheer .shadow, .chibi.m-happy .shadow { animation: shadow .6s cubic-bezier(.3,.8,.4,1) infinite; transform-box: fill-box; transform-origin: center; }
 .chibi.still .body, .chibi.still .eye, .chibi.still .arm, .chibi.still .head, .chibi.still .shadow { animation: none !important; }
+/* off screen (pages mark them with .paused): no repainting characters nobody can see */
+.chibi.paused, .chibi.paused * { animation-play-state: paused !important; }
 @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 95.5% { transform: scaleY(.08); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
 @keyframes hop { 0%, 100% { transform: translateY(0) scale(1, 1); } 20% { transform: translateY(0) scale(1.04, .95); } 50% { transform: translateY(-12px) scale(.97, 1.04); } }

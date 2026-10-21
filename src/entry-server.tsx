@@ -3,9 +3,13 @@
 import { StrictMode } from "react";
 import { renderToString } from "react-dom/server";
 import App from "./App";
+import { setSsrPath } from "./app/router";
 export { FAQ } from "./pages/faq";
+export { HOME_META, PUBLIC_PAGES, SECTION_META } from "./pages/seo";
 
-export function render(): string {
+/** HTML for one public page: "/" (landing) or a section page like "/features". */
+export function render(path = "/"): string {
+  setSsrPath(path);
   return renderToString(
     <StrictMode>
       <App />

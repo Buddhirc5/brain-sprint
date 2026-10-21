@@ -427,3 +427,14 @@
   .h-contact { grid-template-columns: 1fr auto; padding: 44px 48px; align-items: center; }
   .h-contact-art { display: flex; align-items: flex-end; gap: 6px; }
 }
+
+/* ---------- a page of its own per section (/features, /faq …) ---------- */
+.h-page-hero { display: grid; gap: 14px; padding: 18px 0 8px; }
+.h-page-h1 { font-family: var(--display); font-weight: 400; font-size: clamp(42px, 10vw, 84px); line-height: .92; text-transform: uppercase; max-width: 16ch; }
+.h-page-hero .h-sub { max-width: 60ch; }
+.h-crumbs { font-size: 13px; font-weight: 700; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.h-crumbs a { color: var(--ink); }
+.h-more { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 16px 18px; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow); }
+.h-more b { width: 100%; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.h-more a { font-weight: 800; color: var(--ink); text-decoration: none; padding: 6px 12px; border-radius: 999px; background: var(--paper); }
+.h-more a:hover { background: var(--lime); }
