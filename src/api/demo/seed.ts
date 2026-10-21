@@ -8,6 +8,7 @@ import { DEFAULT_BRANDING, LABELS, defaultCfg } from "../engine";
 import { sha256 } from "../../lib/security";
 import { randHex } from "../../lib/util";
 import type { DB, TStore } from "./db";
+import { RULES, runPoints } from "../../lib/scoring";
 
 export const DEMO_PASSWORD = "demo1234";
 export const DEMO_ACCOUNTS = {
@@ -83,6 +84,7 @@ export async function buildDemoDB(): Promise<DB> {
     hs.keys[gid] = s.keys[gid];
   }
   for (const [uid, p] of Object.entries<any>(s.players)) hs.players[uid] = { ...(p as Player), email: `${String(p.name).split(" ")[0].toLowerCase()}.${uid.slice(-3)}@harbor.demo` };
+  seedRetries(hs);
   hs.gifts = s.gifts;
   hs.dq = { runs: {}, ...(s.config?.dq || {}) };
   // certification exam + live quiz from the library
@@ -188,4 +190,22 @@ export async function buildDemoDB(): Promise<DB> {
     db.users[id] = { id, email, pw: await pwHash(DEMO_PASSWORD), anonymous: false, createdAt: now };
   }
   return db;
+}
+
+/** Demo: some players used their second chance on past daily quizzes, so admins see it in Results. */
+function seedRetries(st: TStore) {
+  Object.values(st.players).forEach((p, pi) => {
+    if (pi % 3 === 2) return; // some players never retry
+    for (const r of Object.values(p.runs || {})) {
+      const g = st.games[r.gid];
+      if (!g || g.kind === "cert" || r.status !== "done") continue;
+      r.ans.forEach((a, i) => {
+        const q = g.questions[i];
+        if (a.ok || a.rt || !q || (i + pi) % 2) return;
+        const fixed = (i + pi) % 4 === 0 || pi % 5 === 0;
+        Object.assign(a, { rt: 1 as const, rc: fixed ? st.keys[r.gid]?.answers[q.id] ?? a.c : a.c, rp: fixed ? RULES.retry : 0 });
+      });
+      r.score = runPoints(r).total;
+    }
+  });
 }

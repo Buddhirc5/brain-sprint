@@ -319,3 +319,4 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 }
 .qe-endings summary { cursor: pointer; font-weight: 800; font-size: 14px; }
 .qe-endings[open] { display: grid; gap: 10px; }
+.retry-note { display: block; margin-top: 4px; }

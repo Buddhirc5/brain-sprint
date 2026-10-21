@@ -66,6 +66,21 @@ export function runPoints(r: Run): { total: number; base: number; speed: number;
 /** Questions this play can still fix with a second chance (daily quizzes only, once each). */
 export const retryable = (r: Run | undefined) =>
   r && r.status === "done" && r.kind !== "cert" ? (r.ans || []).map((a, i) => (!a.ok && !a.rt ? i : -1)).filter((i) => i >= 0) : [];
+/** Second-chance use in one play: misses, how many were retried, how many fixed, and points added. */
+export function retryStats(r: Run) {
+  let misses = 0, used = 0, fixed = 0, pts = 0;
+  for (const a of r.ans || []) {
+    if (a.ok) continue;
+    misses++;
+    if (!a.rt) continue;
+    used++;
+    if ((a.rp || 0) > 0) fixed++;
+    pts += retryPoints(a);
+  }
+  return { misses, used, fixed, pts };
+}
+/** "Fixed ✓ +50" style label for one answer's second chance, or "" when it had none. */
+export const retryLabel = (a: Ans | undefined) => (!a?.rt ? "" : (a.rp || 0) > 0 ? `Fixed (+${retryPoints(a)})` : "Still wrong");
 export const runCorrect = (r: Run) => (r.ans || []).filter((a) => a.ok).length;
 export const runMs = (r: Run) => (r.ans || []).reduce((s, a) => s + Math.max(0, a.ms || 0), 0);
 

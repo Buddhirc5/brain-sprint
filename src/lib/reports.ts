@@ -4,7 +4,7 @@ import { unitTypes } from "../api/engine";
 import { analyze, PERIODS, scope, SEV_LABEL, sevOf, unitStats, type Period } from "./analytics";
 import { choiceText, TYPE_NAME } from "./answers";
 import { isOpen, isScheduled, sortGames } from "./games";
-import { board, limitMs, runMs, runPoints, type Stats } from "./scoring";
+import { board, limitMs, retryLabel, retryStats, runMs, runPoints, type Stats } from "./scoring";
 import { maskId } from "./security";
 import { dayKey, pct } from "./util";
 
@@ -116,6 +116,8 @@ export function quizReport(c: RCtx, gid: string): Rows {
       ["Top score", done[0] ? runPoints(done[0].r).total : 0],
       ["Accuracy %", pct(correct, n)],
       ["Perfect runs", done.filter((x) => runPoints(x.r).perfect).length],
+      ["Players who used a second chance", done.filter((x) => retryStats(x.r).used).length],
+      ["Misses fixed on a second chance", done.reduce((s, x) => s + retryStats(x.r).fixed, 0)],
       [],
     );
   R.push(["QUESTIONS"], ["#", "Question", "Topic", "Answered", "Correct", "Wrong", "Accuracy %", "Most common wrong answer", "Times chosen"]);
@@ -129,10 +131,11 @@ export function quizReport(c: RCtx, gid: string): Rows {
       R.push([idOf(c, p), p.name, p.unit, r.attempt || 1, `${r.correct}/${r.total}`, pct(r.correct, r.total), r.status !== "done" ? "In progress" : r.passed ? "Passed" : "Failed", Math.round(runMs(r) / 1000), r.blur || 0, r.finishedAt ? new Date(r.finishedAt).toLocaleString() : ""]),
     );
   } else {
-    R.push([], ["PLAYERS"], ["Rank", "Employee ID", "Name", "Unit", "Points", "Correct", "Total", "Time (s)", "Left screen", "Status", "Finished"]);
-    rows.forEach(({ p, r }, i) =>
-      R.push([i + 1, idOf(c, p), p.name, p.unit, runPoints(r).total, r.ans.filter((a) => a.ok).length, r.total, Math.round(runMs(r) / 1000), r.blur || 0, r.status, r.finishedAt ? new Date(r.finishedAt).toLocaleString() : ""]),
-    );
+    R.push([], ["PLAYERS"], ["Rank", "Employee ID", "Name", "Unit", "Points", "Correct", "Total", "Second chances used", "Fixed on second chance", "Second chance points", "Time (s)", "Left screen", "Status", "Finished"]);
+    rows.forEach(({ p, r }, i) => {
+      const rs = retryStats(r);
+      R.push([i + 1, idOf(c, p), p.name, p.unit, runPoints(r).total, r.ans.filter((a) => a.ok).length, r.total, rs.used, rs.fixed, rs.pts, Math.round(runMs(r) / 1000), r.blur || 0, r.status, r.finishedAt ? new Date(r.finishedAt).toLocaleString() : ""]);
+    });
   }
   return R;
 }
@@ -143,19 +146,19 @@ export function playerReport(c: RCtx, uid: string): Rows {
   if (!p) return [["Player not found"]];
   const s = c.stats[uid];
   const R: Rows = [["PLAYER REPORT"], ["Name", p.name], ["Employee ID", idOf(c, p)], [unitWord(c, p.unitType), p.unit], ["Completed plays", s?.runsDone ?? 0], ["Accuracy %", s?.acc ?? 0], ["Points", s?.points ?? 0], []];
-  R.push(["Quiz", "Attempt", "Question", "Topic", "Correct?", "Answer given", "Seconds", "Points", "Played on"]);
+  R.push(["Quiz", "Attempt", "Question", "Topic", "Correct?", "Answer given", "Seconds", "Points", "Second chance", "Second chance answer", "Played on"]);
   for (const [, r] of Object.entries(p.runs || {}).sort((a, b) => (a[1].startedAt || 0) - (b[1].startedAt || 0))) {
     const g = c.games[r.gid];
     r.ans.forEach((a, i) => {
       const q = g?.questions[i];
-      R.push([g?.title || r.gid, r.attempt || 1, q?.q || "", q?.topic || "", a.ok ? "Yes" : "No", choiceText(q, a.c), (a.ms / 1000).toFixed(1), a.pts, dayKey(r.finishedAt || r.startedAt)]);
+      R.push([g?.title || r.gid, r.attempt || 1, q?.q || "", q?.topic || "", a.ok ? "Yes" : "No", choiceText(q, a.c), (a.ms / 1000).toFixed(1), a.pts, retryLabel(a), a.rt ? choiceText(q, a.rc) : "", dayKey(r.finishedAt || r.startedAt)]);
     });
   }
   return R;
 }
 
 export function answersReport(c: RCtx): Rows {
-  const R: Rows = [["Quiz", "Quiz date", "Employee ID", "Name", "Unit", "Unit type", "Question", "Topic", "Type", "Correct?", "Answer given", "Seconds", "Points", "Answered on"]];
+  const R: Rows = [["Quiz", "Quiz date", "Employee ID", "Name", "Unit", "Unit type", "Question", "Topic", "Type", "Correct?", "Answer given", "Seconds", "Points", "Second chance", "Second chance answer", "Answered on"]];
   let n = 0,
     ok = 0;
   for (const p of c.players)
@@ -165,7 +168,7 @@ export function answersReport(c: RCtx): Rows {
         const q = g?.questions[i];
         n++;
         if (a.ok) ok++;
-        R.push([g?.title || r.gid, g?.date || "", idOf(c, p), p.name, p.unit, unitWord(c, p.unitType), q?.q || "", q?.topic || "", q ? TYPE_NAME[q.type] : "", a.ok ? "Yes" : "No", choiceText(q, a.c), (a.ms / 1000).toFixed(1), a.pts, dayKey(r.finishedAt || r.startedAt)]);
+        R.push([g?.title || r.gid, g?.date || "", idOf(c, p), p.name, p.unit, unitWord(c, p.unitType), q?.q || "", q?.topic || "", q ? TYPE_NAME[q.type] : "", a.ok ? "Yes" : "No", choiceText(q, a.c), (a.ms / 1000).toFixed(1), a.pts, retryLabel(a), a.rt ? choiceText(q, a.rc) : "", dayKey(r.finishedAt || r.startedAt)]);
       });
     }
   R.push([], ["TOTAL ANSWERS", n], ["CORRECT", ok], ["WRONG / TIMED OUT", n - ok], ["ACCURACY %", pct(ok, n)]);
