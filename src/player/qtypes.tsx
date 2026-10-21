@@ -521,7 +521,6 @@ export function StoryQ({ q, rv, busy, canon, choice, onSubmit }: QTypeProps) {
     const noteAt = lines.length * 550 + 350;
     return (
       <div className="imc">
-        <div className="imc-glow" aria-hidden="true" />
         <span className="imc-k">
           Case study · {steps.length} scenes{at ? ` · ${at}` : ""}
         </span>
