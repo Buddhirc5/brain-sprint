@@ -2,15 +2,18 @@
 .am-page { gap: 14px; }
 
 /* summary card */
-.am-hud { display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 18px; border-radius: var(--r-lg); background: var(--sky); box-shadow: var(--shadow); }
+.am-hud {
+  display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 18px; border-radius: 22px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--sky) 88%, #fff), color-mix(in srgb, var(--sky) 62%, #fff)); box-shadow: 0 10px 24px -16px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.65);
+}
 .am-hud-l { flex: 1; min-width: 0; display: grid; gap: 4px; }
 .am-hud-k { font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-l); opacity: .8; }
 .am-hud-n { font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 1; text-transform: uppercase; color: var(--ink-l); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .am-hud-bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,.7); overflow: hidden; margin-top: 4px; }
-.am-hud-bar span { display: block; height: 100%; border-radius: 999px; background: var(--ink); }
+.am-hud-bar span { display: block; height: 100%; border-radius: 999px; background: var(--ink-l, var(--ink)); }
 .am-hud-s { font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; }
 .am-hud-s .am-star { width: 15px; height: 15px; }
-.am-me { flex: none; display: grid; justify-items: center; gap: 2px; padding: 6px 8px 8px; border-radius: 18px; background: #fff; font-size: 12px; font-weight: 900; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.am-me { flex: none; display: grid; justify-items: center; gap: 2px; padding: 6px 8px 8px; border-radius: 18px; background: rgba(255,255,255,.72); font-size: 12px; font-weight: 900; box-shadow: 0 6px 16px -8px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .am-me:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
 
 /* the map itself */
@@ -37,6 +40,19 @@
 .am-gate-k { font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; background: var(--ink-l); color: #fff; padding: 3px 10px; border-radius: 999px; }
 .am-gate-s { margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 900; background: rgba(255,255,255,.85); padding: 3px 10px; border-radius: 999px; }
 .am-gate-s .am-star { width: 14px; height: 14px; }
+/* each land's sign has its own material */
+.am-gate.g-rookie b { background: linear-gradient(180deg, #C99D68, #A97B48); color: #FFF8EA; text-shadow: 0 1px 0 rgba(0,0,0,.25); box-shadow: 0 5px 0 #7A5230, 0 10px 18px -8px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.3); }
+.am-gate.g-rookie b::before, .am-gate.g-rookie b::after { background: #7A5230; }
+.am-gate.g-coral b { background: #FFF9EE; color: #0D5563; box-shadow: 0 5px 0 #D8BC8A, 0 10px 18px -8px rgba(0,0,0,.3), inset 0 0 0 2px #FFF9EE, inset 0 0 0 4px #E2C590; }
+.am-gate.g-coral b::before, .am-gate.g-coral b::after { background: #D8BC8A; }
+.am-gate.g-sunset b { background: linear-gradient(180deg, #F0D2B3, #DDAE86); color: #6E2E0B; text-shadow: 0 1px 0 rgba(255,255,255,.55); box-shadow: 0 5px 0 #A85E38, 0 10px 18px -8px rgba(0,0,0,.35); }
+.am-gate.g-sunset b::before, .am-gate.g-sunset b::after { background: #A85E38; }
+.am-gate.g-crystal b { background: linear-gradient(135deg, #F4F0FF, #D6CAFF); color: #3C2A8C; box-shadow: 0 5px 0 #8C78DA, 0 0 18px rgba(150,120,255,.55), inset 0 0 0 1px rgba(255,255,255,.8); }
+.am-gate.g-crystal b::before, .am-gate.g-crystal b::after { background: #8C78DA; }
+.am-gate.g-frost b { background: rgba(240,248,255,.78); color: #1F4A86; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 5px 0 #A9C3E3, 0 10px 18px -8px rgba(0,0,0,.25), inset 0 0 0 1.5px rgba(255,255,255,.9); }
+.am-gate.g-frost b::before, .am-gate.g-frost b::after { background: #A9C3E3; }
+.am-gate.g-volcano b { background: linear-gradient(180deg, #3E3331, #2A2220); color: #FFB37A; box-shadow: 0 5px 0 #7A1E07, 0 0 16px rgba(255,120,40,.45), inset 0 1px 0 rgba(255,255,255,.12); }
+.am-gate.g-volcano b::before, .am-gate.g-volcano b::after { background: #7A1E07; }
 
 /* quiz stops: the disc is centred on its point, stars float above it and the tag sits on the ground below */
 .am-node { z-index: 3; display: grid; place-items: center; padding: 0; }
@@ -62,6 +78,11 @@
 .am-stars { display: flex; gap: 1px; padding: 3px 6px; border-radius: 999px; background: #fff; box-shadow: 0 2px 0 rgba(0,0,0,.08); }
 .am-star { width: 16px; height: 16px; fill: #D9D6CC; }
 .am-star.on { fill: #FFC21A; stroke: #C99A12; stroke-width: 1.2; stroke-linejoin: round; }
+/* earned stars catch the light now and then */
+.am-node .am-star.on { animation: am-shine 4.5s ease-in-out infinite; }
+.am-node .am-star.on:nth-child(2) { animation-delay: .18s; }
+.am-node .am-star.on:nth-child(3) { animation-delay: .36s; }
+@keyframes am-shine { 0%, 82%, 100% { filter: none; transform: none; } 88% { filter: brightness(1.35) drop-shadow(0 0 3px rgba(255,214,90,.9)); transform: scale(1.18); } }
 .am-tag { font-size: 11px; font-weight: 900; letter-spacing: .04em; padding: 3px 9px; border-radius: 999px; background: #fff; color: var(--ink-2); white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.08); }
 .am-tag.go { background: var(--ink); color: #fff; letter-spacing: .1em; }
 
@@ -100,6 +121,7 @@
 .am-start span { display: inline-block; font-family: var(--display); font-size: 18px; letter-spacing: .08em; padding: 6px 16px; border-radius: 10px; background: var(--ink); color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.25); }
 
 @media (prefers-reduced-motion: reduce) {
+  .am-node .am-star.on, .am3d[data-tod="night"]::before { animation: none; }
   .am-hero, .am-glow, .am-chest-art.open, .am-node.cur.s-play .am-disc::after { animation: none; }
 }
 
@@ -107,9 +129,22 @@
 .am3d {
   height: max(440px, calc(100vh - 250px)); height: max(440px, calc(100dvh - 250px));
   touch-action: none; cursor: grab;
-  background: radial-gradient(120% 70% at 50% 0%, #FFFFFF 0, #DDF0FF 35%, #B5DDFB 75%, #9CCFF5 100%);
+  /* the sky follows the land in view and the time of day (Arena3D sets --sky-a / --sky-b) */
+  background: radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%), linear-gradient(180deg, var(--sky-a, #F4FAFF), var(--sky-b, #B5DDFB));
 }
 .am3d:active { cursor: grabbing; }
+/* a few soft stars behind the islands at night */
+.am3d[data-tod="night"]::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .8; animation: am-twinkle 5s ease-in-out infinite alternate;
+  background:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 28% 62%, #fff, transparent), radial-gradient(1.5px 1.5px at 44% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 61% 12%, #fff, transparent), radial-gradient(2px 2px at 78% 44%, #FFF6D8, transparent), radial-gradient(1px 1px at 88% 76%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 8% 84%, #fff, transparent), radial-gradient(1px 1px at 52% 88%, #fff, transparent), radial-gradient(1.5px 1.5px at 70% 66%, #fff, transparent),
+    radial-gradient(1px 1px at 35% 8%, #fff, transparent), radial-gradient(1px 1px at 92% 22%, #fff, transparent), radial-gradient(1.5px 1.5px at 20% 40%, #fff, transparent);
+}
+@keyframes am-twinkle { to { opacity: .45; } }
+.am3d[data-tod="night"] .am-fogtext { color: rgba(255,255,255,.75); }
+.am3d[data-tod="night"] .am-fogtext b { color: #fff; }
 .am3d-host, .am3d-labels, .am3d-layer { position: absolute; inset: 0; }
 .am3d-host canvas, .am3d-canvas { width: 100% !important; height: 100% !important; display: block; }
 .am3d-labels, .am3d-layer { pointer-events: none; overflow: hidden; }
@@ -120,7 +155,10 @@
 .am3d .am-start { position: absolute; }
 .am3d .am-fogtext { top: 0; width: 240px; transform: translate(-50%, -100%); }
 .am3d-name, .am3d-you, .am3d-plus { margin: 0; white-space: nowrap; font-weight: 900; border-radius: 999px; }
-.am3d-name { font-size: 10px; padding: 2px 7px; background: rgba(255,255,255,.92); color: var(--ink-2); translate: -50% -100%; box-shadow: 0 2px 4px rgba(0,0,0,.12); }
+.am3d-name {
+  font-size: 10px; padding: 2px 8px; color: var(--ink-2); translate: -50% -100%; opacity: var(--nz, 1); transition: opacity .25s;
+  background: rgba(255,255,255,.66); backdrop-filter: blur(8px) saturate(1.4); -webkit-backdrop-filter: blur(8px) saturate(1.4); box-shadow: 0 2px 8px rgba(0,0,0,.1), inset 0 0 0 1px rgba(255,255,255,.7);
+}
 .am3d-you { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; background: var(--ink); color: #fff; translate: -50% -100%; }
 .am3d-plus { font-size: 11px; padding: 3px 8px; background: var(--ink); color: #fff; translate: -50% -50%; }
 .am3d-bubble {
@@ -131,7 +169,8 @@
 .am3d-bubble span { font-size: 12px; font-weight: 700; color: var(--muted); }
 .am3d-hint {
   position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 7px 14px; border-radius: 999px; white-space: nowrap;
-  background: rgba(22,21,18,.78); color: #fff; font-size: 12px; font-weight: 800; pointer-events: none; animation: am-fade 6s ease-in forwards;
+  background: rgba(22,21,18,.55); color: #fff; font-size: 12px; font-weight: 800; pointer-events: none; animation: am-fade 6s ease-in forwards;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 @keyframes am-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
 @media (max-width: 502px) { .am3d { margin-inline: -16px; border-radius: 0; } }
@@ -145,7 +184,8 @@
 /* sound on/off over the 3D map */
 .am3d-sound {
   position: absolute; top: 12px; right: 12px; z-index: 5; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px 7px 9px;
-  border-radius: 999px; background: rgba(255,255,255,.92); color: var(--ink); font-size: 12px; font-weight: 900; box-shadow: 0 3px 0 rgba(0,0,0,.12);
+  border-radius: 999px; background: rgba(255,255,255,.62); color: var(--ink); font-size: 12px; font-weight: 900;
+  backdrop-filter: blur(12px) saturate(1.5); -webkit-backdrop-filter: blur(12px) saturate(1.5); box-shadow: 0 4px 14px -6px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.6);
 }
 .am3d-sound svg { width: 20px; height: 20px; fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .am3d-sound:not(.on) { color: var(--muted); }

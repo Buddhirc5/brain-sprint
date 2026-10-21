@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElemen
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
 import { Icon, Modal } from "../components/ui";
-import { buildMap, starsFor, type ArenaMap as MapData, type CastleState, type Deco, type Land, type MapStop, type Theme } from "../lib/arenaMap";
+import { buildMap, starsFor, themeKey, type ArenaMap as MapData, type CastleState, type Deco, type Land, type MapStop, type Theme } from "../lib/arenaMap";
 import { buildWorld, hash, key, type Spot, type Tile, type World } from "../lib/arenaWorld";
 import { isOpen } from "../lib/games";
 import { limitMs, runCorrect } from "../lib/scoring";
@@ -143,7 +143,7 @@ export function ArenaMap() {
               const p = geo.at(u, v);
               return (
                 // the sign floats in the sky beside its bridge
-                <div key={land.idx} className="am-gate" style={{ left: Math.min(W - 104, Math.max(104, p.x + (p.x > W / 2 ? -1 : 1) * (geo.hw + 104))), top: p.y, ["--ink-l" as string]: land.theme.ink, ["--rib" as string]: land.theme.side }}>
+                <div key={land.idx} className={`am-gate g-${themeKey(land.theme.name)}`} style={{ left: Math.min(W - 104, Math.max(104, p.x + (p.x > W / 2 ? -1 : 1) * (geo.hw + 104))), top: p.y, ["--ink-l" as string]: land.theme.ink, ["--rib" as string]: land.theme.side }}>
                   <span className="am-gate-k">Land {land.idx + 1}</span>
                   <b>{land.name}</b>
                   <span className="am-gate-s num">
@@ -322,7 +322,7 @@ function Map3D({ map, world, me, curLand, sceneRef, go, toast, pick }: { map: Ma
         </div>
         {world.banners.map(({ land, u, v }) => (
           <div key={land.idx} className="am-pin" data-at={`${u},1.5,${v}`} data-clamp="112">
-            <div className="am-gate" style={{ left: 0, top: 0, ["--ink-l" as string]: land.theme.ink, ["--rib" as string]: land.theme.side }}>
+            <div className={`am-gate g-${themeKey(land.theme.name)}`} style={{ left: 0, top: 0, ["--ink-l" as string]: land.theme.ink, ["--rib" as string]: land.theme.side }}>
               <span className="am-gate-k">Land {land.idx + 1}</span>
               <b>{land.name}</b>
               <span className="am-gate-s num">

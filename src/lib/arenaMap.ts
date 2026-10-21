@@ -35,6 +35,9 @@ export const THEMES: Theme[] = [
   { name: "Volcano Summit", top: "#6E5652", top2: "#654E4A", lip: "#574340", side: "#3E302D", side2: "#2C2220", deco: ["lava", "rock", "rock"], ink: "#7A1E07", soft: "#FFD7CB" },
 ];
 
+/** "Frost Peaks II" → "frost": picks a land's sign style. */
+export const themeKey = (name: string) => name.replace(/ [IVX]+$/, "").split(" ")[0].toLowerCase();
+
 export interface Land { idx: number; theme: Theme; name: string; items: MapItem[]; stops: MapStop[]; stars: number; done: number }
 export interface ArenaMap {
   lands: Land[];

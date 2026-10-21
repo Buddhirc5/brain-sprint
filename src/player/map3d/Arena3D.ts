@@ -5,7 +5,7 @@
    over the canvas every frame by projecting their 3D anchor points. */
 import {
   AmbientLight, BoxGeometry, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry,
-  DirectionalLight, DodecahedronGeometry, DoubleSide, Euler, Group, HemisphereLight, IcosahedronGeometry, InstancedMesh, Material, Matrix4,
+  DirectionalLight, DodecahedronGeometry, DoubleSide, Euler, Fog, Group, HemisphereLight, IcosahedronGeometry, InstancedMesh, Material, Matrix4,
   Mesh, MeshBasicMaterial, MeshLambertMaterial, Object3D, OctahedronGeometry, OrthographicCamera, PCFShadowMap, Plane, PlaneGeometry,
   Quaternion, Raycaster, RepeatWrapping, Scene, SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace, TorusGeometry, Vector2, Vector3, WebGLRenderer,
 } from "three";
@@ -14,6 +14,7 @@ import { hash, key, type World } from "../../lib/arenaWorld";
 import type { Player } from "../../types";
 import { CHIBI_ASPECT, chibiTexture } from "./chibiTexture";
 import { makeCritters, type Critter } from "./critters";
+import { Billboards, faceCamera, landKey, landmark, LIGHT, makeLanterns, makeParticles, mute, skyFor, softDot, timeOfDay, type Tod } from "./ambience";
 
 export interface Anchor { el: HTMLElement; x: number; y: number; z: number; clamp?: number }
 export interface MateInfo { p: Player; u: number; v: number; line: string }
@@ -70,6 +71,20 @@ export class Arena3D {
   private ro: ResizeObserver;
   private io: IntersectionObserver;
   private disposers: (() => void)[] = [];
+  // look & feel (ambience.ts)
+  private tod: Tod = timeOfDay();
+  private lamp = LIGHT[this.tod].lamp;
+  private q = faceCamera(OFF);
+  private hemi!: HemisphereLight;
+  private fog = new Fog("#DDEEFF", 22, 52);
+  private land = -1;
+  private skyNow: [Color, Color] | null = null;
+  private skyGoal: [Color, Color] = [new Color("#F4FAFF"), new Color("#B9E2FF")];
+  private fogGoal = new Color("#DDEEFF");
+  private zoomGoal = 1;
+  private nz = -1;
+  private curIdx = -1; // path index of your stop
+  private puffs!: Billboards;
 
   constructor(private I: Arena3DInput) {
     this.r = new WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -81,9 +96,12 @@ export class Arena3D {
     I.host.appendChild(this.r.domElement);
 
     this.cam = new OrthographicCamera(-1, 1, 1, -1, -60, 200);
-    this.scene.add(new HemisphereLight("#EAF6FF", "#8C7A5B", 1.55));
-    this.scene.add(new AmbientLight("#ffffff", 0.25));
-    this.sun = new DirectionalLight("#FFF1D6", 2.1);
+    const lt = LIGHT[this.tod];
+    this.hemi = new HemisphereLight(lt.sky, lt.ground, lt.hemi);
+    this.scene.add(this.hemi);
+    this.scene.add(new AmbientLight("#ffffff", lt.amb));
+    this.scene.fog = this.fog;
+    this.sun = new DirectionalLight(lt.sun, lt.sunI);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(1024, 1024);
     this.sun.shadow.camera.left = -11;
@@ -94,7 +112,11 @@ export class Arena3D {
     this.sun.shadow.camera.far = 60;
     this.sun.shadow.bias = -0.0008;
     this.sun.shadow.normalBias = 0.02;
+    this.sun.shadow.radius = 3; // softer shadow edges
     this.scene.add(this.sun, this.sun.target);
+    I.host.parentElement?.setAttribute("data-tod", this.tod);
+    this.puffs = new Billboards(this.scene, this.q, 64, { color: "#9C948E", opacity: 0.4, order: 2 });
+    if (I.meAt) this.curIdx = I.world.path.findIndex((p) => p.u === I.meAt!.u && p.v === I.meAt!.v);
 
     this.buildWorld();
     this.buildSky();
@@ -104,6 +126,7 @@ export class Arena3D {
       this.anim, () => this.target,
     );
     void this.buildPeople();
+    if (!I.reduced) makeParticles(this.scene, this.anim, () => this.target, () => landKey(I.lands[Math.max(0, this.land)]?.theme.name || ""));
 
     const start = I.meAt ? new Vector3(I.meAt.u, 0, I.meAt.v) : new Vector3(0, 0, 0);
     this.target.copy(start);
@@ -178,6 +201,8 @@ export class Arena3D {
       if (this.target.distanceTo(this.goal) < 0.01) this.goal = null;
     }
     this.clamp();
+    this.zoom += (this.zoomGoal - this.zoom) * Math.min(1, dt * 14);
+    this.ambience(dt);
     this.aim();
     this.r.render(this.scene, this.cam);
     this.place();
@@ -212,6 +237,38 @@ export class Arena3D {
     const b = this.bounds;
     this.target.x = Math.max(b.u0, Math.min(b.u1, this.target.x));
     this.target.z = Math.max(b.v0, Math.min(b.v1, this.target.z));
+  }
+
+  /** The sky, haze and name tags follow the land in view and the zoom. */
+  private ambience(dt: number) {
+    const li = this.landOf.get(key(Math.round(this.target.x), Math.round(this.target.z)));
+    if (li != null && li >= 0 && li !== this.land) {
+      this.land = li;
+      this.skyGoal = skyFor(this.I.lands[li]?.theme.name || "", this.tod);
+      this.fogGoal = this.skyGoal[0].clone().lerp(this.skyGoal[1], 0.6);
+      if (!this.skyNow) {
+        this.skyNow = [this.skyGoal[0].clone(), this.skyGoal[1].clone()];
+        this.fog.color.copy(this.fogGoal);
+      }
+    }
+    const el = this.I.host.parentElement;
+    if (this.skyNow && el) {
+      const k = Math.min(1, dt * 2.5);
+      const before = this.skyNow[0].getHex() ^ this.skyNow[1].getHex();
+      this.skyNow[0].lerp(this.skyGoal[0], k);
+      this.skyNow[1].lerp(this.skyGoal[1], k);
+      this.fog.color.lerp(this.fogGoal, k);
+      if (!el.style.getPropertyValue("--sky-a") || (this.skyNow[0].getHex() ^ this.skyNow[1].getHex()) !== before) {
+        el.style.setProperty("--sky-a", `#${this.skyNow[0].getHexString()}`);
+        el.style.setProperty("--sky-b", `#${this.skyNow[1].getHexString()}`);
+      }
+    }
+    // names fade as you zoom out
+    const nz = Math.round(Math.max(0, Math.min(1, (this.zoom - 0.7) / 0.3)) * 20) / 20;
+    if (nz !== this.nz) {
+      this.nz = nz;
+      this.I.layer.style.setProperty("--nz", String(nz));
+    }
   }
 
   /* project HTML labels; hide the ones off screen */
@@ -260,7 +317,7 @@ export class Arena3D {
       if (pts.size === 2) {
         const [a, b] = [...pts.values()];
         pinch0 = Math.hypot(a.x - b.x, a.y - b.y);
-        zoom0 = this.zoom;
+        zoom0 = this.zoomGoal;
       }
       vel.set(0, 0, 0);
       this.goal = null;
@@ -272,7 +329,7 @@ export class Arena3D {
         p.x = e.clientX;
         p.y = e.clientY;
         const [a, b] = [...pts.values()];
-        this.zoom = Math.max(0.6, Math.min(1.9, (zoom0 * Math.hypot(a.x - b.x, a.y - b.y)) / Math.max(1, pinch0)));
+        this.zoomGoal = Math.max(0.6, Math.min(1.9, (zoom0 * Math.hypot(a.x - b.x, a.y - b.y)) / Math.max(1, pinch0)));
         moved += 10;
         this.kick();
         return;
@@ -311,7 +368,7 @@ export class Arena3D {
     };
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
-      if (e.ctrlKey) this.zoom = Math.max(0.6, Math.min(1.9, this.zoom * (1 - e.deltaY * 0.01)));
+      if (e.ctrlKey) this.zoomGoal = Math.max(0.6, Math.min(1.9, this.zoomGoal * (1 - e.deltaY * 0.01)));
       else {
         const c = this.ground(innerWidth / 2, innerHeight / 2), d = this.ground(innerWidth / 2 + e.deltaX, innerHeight / 2 + e.deltaY);
         if (c && d) this.target.add(d.sub(c).setY(0));
@@ -429,8 +486,11 @@ export class Arena3D {
       const len = edge ? 0.5 + hash(t.u, t.v, 11) * 0.9 : 1.2 + hash(t.u, t.v, 12) * 2.2;
       if (edge || hash(t.u, t.v, 13) < 0.5) B.add("spike", gSpike, lambert, mat(t.u, -1.26, t.v, 1, len, 1, hash(t.u, t.v, 14) * 3), new Color(th.side2).multiplyScalar(0.85), {});
       if (t.kind === "path") {
-        const c = new Color(hash(t.u, t.v, 2) < 0.5 ? "#EFE2BE" : "#E5D5AC");
-        B.add("stone", gStone, lambert, mat(t.u, 0.02, t.v, 1, 1, 1, hash(t.u, t.v, 6) * 3), c, { recv: true });
+        // stones you've walked are warm and worn; the road ahead is pale, with grass growing over it
+        const walked = this.curIdx >= 0 && (pathIdx.get(key(t.u, t.v)) ?? 1e9) <= this.curIdx;
+        const c = walked ? new Color(hash(t.u, t.v, 2) < 0.5 ? "#E9D4A6" : "#DEC795") : new Color(hash(t.u, t.v, 2) < 0.5 ? "#F2EDDD" : "#E9E4D2").lerp(new Color(th.top), 0.22);
+        const k = walked ? 1 : 0.86;
+        B.add("stone", gStone, lambert, mat(t.u, 0.02, t.v, k, 1, k, hash(t.u, t.v, 6) * 3), c, { recv: true });
       }
       if (t.prop) this.prop(B, t.prop, t.u + (hash(t.u, t.v, 9) - 0.5) * 0.4, t.v + (hash(t.u, t.v, 10) - 0.5) * 0.4, hash(t.u, t.v, 15), lambert);
       const grass = TUFT[th.name.replace(/ [IVX]+$/, "")];
@@ -446,6 +506,8 @@ export class Arena3D {
       if (t.kind !== "bridge" && !t.prop && !t.spot) this.walk.add(key(t.u, t.v));
     }
 
+    this.decorate(solid, pathIdx);
+
     const near = (c: Vector3, r: number) => Math.abs(c.x - this.target.x) + Math.abs(c.z - this.target.z) < r + 16;
     for (const b of batches.values()) b.build(this.scene, this.anim, near);
 
@@ -453,6 +515,123 @@ export class Arena3D {
     for (const s of world.spots) this.spotMesh(s.spot, s.u, s.v);
     this.startFlag();
     lands.forEach((land, i) => this.waterfall(land, i, at, solid));
+  }
+
+  /** Island shadows, cloud skirts, mist between lands, lanterns, landmarks and the footprints to today's stop. */
+  private decorate(solid: Set<string>, pathIdx: Map<string, number>) {
+    const { world, lands } = this.I;
+    const pathSet = new Set(world.path.map((p) => key(p.u, p.v)));
+    const spotSet = new Set(world.spots.map((x) => key(x.u, x.v)));
+    const tileAt = new Map(world.tiles.map((t) => [key(t.u, t.v), t]));
+
+    // a soft shadow under each island, cast onto the sky below
+    const shadowMat = new MeshBasicMaterial({ map: softDot(), color: "#2F5785", transparent: true, opacity: 0.16, depthWrite: false });
+    lands.forEach((_, li) => {
+      const own = world.tiles.filter((t) => t.land === li && t.kind !== "bridge");
+      if (!own.length) return;
+      const us = own.map((t) => t.u), vs = own.map((t) => t.v);
+      const [a, b, c, d] = [Math.min(...us), Math.max(...us), Math.min(...vs), Math.max(...vs)];
+      const sh = new Mesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), shadowMat);
+      sh.position.set((a + b) / 2 + 1.5, -6.5, (c + d) / 2 + 1.5);
+      sh.scale.set((b - a + 4) * 1.15, 1, (d - c + 4) * 1.15);
+      sh.renderOrder = -1;
+      this.scene.add(sh);
+    });
+
+    // a skirt of cloud around the islands' edges, and mist drifting over the bridges between lands
+    const edges = world.tiles.filter((t) => t.kind !== "bridge" && [[1, 0], [0, 1], [-1, 0], [0, -1]].some(([x, y]) => !solid.has(key(t.u + x, t.v + y))));
+    const skirt = new Billboards(this.scene, this.q, edges.length, { opacity: 0.6, order: 0 });
+    for (const t of edges) {
+      if (hash(t.u, t.v, 51) > 0.22) continue;
+      const out = [[1, 0], [0, 1], [-1, 0], [0, -1]].find(([x, y]) => !solid.has(key(t.u + x, t.v + y)))!;
+      const s = 1.1 + hash(t.u, t.v, 52) * 0.8;
+      skirt.add(t.u + out[0] * 0.55, -0.85 - hash(t.u, t.v, 53) * 0.4, t.v + out[1] * 0.55, s * 1.4, s);
+    }
+    const bridges = world.tiles.filter((t) => t.kind === "bridge");
+    const mist = new Billboards(this.scene, this.q, bridges.length * 2, { opacity: 0.42, order: 2 });
+    const drift: { i: number; x: number; y: number; z: number; s: number; ph: number }[] = [];
+    for (const t of bridges) {
+      if (hash(t.u, t.v, 61) > 0.55) continue;
+      for (const side of [-1, 1]) {
+        const x = t.u + side * 0.7 * hash(t.u, t.v, 62), z = t.v - side * 0.7 * hash(t.u, t.v, 63), y = -0.5 + hash(t.u, t.v, 64) * 0.5, sc = 1.6 + hash(t.u, t.v, 65 + side) * 1.2;
+        drift.push({ i: mist.add(x, y, z, sc * 1.5, sc), x, y, z, s: sc, ph: hash(t.u, t.v, 66) * 6 });
+      }
+    }
+    if (drift.length)
+      this.anim.push((t) => {
+        for (const d of drift) {
+          const w = Math.sin(t * 0.25 + d.ph);
+          mist.set(d.i, d.x + w * 0.35, d.y + Math.sin(t * 0.4 + d.ph) * 0.12, d.z - w * 0.35, d.s * 1.5 * (1 + w * 0.08), d.s);
+        }
+      });
+
+    // lanterns beside the path every few steps; lit at dusk and at night
+    const lanterns: [number, number][] = [];
+    world.path.forEach((p, i) => {
+      if (i % 7 !== 3) return;
+      for (const [x, y] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) {
+        const k = key(p.u + x, p.v + y), t = tileAt.get(k);
+        if (!t || t.kind !== "ground" || t.prop || pathSet.has(k) || spotSet.has(k)) continue;
+        lanterns.push([p.u + x * 0.62, p.v + y * 0.62]);
+        this.walk.delete(k);
+        break;
+      }
+    });
+    if (this.tod === "night") [skirt, mist].forEach((b) => b.material.color.set("#A9B9E4")); // moonlit clouds
+    const glows = new Billboards(this.scene, this.q, lanterns.length, { color: "#FFC46B", opacity: 0.55 * this.lamp, additive: true, order: 3 });
+    makeLanterns(this.scene, lanterns, glows, this.lamp);
+
+    // one landmark per land, on the open ground furthest from the path
+    lands.forEach((land, li) => {
+      const own = world.tiles.filter((t) => t.land === li && t.kind === "ground" && !t.prop && !spotSet.has(key(t.u, t.v)) && !pathSet.has(key(t.u, t.v)));
+      const road = world.tiles.filter((t) => t.land === li && pathSet.has(key(t.u, t.v)));
+      let best: (typeof own)[number] | null = null, bestD = -1;
+      for (const t of own) {
+        if (![[1, 0], [0, 1], [-1, 0], [0, -1]].every(([x, y]) => solid.has(key(t.u + x, t.v + y)))) continue; // not on the very edge
+        let d = 1e9;
+        for (const r of road) d = Math.min(d, Math.abs(r.u - t.u) + Math.abs(r.v - t.v));
+        const score = Math.min(d, 4) + hash(t.u, t.v, 71) * 0.5;
+        if (score > bestD) (bestD = score), (best = t);
+      }
+      if (!best || bestD < 2) return;
+      const g = landmark(landKey(land.theme.name), this.anim, () => this.lamp, this.puffs);
+      g.position.set(best.u, 0, best.v);
+      this.scene.add(g);
+      this.walk.delete(key(best.u, best.v));
+    });
+
+    // glowing footprints from your last finished stop to today's stop
+    if (this.curIdx > 0) {
+      const stopsAt = new Set(world.spots.filter((x) => x.spot.kind === "stop").map((x) => key(x.u, x.v)));
+      let from = this.curIdx - 1;
+      while (from > 0 && !stopsAt.has(key(world.path[from].u, world.path[from].v))) from--;
+      const steps = world.path.slice(from + 1, this.curIdx);
+      if (steps.length) {
+        const foot = new InstancedMesh(new CircleGeometry(0.07, 10).scale(0.7, 1, 1).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: "#fff", transparent: true, opacity: 0.9, depthWrite: false }), steps.length * 2);
+        const m = new Matrix4(), qq = new Quaternion(), c = new Color();
+        steps.forEach((p, i) => {
+          const nx = world.path[from + 2 + i] || p;
+          const ang = Math.atan2(nx.u - p.u, nx.v - p.v);
+          for (const side of [0, 1]) {
+            const o = side ? 0.12 : -0.12, along = side ? 0.18 : -0.12;
+            qq.setFromEuler(new Euler(0, ang, 0));
+            m.compose(new Vector3(p.u + Math.cos(ang) * o + Math.sin(ang) * along, 0.04, p.v - Math.sin(ang) * o + Math.cos(ang) * along), qq, new Vector3(1, 1, 1));
+            foot.setMatrixAt(i * 2 + side, m);
+            foot.setColorAt(i * 2 + side, c.set("#FFE7A8"));
+          }
+        });
+        this.scene.add(foot);
+        const n = steps.length * 2;
+        this.anim.push((t) => {
+          for (let i = 0; i < n; i++) {
+            const w = Math.max(0, Math.sin(t * 2.4 - i * 0.45));
+            foot.setColorAt(i, c.setRGB(1, 0.84 + w * 0.16, 0.5 + w * 0.5));
+          }
+          foot.instanceColor!.needsUpdate = true;
+        });
+      }
+    }
+    void pathIdx;
   }
 
   private prop(B: Batch, kind: Deco, x: number, z: number, r: number, mat: MeshLambertMaterial) {
@@ -512,19 +691,28 @@ export class Arena3D {
       return mesh;
     };
     if (spot.kind === "stop") {
-      const [top, side] = ({ done: ["#D8F57A", "#8FBF12"], play: ["#FFB08C", "#E2531C"], missed: ["#E4E1D9", "#B9B5AA"], locked: ["#F7F5EF", "#CFCBC0"] } as const)[spot.state];
-      add(new CylinderGeometry(0.4, 0.44, 0.2, 20), L(side), 0, 0.1);
-      add(new CylinderGeometry(0.34, 0.36, 0.05, 20), L(top), 0, 0.22);
+      // a rounded stone plinth, a coloured drum and a cap with a thin rim of light
+      const [top, side, rim, frost] = ({
+        done: ["#E4F3A6", "#A9C95A", "#FFE08A", false],
+        play: ["#FFC2A3", "#E86A38", "#FFE2CF", false],
+        missed: ["#ECE9E2", "#C8C4BA", "#FFFFFF", false],
+        locked: ["#F5F7F9", "#D3DAE2", "#FFFFFF", true],
+      } as const)[spot.state];
+      const glass = (c: string) => new MeshLambertMaterial({ color: c, flatShading: true, transparent: frost, opacity: frost ? 0.78 : 1 });
+      add(new CylinderGeometry(0.47, 0.51, 0.1, 28), L("#EFE9DC"), 0, 0.05);
+      add(new CylinderGeometry(0.41, 0.44, 0.16, 28), glass(side), 0, 0.18);
+      add(new CylinderGeometry(0.36, 0.39, 0.05, 28), glass(top), 0, 0.285);
+      add(new TorusGeometry(0.375, 0.016, 6, 40).rotateX(Math.PI / 2), new MeshBasicMaterial({ color: rim, transparent: true, opacity: spot.state === "done" ? 0.95 : 0.6 }), 0, 0.31, 0, false);
       if (spot.state === "play") {
-        // a glowing ring and a beam of light on stops ready to play
-        const ring = add(new TorusGeometry(0.52, 0.045, 8, 32).rotateX(Math.PI / 2), new MeshBasicMaterial({ color: "#FF8A3D", transparent: true, opacity: 0.9 }), 0, 0.04, 0, false);
-        const beam = add(new CylinderGeometry(0.3, 0.42, 2.4, 20, 1, true).translate(0, 1.2, 0), new MeshBasicMaterial({ color: "#FFB27A", transparent: true, opacity: 0.18, depthWrite: false, side: DoubleSide }), 0, 0.2, 0, false);
+        // a soft breathing ring and a beam of light on stops ready to play
+        const ring = add(new TorusGeometry(0.56, 0.035, 8, 40).rotateX(Math.PI / 2), new MeshBasicMaterial({ color: "#FF9A5A", transparent: true, opacity: 0.7 }), 0, 0.04, 0, false);
+        const beam = add(new CylinderGeometry(0.3, 0.42, 2.4, 20, 1, true).translate(0, 1.2, 0), new MeshBasicMaterial({ color: "#FFB27A", transparent: true, opacity: 0.16, depthWrite: false, side: DoubleSide }), 0, 0.2, 0, false);
         const ph = u * 0.7;
         this.anim.push((t) => {
-          const k = 1 + ((t * 0.8 + ph) % 1) * 0.5;
-          ring.scale.set(k, 1, k);
-          (ring.material as MeshBasicMaterial).opacity = 0.9 * (1 - ((t * 0.8 + ph) % 1));
-          (beam.material as MeshBasicMaterial).opacity = 0.14 + Math.sin(t * 2 + ph) * 0.06;
+          const w = Math.sin(t * 1.6 + ph);
+          ring.scale.set(1.08 + w * 0.08, 1, 1.08 + w * 0.08);
+          (ring.material as MeshBasicMaterial).opacity = 0.5 + w * 0.25;
+          (beam.material as MeshBasicMaterial).opacity = 0.13 + Math.sin(t * 2 + ph) * 0.05;
         });
       }
       return;
@@ -540,6 +728,12 @@ export class Arena3D {
       lid.position.set(0, 0.07, 0.2);
       lid.castShadow = true;
       pivot.add(lid);
+      if (!spot.open) {
+        // a faint glow says "something's inside"
+        const hint = new Billboards(this.scene, this.q, 1, { color: "#FFD86B", opacity: 0.35, additive: true, order: 3 });
+        hint.add(u, 0.45, v, 0.9);
+        this.anim.push((t) => (hint.material.opacity = 0.18 + Math.max(0, Math.sin(t * 1.3 + u)) * 0.3));
+      }
       if (spot.open) {
         pivot.rotation.x = -1.15;
         for (let i = 0; i < 5; i++) add(new CylinderGeometry(0.07, 0.07, 0.025, 12), gold, (i - 2) * 0.09, 0.33 + (i % 2) * 0.03, (i % 3) * 0.06 - 0.06, false);
@@ -676,6 +870,26 @@ export class Arena3D {
         }
       }
     });
+    // a far, soft layer of cloud deep below, drifting slower: depth
+    const far = new Billboards(this.scene, this.q, 12, { opacity: 0.5, order: -2 });
+    if (this.tod === "night") far.material.color.set("#7F90C4");
+    const deep: { i: number; x: number; z: number; s: number; v: number }[] = [];
+    const st0 = this.I.meAt || { u: 0, v: 0 };
+    for (let i = 0; i < 12; i++) {
+      const x = st0.u + (hash(i, 81) - 0.5) * 30, z = st0.v + (hash(i, 82) - 0.5) * 30, s2 = 5 + hash(i, 83) * 5;
+      deep.push({ i: far.add(x, -9 - hash(i, 84) * 3, z, s2 * 1.6, s2), x, z, s: s2, v: 0.05 + hash(i, 85) * 0.06 });
+    }
+    this.anim.push((_, dt) => {
+      for (const d of deep) {
+        d.x += dt * d.v;
+        d.z -= dt * d.v;
+        if (Math.abs(d.x - this.target.x) > 22 || Math.abs(d.z - this.target.z) > 22) {
+          d.x = this.target.x + (Math.random() - 0.5) * 30;
+          d.z = this.target.z + (Math.random() - 0.5) * 30;
+        }
+        far.set(d.i, d.x, -10, d.z, d.s * 1.6, d.s);
+      }
+    });
     // a few birds circling
     const wing = new ConeGeometry(0.09, 0.42, 3).rotateZ(-Math.PI / 2).translate(0.21, 0, 0).scale(1, 0.25, 1);
     const dark = new MeshLambertMaterial({ color: "#FFFFFF", emissive: "#FFFFFF", emissiveIntensity: 0.3, flatShading: true });
@@ -713,8 +927,8 @@ export class Arena3D {
   /* ---------------- people ---------------- */
   private async buildPeople() {
     const { me, meAt, meFrom, mates, overflow, reduced, world } = this.I;
-    const shadowGeo = new CircleGeometry(0.26, 18).rotateX(-Math.PI / 2);
-    const shadowMat = new MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.22, depthWrite: false });
+    const shadowGeo = new PlaneGeometry(0.72, 0.72).rotateX(-Math.PI / 2);
+    const shadowMat = new MeshBasicMaterial({ map: softDot(), color: "#1D2433", transparent: true, opacity: 0.32, depthWrite: false });
     const make = async (p: Player, isMe: boolean, at: Vector3) => {
       const tex = await chibiTexture(p.look ?? 0, p.equipped, isMe ? "happy" : "idle");
       tex.userData.shared = true;
@@ -817,6 +1031,7 @@ export class Arena3D {
         }
         if (!r.route.length) {
           r.idleUntil = t + 2 + Math.random() * 5;
+          if (!r.me && !this.I.reduced) r.hop = 0.5; // a little bounce on landing
           if (r.me) {
             r.hop = 1;
             this.I.onSound?.("arrive");
@@ -923,7 +1138,7 @@ class Batch {
     const id = `${k}|${mat.uuid}`;
     let it = this.items.get(id);
     if (!it) this.items.set(id, (it = { geo, mat, list: [], o }));
-    it.list.push({ m, c });
+    it.list.push({ m, c: o.glow ? c : mute(c) });
   }
   build(scene: Scene, anim: ((t: number, dt: number) => void)[], near: (c: Vector3, r: number) => boolean) {
     for (const it of this.items.values()) {
