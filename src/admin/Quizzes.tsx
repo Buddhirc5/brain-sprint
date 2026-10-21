@@ -18,6 +18,8 @@ import { LIVE } from "../api/engine";
 import type { AnswerKey, CardColor, CertSettings, Game, GameStatus, QType, QuizKind } from "../types";
 import { useAdmin } from "./Admin";
 import { BucketEdit, StoryEdit, SwipeEdit } from "./QTypeEditors";
+import { ImportStories, StoryEpisode } from "./StoryEditor";
+import { parseScript, SCRIPT_EXAMPLE } from "../lib/storyScript";
 import { KIND } from "./common";
 
 const MAX_Q_HARD = 50; // backend limit
@@ -33,6 +35,7 @@ export function Quizzes() {
   const [kind, setKind] = useState<"all" | QuizKind>("all");
   const [picker, setPicker] = useState(false);
   const [packs, setPacks] = useState(false);
+  const [stories, setStories] = useState(false);
   const all = sortGames(Object.values(d.games));
   const gs = all.filter((g) => kind === "all" || (g.kind || "sprint") === kind);
   const count = (k: QuizKind) => all.filter((g) => (g.kind || "sprint") === k).length;
@@ -81,12 +84,17 @@ export function Quizzes() {
             ✨ Starter library
           </button>
         )}
+        {can("editor") && features.sprint && (
+          <button className="btn ghost small" onClick={() => setStories(true)}>
+            Import stories
+          </button>
+        )}
         <button className="btn primary" onClick={() => setPicker(true)}>
           New quiz
         </button>
       </div>
       <div className="chips-row" role="group" aria-label="Filter by type">
-        {(["all", "sprint", "cert", "live"] as const).map((k) => (
+        {(["all", "sprint", "story", "cert", "live"] as const).map((k) => (
           <button key={k} className={`chip-tg ${kind === k ? "on" : ""}`} aria-pressed={kind === k} onClick={() => setKind(k)}>
             {k === "all" ? "All" : KIND[k].label} <span className="sub num">{k === "all" ? all.length : count(k)}</span>
           </button>
@@ -119,14 +127,14 @@ export function Quizzes() {
                       <span className={`st ${st.key}`}>{k === "live" ? (g.status === "draft" ? "Draft" : "Ready") : st.label}</span>
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 700 }}>
-                      {k === "live" ? `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${liveSecs < 60 ? `${liveSecs}s` : `${Math.floor(liveSecs / 60)}:${String(liveSecs % 60).padStart(2, "0")} min`}` : <>{g.date ? (g.date === t ? "Today" : fmtDate(g.date)) : "No date"} · {fmtMin(limitMs(g) / 60000)}</>}
+                      {k === "live" ? `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${liveSecs < 60 ? `${liveSecs}s` : `${Math.floor(liveSecs / 60)}:${String(liveSecs % 60).padStart(2, "0")} min`}` : <>{g.date ? (g.date === t ? "Today" : fmtDate(g.date)) : "No date"} · {k === "story" ? "no timer" : fmtMin(limitMs(g) / 60000)}</>}
                     </span>
                   </div>
                   <h3>{g.title}</h3>
                 </div>
                 <div className="body">
                   <div className="nums">
-                    <div><b className="num">{g.questions.length}</b>questions</div>
+                    <div><b className="num">{g.questions.length}</b>{k === "story" ? (g.questions.length === 1 ? "story" : "stories") : "questions"}</div>
                     {k === "cert" ? (
                       <>
                         <div><b className="num">{plays.length}</b>attempts</div>
@@ -182,6 +190,7 @@ export function Quizzes() {
         )}
       </div>
       {picker && <KindPicker onClose={() => setPicker(false)} onPick={(k) => { setPicker(false); setTab("edit", "new:" + k); }} />}
+      {stories && <ImportStories onClose={() => setStories(false)} />}
       {packs && <StarterPacks kinds={["sprint", "cert", "live", "poll"]} onClose={() => setPacks(false)} />}
     </>
   );
@@ -194,7 +203,7 @@ function KindPicker({ onClose, onPick }: { onClose: () => void; onPick: (k: Quiz
       <div className="stack">
         <h3>What kind of quiz?</h3>
         <div className="kind-grid">
-          {(["sprint", "cert", "live"] as const).map((k) => {
+          {(["sprint", "story", "cert", "live"] as const).map((k) => {
             const off = !features[KIND[k].feature];
             return (
               <button key={k} type="button" className="kind-opt" disabled={off} onClick={() => onPick(k)}>
@@ -233,7 +242,7 @@ export function Editor({ gid }: { gid?: string }) {
   const isNew = !gid || gid.startsWith("new:");
   const orig = !isNew ? d.games[gid!] : undefined;
   const key = orig ? d.keys[orig.id] : undefined;
-  const newKind: QuizKind = gid?.startsWith("new:") && ["sprint", "cert", "live"].includes(gid.slice(4)) ? (gid.slice(4) as QuizKind) : "sprint";
+  const newKind: QuizKind = gid?.startsWith("new:") && ["sprint", "cert", "live", "story"].includes(gid.slice(4)) ? (gid.slice(4) as QuizKind) : "sprint";
   const topic0 = d.cfg.topics[0] || "General Knowledge";
   const [f, setF] = useState<Form>(() =>
     orig
@@ -243,9 +252,12 @@ export function Editor({ gid }: { gid?: string }) {
           qs: orig.questions.map((q) => ({ ...unseal(q, key?.answers[q.id]), seconds: q.seconds || (orig.kind === "live" ? LIVE.defaultSeconds : undefined) })),
         }
       : {
-          kind: newKind, title: "", desc: "", date: newKind === "sprint" ? todayKey() : "", until: "", minutes: newKind === "cert" ? 5 : 1.5,
-          color: newKind === "cert" ? "ink" : newKind === "live" ? "orange" : "lime", status: "draft", cert: { ...DEFAULT_CERT },
-          qs: [{ ...blankDraft("mcq", topic0, newId("q")), ...(newKind === "live" ? { seconds: LIVE.defaultSeconds } : {}) }],
+          kind: newKind, title: "", desc: "", date: newKind === "sprint" || newKind === "story" ? todayKey() : "", until: "", minutes: newKind === "cert" ? 5 : newKind === "story" ? 0 : 1.5,
+          color: newKind === "cert" ? "ink" : newKind === "live" ? "orange" : newKind === "story" ? "orange" : "lime", status: "draft", cert: { ...DEFAULT_CERT },
+          qs:
+            newKind === "story"
+              ? parseScript(SCRIPT_EXAMPLE, d.cfg.topics, [newId("q")]).drafts
+              : [{ ...blankDraft("mcq", topic0, newId("q")), ...(newKind === "live" ? { seconds: LIVE.defaultSeconds } : {}) }],
         },
   );
   const [start] = useState(() => JSON.stringify(f));
@@ -258,6 +270,7 @@ export function Editor({ gid }: { gid?: string }) {
   const topics = useMemo(() => d.cfg.topics, [d.cfg.topics]);
   const live = f.kind === "live";
   const cert = f.kind === "cert";
+  const storyKind = f.kind === "story";
   const maxQ = f.kind === "sprint" ? d.cfg.maxQ : MAX_Q_HARD;
   const n = f.qs.length;
   const per = Math.round((f.minutes * 60) / Math.max(1, n));
@@ -283,18 +296,19 @@ export function Editor({ gid }: { gid?: string }) {
     // imported rows replace any empty question the editor started with
     const kept = f.qs.filter((q) => (q.type !== "mcq" && q.type !== "tf") || q.q.trim() || q.options.some((o) => o.trim()));
     const room = Math.max(0, maxQ - kept.length);
-    set({ qs: [...kept, ...out.slice(0, room)] });
+    set({ qs: [...kept, ...out.filter((q) => !storyKind || q.type === "story").slice(0, room)] });
     setImport("");
     toast(`Added ${Math.min(out.length, room)} question(s)${skipped.length ? ` · ${skipped.length} row(s) skipped` : ""}${out.length > room ? " · quiz limit reached" : ""}`);
   };
 
   const save = async () => {
     setErr("");
-    const title = cleanText(f.title, 60).trim();
+    const title = cleanText(f.title || (storyKind ? f.qs[0]?.q || "" : ""), 60).trim();
     if (!title) return setErr("Give the quiz a title.");
-    if (n < d.cfg.minQ || n > maxQ) return setErr(`This quiz needs ${d.cfg.minQ}–${maxQ} questions.`);
+    if (storyKind ? n < 1 || n > 5 : n < d.cfg.minQ || n > maxQ) return setErr(storyKind ? "A Story Mode quiz holds 1–5 stories." : `This quiz needs ${d.cfg.minQ}–${maxQ} questions.`);
     if (!live && f.until && f.date && f.until < f.date) return setErr("The close date is before the start date.");
     if (live && f.qs.some((q) => q.type !== "mcq" && q.type !== "tf")) return setErr("Live quizzes use multiple-choice and true/false questions only.");
+    if (storyKind && f.qs.some((q) => q.type !== "story")) return setErr("Story Mode holds stories only.");
     if (cert) {
       if (!(f.cert.passPct >= 1 && f.cert.passPct <= 100)) return setErr("Pass mark must be between 1% and 100%.");
       if (!f.cert.certTitle.trim()) return setErr("Give the certificate a title — it's printed on the certificate.");
@@ -395,12 +409,14 @@ export function Editor({ gid }: { gid?: string }) {
           {!live && (
             <>
               <div className="row2">
+                {!storyKind && (
                 <div className="field">
                   <label htmlFor="gMin">{cert ? "Time for the whole exam" : "Time for the whole quiz"}</label>
                   <select className="inp" id="gMin" value={f.minutes} onChange={(e) => set({ minutes: Number(e.target.value) })}>
                     {[...new Set([...(cert ? CERT_MINUTES : MINUTE_OPTS), f.minutes])].sort((a, b) => a - b).map((m) => <option key={m} value={m}>{fmtMin(m)}</option>)}
                   </select>
                 </div>
+                )}
                 <div className="field">
                   <label htmlFor="gDate">Show from</label>
                   <input className="inp" id="gDate" type="date" value={f.date} onChange={(e) => set({ date: e.target.value })} />
@@ -410,11 +426,17 @@ export function Editor({ gid }: { gid?: string }) {
                   <input className="inp" id="gUntil" type="date" value={f.until} onChange={(e) => set({ until: e.target.value })} />
                 </div>
               </div>
+              {storyKind ? (
+                <p className="fine">
+                  Story Mode has no timer — players read at their own pace and get a rank (S, A or B) for each story. Write each story as a script below, pick the cast&apos;s looks, and preview it before you publish.
+                </p>
+              ) : (
               <p className="fine">
                 {n} question{n === 1 ? "" : "s"} in {fmtMin(f.minutes)} → about <b>{per}s per question</b>.
                 {cert ? " Exams hide right/wrong until the end and score 1 point per right answer." : " Recommended: 1–5 questions in 1–2 minutes. The clock pauses while players read each answer."}
                 {f.qs.some((q) => q.type === "story") && " Case studies take longer to read — allow about a minute for each."}
               </p>
+              )}
             </>
           )}
           {live && (
@@ -468,7 +490,7 @@ export function Editor({ gid }: { gid?: string }) {
             <p className="fine">Passing needs {Math.ceil((f.cert.passPct / 100) * n)} of {n} right. People who pass can print their certificate; people who fail can retry until they run out of attempts.</p>
           </section>
         ) : (
-          <BulkImport text={importText} setText={setImport} onAdd={importRows} live={live} />
+          <BulkImport text={importText} setText={setImport} onAdd={importRows} live={live} story={storyKind} />
         )}
       </div>
       {cert && <CertDesign cert={f.cert} setCert={setCert} />}
@@ -476,14 +498,23 @@ export function Editor({ gid }: { gid?: string }) {
       <section className="panel">
         <div className="panel-h">
           <div>
-            <h2>Questions ({n})</h2>
+            <h2>{storyKind ? `Stories (${n})` : `Questions (${n})`}</h2>
             <p>Answer keys stay on the server — players only ever receive the questions.</p>
           </div>
         </div>
-        {f.qs.map((q, i) => (
-          <QEditor key={q.id} q={q} i={i} n={n} topics={topics} live={live} setQ={setQ} move={move} remove={() => set({ qs: f.qs.filter((_, k) => k !== i) })} />
-        ))}
+        {f.qs.map((q, i) =>
+          storyKind ? (
+            <StoryEpisode key={q.id} q={q} i={i} n={n} topics={topics} setQ={setQ} move={move} remove={() => set({ qs: f.qs.filter((_, k) => k !== i) })} />
+          ) : (
+            <QEditor key={q.id} q={q} i={i} n={n} topics={topics} live={live} setQ={setQ} move={move} remove={() => set({ qs: f.qs.filter((_, k) => k !== i) })} />
+          ),
+        )}
         {!n && <p className="fine">No questions yet. Add one below.</p>}
+        {storyKind ? (
+          <div className="row">
+            <button className="btn lime small" disabled={n >= 5} onClick={() => set({ qs: [...f.qs, ...parseScript(SCRIPT_EXAMPLE.replace("The blocked card", "New story"), topics, [newId("q")]).drafts] })}>+ Another story</button>
+          </div>
+        ) : (
         <div className="row">
           <button className="btn lime small" onClick={() => addQ("mcq")}>+ Multiple choice</button>
           <button className="btn ghost small" onClick={() => addQ("tf")}>+ True / False</button>
@@ -491,8 +522,8 @@ export function Editor({ gid }: { gid?: string }) {
           {!live && <button className="btn ghost small" onClick={() => addQ("order")}>+ Put in order</button>}
           {!live && <button className="btn ghost small" onClick={() => addQ("swipe")}>+ Swipe sort</button>}
           {!live && <button className="btn ghost small" onClick={() => addQ("bucket")}>+ Buckets</button>}
-          {!live && <button className="btn ghost small" onClick={() => addQ("story")}>+ Case study</button>}
         </div>
+        )}
       </section>
       <div className="toolbar">
         <span style={{ marginRight: "auto" }} />
@@ -514,21 +545,31 @@ const IMPORT_EXAMPLES: [string, string, string][] = [
     "Case study",
     [
       "STORY | Customer Experience | The blocked card",
+      "CAST | Nimal | Customer | 11",
+      "CAST | Ms. Perera | Branch manager | 5",
       "INTRO | Monday, 9:05 am. The branch has just opened. A customer hurries to your counter.",
-      "SCENE | customer | Nimal | My card got blocked and I fly in two hours! Fix it NOW!",
-      "CHOICE | Best | I'm sorry — let's sort this out. May I see your ID? | Nimal takes a breath and hands it over.",
-      "CHOICE | Okay | Please call our hotline. | Nimal sighs: “I'm already standing here…”",
-      "CHOICE | Poor | Cards aren't my department. | Nimal asks for your manager.",
+      "SCENE | Customer | Nimal | My card got blocked and I fly in two hours! Fix it NOW! | angry",
+      "CHOICE | Best | I'm sorry — let's sort this out. May I see your ID? | Nimal takes a breath and hands it over. | calm",
+      "CHOICE | Okay | Please call our hotline. | Nimal sighs: “I'm already standing here…” | worried",
+      "CHOICE | Poor | Cards aren't my department. | Nimal asks for your manager. | angry",
       "SCENE | narrator | The system shows three wrong PIN tries last night.",
-      "CHOICE | Best | Explain, verify him and reset the PIN | Nimal relaxes: “That was me!”",
-      "CHOICE | Poor | Unblock it, no questions | It works — but you skipped the checks.",
+      "CHOICE | Best | Explain, verify him and reset the PIN | “That was me!” | happy",
+      "CHOICE | Poor | Unblock it, no questions | It works — but you skipped the checks. | thinking",
+      "SCENE | Branch manager | Ms. Perera | Everything okay here? | thinking",
+      "CHOICE | Best | All sorted — verified and unblocked. | “That's exactly how we do it.” | excited",
+      "CHOICE | Okay | I'm not sure I followed every step. | She walks you through the checklist. | thinking",
       "ENDING | Best | Nimal makes his flight — and leaves a 5-star review.",
       "WHY | Calm the customer, verify identity, then fix it.",
       "END",
     ].join("\n"),
   ],
 ];
+const STORY_EXAMPLES: [string, string, string][] = [
+  ["script", "Script", SCRIPT_EXAMPLE],
+  ["story", "Spreadsheet rows", IMPORT_EXAMPLES.find((x) => x[0] === "story")![2]],
+];
 const IMPORT_HELP: Record<string, string> = {
+  script: "Write it like a play: Title, Cast (role and look for each person), Intro, then scenes as  Name (mood): words  with 2–3 replies under each:  - Best/Okay/Poor: reply -> (mood) what happens. Several stories can go in one paste.",
   mcq: "Type | Topic | Question | 2–5 options | correct letter | explanation (optional).",
   tf: "Type | Topic | Statement | TRUE or FALSE | explanation (optional).",
   match: "Type | Topic | Question | 2–6 pairs written as  term = meaning | Why: explanation (optional).",
@@ -536,7 +577,7 @@ const IMPORT_HELP: Record<string, string> = {
   swipe: "Type | Topic | Question | Left / Right side names | 4–12 cards written as  card = side  (the side's name, or L / R) | Why: explanation (optional).",
   bucket: "Type | Topic | Question | 2–3 bucket names split by / | 3–12 items written as  item = bucket  (its name, or A / B / C) | Why: explanation (optional).",
   story:
-    "One row per line, from STORY to END. SCENE | customer, manager, colleague or narrator | name (optional) | what's said. Then 2–3 CHOICE rows: Best, Okay or Poor | the reply | what happens. 2–5 scenes. ENDING | Best, Good or Learn | text is optional; WHY is the lesson.",
+    "One row per line (Excel or .csv works), from STORY | topic | title to END. CAST | name | role | look number. SCENE | role or narrator | name | words | mood. Then 2–3 CHOICE | Best/Okay/Poor | reply | what happens | mood. 2–5 scenes. ENDING | Best/Good/Learn | text is optional; WHY is the lesson. Moods: calm, happy, excited, worried, thinking, angry, shocked.",
 };
 
 /** One CSV line → tab-separated cells (handles "quoted, cells" and "" escapes). */
@@ -558,9 +599,9 @@ function csvToTabs(line: string) {
   return out.map((c) => c.replace(/\t/g, " ")).join("\t");
 }
 
-function BulkImport({ text, setText, onAdd, live }: { text: string; setText: (s: string) => void; onAdd: () => void; live: boolean }) {
+function BulkImport({ text, setText, onAdd, live, story }: { text: string; setText: (s: string) => void; onAdd: () => void; live: boolean; story?: boolean }) {
   const { d, toast } = useApp();
-  const [help, setHelp] = useState<string>("mcq");
+  const [help, setHelp] = useState<string>(story ? "script" : "mcq");
   const file = useRef<HTMLInputElement>(null);
   const load = async (f: File | undefined) => {
     if (!f) return;
@@ -574,7 +615,7 @@ function BulkImport({ text, setText, onAdd, live }: { text: string; setText: (s:
   };
   const res = useMemo(() => (text.trim() ? parseImport(text, d.cfg.topics, live) : null), [text, d.cfg.topics, live]);
   const counts = (res?.drafts || []).reduce<Record<string, number>>((m, q) => ((m[q.type] = (m[q.type] || 0) + 1), m), {});
-  const ex = IMPORT_EXAMPLES.filter((x) => !live || x[0] === "mcq" || x[0] === "tf");
+  const ex = story ? STORY_EXAMPLES : IMPORT_EXAMPLES.filter((x) => (!live || x[0] === "mcq" || x[0] === "tf") && x[0] !== "story");
   const cur = ex.find((x) => x[0] === help) || ex[0];
   return (
     <section className="panel bulk">

@@ -305,7 +305,7 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .qe-dot { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 13px; box-shadow: inset 0 0 0 2px rgba(0,0,0,.12); }
 .qe-scene { display: grid; gap: 10px; padding: 12px; border-radius: var(--r-md); background: var(--paper); border-left: 4px solid var(--ink); }
 .qe-scene .inp { background: #fff; }
-.qe-reply { display: grid; grid-template-columns: auto 1fr 1fr auto; gap: 6px; align-items: center; }
+.qe-reply { display: grid; grid-template-columns: auto 1fr 1fr 130px auto; gap: 6px; align-items: center; }
 .qe-reply .qe-pick { max-width: none; background: #fff; }
 @media (max-width: 760px) {
   .qe-reply { grid-template-columns: 1fr auto; }
@@ -320,3 +320,28 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .qe-endings summary { cursor: pointer; font-weight: 800; font-size: 14px; }
 .qe-endings[open] { display: grid; gap: 10px; }
 .retry-note { display: block; margin-top: 4px; }
+
+/* Story Mode editor (StoryEditor.tsx) */
+.story-ep { border-color: #141414; }
+.inp.script { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; }
+.script-ed { display: grid; gap: 8px; }
+.ok-line { color: var(--good); font-weight: 700; }
+.script-help summary { cursor: pointer; font-weight: 800; font-size: 14px; }
+.script-help ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13px; }
+.script-help code { background: var(--paper); padding: 1px 5px; border-radius: 6px; font-size: 12.5px; }
+.cast { display: grid; gap: 10px; padding: 12px; border-radius: var(--r-md); background: var(--paper); }
+.cast-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.cast-m { display: grid; justify-items: center; gap: 4px; width: 120px; }
+.cast-m b { font-size: 13px; }
+.cast-m .inp { padding: 6px 8px; font-size: 13px; text-align: center; }
+.cast-face { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 3px #141414; overflow: hidden; }
+.cast-face:hover { box-shadow: inset 0 0 0 3px var(--orange, #E2531C); }
+.look-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; padding: 8px; border-radius: 12px; background: #fff; }
+.look-opt { display: grid; justify-items: center; gap: 2px; padding: 4px; border-radius: 10px; font-size: 11px; font-weight: 800; color: var(--muted); }
+.look-opt:hover, .look-opt[aria-selected="true"] { background: var(--lime-soft); color: var(--ink); }
+.mood-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.mood-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px 2px 2px; border-radius: 999px; background: #fff; font-size: 12px; font-weight: 800; }
+.mood-chip .chibi { border-radius: 50%; }
+.story-preview { display: grid; gap: 10px; }
+.story-preview .qcard.comic { max-width: 420px; justify-self: center; width: 100%; box-sizing: border-box; }
+@media (max-width: 760px) { .qe-reply .qe-mood { grid-column: 1 / -1; } }

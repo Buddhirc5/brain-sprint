@@ -4,12 +4,12 @@
      Case study  — a short illustrated story: scenes, a reply to pick in each, then an ending
    Each one builds its choice string the same way the answer key is written (lib/answers.ts) and hands
    it to onSubmit; after the server marks it (rv), it shows what was right using last.canon. */
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent, type ReactNode } from "react";
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
 import { WHO } from "../lib/answers";
 import { shuffle } from "../lib/util";
-import type { Question, StoryWho } from "../types";
+import type { Question, StoryMood, StoryWho } from "../types";
 import "../styles/qtypes.css";
 
 export interface QTypeProps {
@@ -19,6 +19,7 @@ export interface QTypeProps {
   canon: string | null; // the right answer (null in certification exams: hidden)
   choice: string | null; // what the player sent
   onSubmit: (c: string) => void;
+  explain?: string; // the lesson (case studies show it with the ending)
 }
 
 const buzz = () => {
@@ -332,12 +333,12 @@ export function BucketQ({ q, rv, busy, canon, choice, onSubmit }: QTypeProps) {
 }
 
 /* =====================================================================
-   Case study (story) — told like a phone conversation (Messages style):
-     cover    a "lock screen": the scene-setting lines fade in one by one, then a message notification drops in
-     chat     each scene: typing dots → their message → your reply suggestions → you send → what happens next
-     reveal   the ending (★★★ / ★★ / ★) and a replay of the chat with every reply rated and the better one shown
+   Case study (story) — a comic book, drawn with the app's own characters:
+     cover    an issue cover: title, the opening in a caption box, the cast in their first moods
+     pages    one page per scene: their panel (face + speech bubble, shouted when angry) → your pick →
+              your panel → their reaction (new mood, a sound effect, what happens)
+     ending   a rank stamp (S / A / B), stars, the lesson, and a replay of every page with the better reply
    ===================================================================== */
-const MOOD: Record<StoryWho, "think" | "idle" | "sad"> = { customer: "sad", manager: "think", colleague: "idle", narrator: "idle" };
 export const ENDINGS: [string, string, string][] = [
   ["🏆", "Star employee", "Every call was the best one. That's exactly how it's done."],
   ["🙂", "Good save", "You got there — a couple of choices could have been even better."],
@@ -345,94 +346,85 @@ export const ENDINGS: [string, string, string][] = [
 ];
 /** 0 best · 1 good · 2 learn, from the share of best replies. */
 export const endingOf = (f: number) => (f >= 1 ? 0 : f >= 0.5 ? 1 : 2);
+const RANK = ["S", "A", "B"];
 const QUAL_TAG = ["Poor", "Okay", "Best"];
-
-type Phase = "typing" | "said" | "choose" | "compose" | "sent" | "outcome" | "ready";
-// how long each beat lasts (ms) — long enough to read, short enough to keep moving; a tap skips ahead
-const typingMs = (say: string) => Math.min(2000, 700 + say.length * 14);
-const BEAT: Partial<Record<Phase, number>> = { said: 650, compose: 650, sent: 900, outcome: 1100 };
-const NEXT: Partial<Record<Phase, Phase>> = { typing: "said", said: "choose", compose: "sent", sent: "outcome", outcome: "ready" };
-
-/** Round avatar: the character's face, or a book for the narrator. */
-function Ava({ who, size = 30 }: { who: StoryWho; size?: number }) {
-  if (who === "narrator")
-    return (
-      <span className="im-ava narr" style={{ width: size, height: size, fontSize: size * 0.5 }} aria-hidden="true">
-        📖
-      </span>
-    );
-  return (
-    <span className={`im-ava w-${who}`} style={{ width: size, height: size }} aria-hidden="true">
-      <Chibi look={WHO[who].look} variant="bust" size={size} mood={MOOD[who]} still />
-    </span>
-  );
-}
+const SFX: Partial<Record<StoryMood, string>> = { angry: "GRR!", shock: "WHAT?!", happy: "PHEW!", cheer: "YES!", sad: "SIGH…", think: "HMM…" };
+const lookOf = (s: { who: StoryWho; look?: number }) => (s.look != null && s.look >= 0 ? s.look : WHO[s.who].look);
 const nameOf = (s: { who: StoryWho; name?: string }) => s.name || WHO[s.who].label;
-/** "Monday, 9:05 am. …" → "9:05 am" for the chat's time stamp. */
-const timeIn = (t: string) => t.match(/\b\d{1,2}[:.]\d{2}\s?(?:am|pm)?/i)?.[0].replace(".", ":") || "";
-const sentences = (t: string) => t.match(/[^.!?…]+[.!?…]+["”’']?\s*|[^.!?…]+$/g)?.map((x) => x.trim()).filter(Boolean) || [t];
 
-function TypingDots() {
+type CPhase = "panel" | "choose" | "reply" | "react" | "ready";
+const NEXT: Partial<Record<CPhase, CPhase>> = { reply: "react", react: "ready" };
+const BEAT: Partial<Record<CPhase, number>> = { reply: 650, react: 900 };
+
+/** A character drawn in a panel, in a mood. */
+function Who({ s, mood, size = 112, full = true }: { s: { who: StoryWho; look?: number }; mood?: StoryMood; size?: number; full?: boolean }) {
+  return <Chibi look={lookOf(s)} variant={full ? "full" : "bust"} size={size} mood={mood || "idle"} />;
+}
+
+/** Text revealed a few characters at a time; a tap shows it all. */
+function Typed({ text, onDone }: { text: string; onDone?: () => void }) {
+  const [n, setN] = useState(() => (reduced() ? text.length : 0));
+  useEffect(() => {
+    if (n >= text.length) {
+      onDone?.();
+      return;
+    }
+    const t = window.setTimeout(() => setN((x) => Math.min(text.length, x + 2)), 18);
+    return () => window.clearTimeout(t);
+  }, [n, text]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <span className="im-dots" aria-label="typing">
-      <i />
-      <i />
-      <i />
+    <span onClick={() => setN(text.length)}>
+      <span aria-hidden="true">{text.slice(0, n)}</span>
+      <span className="sr">{text}</span>
     </span>
   );
 }
 
-export function StoryQ({ q, rv, busy, canon, choice, onSubmit }: QTypeProps) {
+/** A speech bubble: shouted (jagged) when the speaker is angry or shocked. */
+function Bubble({ mood, side = "l", children }: { mood?: StoryMood; side?: "l" | "r"; children: ReactNode }) {
+  const shout = mood === "angry" || mood === "shock";
+  return <div className={`cc-bubble ${side} ${shout ? "shout" : ""} ${mood === "think" ? "thought" : ""}`}>{children}</div>;
+}
+
+export function StoryQ({ q, rv, busy, canon, choice, onSubmit, explain }: QTypeProps) {
   const { me } = useApp();
   const st = q.story || { intro: "", steps: [] };
   const steps = st.steps;
-  const [stage, setStage] = useState<"cover" | "chat">("cover");
+  const [stage, setStage] = useState<"cover" | "read">("cover");
   const [scene, setScene] = useState(0);
   const [picks, setPicks] = useState<number[]>([]);
-  const [pending, setPending] = useState<number | null>(null); // reply being "typed" into the message box
-  const [phase, setPhase] = useState<Phase>("typing");
+  const [phase, setPhase] = useState<CPhase>("panel");
   const end = useRef<HTMLDivElement>(null);
   const step = steps[scene];
   const last = scene === steps.length - 1;
-  const at = timeIn(st.intro);
+  const meLook = me?.look ?? 0;
 
-  /* the story's clock: each beat moves to the next after a pause (instantly with reduced motion) */
   useEffect(() => {
-    if (stage !== "chat" || !step) return;
     const to = NEXT[phase];
-    if (!to) return;
-    const ms = reduced() ? 0 : phase === "typing" ? (step.who === "narrator" ? 450 : typingMs(step.say)) : BEAT[phase] ?? 0;
-    const t = window.setTimeout(() => {
-      if (phase === "compose" && pending != null) {
-        setPicks((p) => [...p, pending]);
-        setPending(null);
-      }
-      setPhase(to);
-    }, ms);
+    if (stage !== "read" || !to) return;
+    const t = window.setTimeout(() => setPhase(to), reduced() ? 0 : BEAT[phase] ?? 0);
     return () => window.clearTimeout(t);
-  }, [phase, stage, scene, step, pending]);
-
-  /* keep the newest message in view */
+  }, [phase, stage]);
   useEffect(() => {
-    if (stage !== "chat") return;
+    if (stage !== "read") return;
     const r = requestAnimationFrame(() => end.current?.scrollIntoView({ block: "end", behavior: reduced() ? "auto" : "smooth" }));
     return () => cancelAnimationFrame(r);
   }, [stage, scene, phase]);
 
-  const skip = () => {
-    const to = NEXT[phase];
-    if (!to || phase === "compose") return;
-    setPhase(to);
-  };
+  const said = () => setPhase((p) => (p === "panel" ? "choose" : p));
   const pick = (k: number) => {
     if (phase !== "choose") return;
     buzz();
-    setPending(k);
-    setPhase("compose");
+    setPicks((p) => [...p, k]);
+    setPhase("reply");
   };
-  const nextScene = () => {
+  const turn = () => {
     setScene((x) => x + 1);
-    setPhase("typing");
+    setPhase("panel");
+    window.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" });
+  };
+  const skip = () => {
+    if (phase === "reply" || phase === "react") setPhase(NEXT[phase]!);
   };
 
   /* ---------------- the ending ---------------- */
@@ -442,223 +434,206 @@ export function StoryQ({ q, rv, busy, canon, choice, onSubmit }: QTypeProps) {
     const f = qual ? qual.reduce((s, row, i) => s + (row[got[i]] ?? 0), 0) / (2 * Math.max(1, qual.length)) : null;
     const e = f == null ? null : endingOf(f);
     return (
-      <div className="st-end">
+      <div className="cc-end">
         {e == null ? (
-          <div className="st-ending saved">
-            <span className="st-ending-ic" aria-hidden="true">📝</span>
+          <div className="cc-final saved">
             <b>Your choices are saved</b>
             <p>You'll see how the story could have gone when the exam ends.</p>
           </div>
         ) : (
-          <div className={`st-ending e${e}`}>
-            <span className="st-ending-k">The ending</span>
-            <span className="st-stars" aria-label={`${3 - e} of 3 stars`}>
+          <div className={`cc-final e${e}`}>
+            <span className="cc-final-k">The end</span>
+            <span className="cc-rank" aria-label={`Rank ${RANK[e]}`}>
+              <small>Rank</small>
+              {RANK[e]}
+            </span>
+            <span className="cc-stars" aria-label={`${3 - e} of 3 stars`}>
               {[0, 1, 2].map((k) => (
                 <i key={k} className={k < 3 - e ? "on" : ""} style={{ ["--i" as string]: k } as CSSProperties}>
                   ★
                 </i>
               ))}
             </span>
-            <b>
-              {ENDINGS[e][1]} <span aria-hidden="true">{ENDINGS[e][0]}</span>
-            </b>
+            <b className="cc-final-t">{ENDINGS[e][1]}!</b>
             <p>{st.endings?.[e] || ENDINGS[e][2]}</p>
-            {me && <Chibi look={me.look} equipped={me.equipped} variant="full" size={84} mood={e === 0 ? "cheer" : e === 1 ? "happy" : "think"} className="st-ending-me" />}
+            <span className="cc-final-me" aria-hidden="true">
+              <Chibi look={meLook} equipped={me?.equipped} variant="full" size={92} mood={e === 0 ? "cheer" : e === 1 ? "happy" : "think"} />
+            </span>
           </div>
         )}
-        <div className="im replay" aria-label="Replay of the conversation">
-          <div className="im-replay-h">Replay · see each choice</div>
-          <div className="im-feed">
-            {steps.map((s, i) => {
-              const mine = s.choices[got[i]];
-              const qv = qual?.[i]?.[got[i]];
-              const bestK = qual ? qual[i].indexOf(2) : -1;
-              const best = bestK >= 0 ? s.choices[bestK] : null;
-              return (
-                <div key={i} className="im-scene" style={{ ["--i" as string]: i } as CSSProperties}>
-                  <span className="im-stamp">Scene {i + 1}</span>
-                  {s.who === "narrator" ? (
-                    <p className="im-note">{s.say}</p>
-                  ) : (
-                    <div className="im-row in">
-                      <Ava who={s.who} size={26} />
-                      <div className="im-col">
-                        <span className="im-name">{nameOf(s)}</span>
-                        <p className="im-b in tail">{s.say}</p>
-                      </div>
-                    </div>
-                  )}
-                  {mine && (
-                    <div className="im-row out">
-                      <div className="im-col">
-                        <p className={`im-b out tail ${qv === 0 ? "poor" : ""}`}>{mine.t}</p>
-                        {qv != null && <span className={`im-grade q${qv}`}>{qv === 2 ? "✓ Best reply" : QUAL_TAG[qv]}</span>}
-                      </div>
-                    </div>
-                  )}
-                  {mine && <p className="im-then">{mine.then}</p>}
-                  {qv != null && qv < 2 && best && (
-                    <div className="im-better">
-                      <span className="im-better-k">💡 A better reply</span>
-                      <p className="im-b out ghost">{best.t}</p>
-                      <p className="im-then">{best.then}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+        {explain && (
+          <div className="cc-lesson">
+            <span>The lesson</span>
+            <p>{explain}</p>
           </div>
-        </div>
+        )}
+        <span className="cc-replay-k">Replay · every page</span>
+        <ol className="cc-replay">
+          {steps.map((s, i) => {
+            const mine = s.choices[got[i]];
+            const qv = qual?.[i]?.[got[i]];
+            const bestK = qual ? qual[i].indexOf(2) : -1;
+            const best = bestK >= 0 ? s.choices[bestK] : null;
+            return (
+              <li key={i} className={qv == null ? "" : `q${qv}`} style={{ ["--i" as string]: i } as CSSProperties}>
+                <span className="cc-replay-n">Page {i + 1}</span>
+                <div className="cc-replay-row">
+                  {s.who !== "narrator" && (
+                    <span className="cc-replay-face">
+                      <Who s={s} mood={s.mood} size={44} full={false} />
+                    </span>
+                  )}
+                  <p className={s.who === "narrator" ? "narr" : ""}>
+                    {s.who !== "narrator" && <b>{nameOf(s)}: </b>}
+                    {s.say}
+                  </p>
+                </div>
+                {mine && (
+                  <p className="cc-replay-you">
+                    <b>You:</b> {mine.t} {qv != null && <span className={`cc-tag q${qv}`}>{QUAL_TAG[qv]}</span>}
+                  </p>
+                )}
+                {qv != null && qv < 2 && best && (
+                  <p className="cc-replay-best">
+                    <b>Better:</b> {best.t} <em>— {best.then}</em>
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ol>
       </div>
     );
   }
 
-  /* ---------------- cover: a lock screen with the opening and a message notification ---------------- */
+  /* ---------------- the cover ---------------- */
   if (stage === "cover") {
-    const lines = sentences(st.intro);
-    const first = steps.find((s) => s.who !== "narrator") || steps[0];
-    const cast = [...new Set(steps.map((s) => s.who))].filter((w) => w !== "narrator");
-    const noteAt = lines.length * 550 + 350;
+    const castSteps = steps.filter((s, i) => s.who !== "narrator" && steps.findIndex((x) => x.who === s.who && nameOf(x) === nameOf(s)) === i).slice(0, 3);
+    const first = steps.find((s) => s.who !== "narrator");
     return (
-      <div className="imc">
-        <span className="imc-k">
-          Case study · {steps.length} scenes{at ? ` · ${at}` : ""}
-        </span>
-        <p className="imc-intro">
-          {lines.map((l, k) => (
-            <span key={k} style={{ ["--d" as string]: `${k * 550}ms` } as CSSProperties}>
-              {l}{" "}
+      <div className="cc-cover">
+        <div className="cc-rays" aria-hidden="true" />
+        <div className="cc-mast">
+          <span className="cc-mast-k">Story Mode</span>
+          <span className="cc-mast-n">{steps.length} pages</span>
+        </div>
+        <h3 className="cc-title">{q.q}</h3>
+        {st.intro && <p className="cc-caption">{st.intro}</p>}
+        {first && (
+          <span className="cc-cover-say">
+            <Bubble mood={first.mood}>
+              <b>{nameOf(first)}:</b> {first.say.length > 70 ? first.say.slice(0, 68) + "…" : first.say}
+            </Bubble>
+          </span>
+        )}
+        <div className="cc-cast">
+          {castSteps.map((s, i) => (
+            <span key={i} className="cc-cast-who" style={{ ["--i" as string]: i } as CSSProperties}>
+              <Who s={s} mood={s.mood} size={86} />
+              <small>{nameOf(s)}</small>
             </span>
           ))}
-        </p>
-        {first && (
-          <button type="button" className="imc-note" style={{ ["--d" as string]: `${noteAt}ms` } as CSSProperties} onClick={() => setStage("chat")} aria-label={`Message from ${nameOf(first)}: ${first.say}. Open the conversation`}>
-            <Ava who={first.who} size={38} />
-            <span className="imc-note-t">
-              <b>{nameOf(first)}</b>
-              <small>now</small>
+          <span className="cc-cast-who you" style={{ ["--i" as string]: castSteps.length } as CSSProperties}>
+            <Chibi look={meLook} equipped={me?.equipped} variant="full" size={86} mood="happy" />
+            <small>You</small>
+          </span>
+        </div>
+        <button type="button" className="cc-btn" onClick={() => setStage("read")} data-autofocus>
+          Read the story
+        </button>
+      </div>
+    );
+  }
+
+  /* ---------------- a page ---------------- */
+  const narr = step.who === "narrator";
+  const mine = picks[scene];
+  const reply = mine != null ? step.choices[mine] : null;
+  const showReply = phase === "reply" || phase === "react" || phase === "ready";
+  const showReact = phase === "react" || phase === "ready";
+  // who reacts on a narrator page: the last character we met
+  const reactor = narr ? steps.slice(0, scene).reverse().find((s) => s.who !== "narrator") : step;
+  const reactMood: StoryMood = reply?.mood || (reactor === step ? step.mood : undefined) || "idle";
+  return (
+    <div className="cc" onClick={skip}>
+      <div className="cc-top" aria-label={`Page ${scene + 1} of ${steps.length}`}>
+        <span className="cc-top-k">Page {scene + 1} of {steps.length}</span>
+        <span className="cc-top-bar" aria-hidden="true">
+          {steps.map((_, i) => (
+            <i key={i} className={i < scene || (i === scene && showReply) ? "done" : i === scene ? "cur" : ""} />
+          ))}
+        </span>
+      </div>
+
+      <div className="cc-page" key={scene}>
+        {narr ? (
+          <div className="cc-panel narr">
+            <p className="cc-narr">
+              <Typed text={step.say} onDone={said} />
+            </p>
+          </div>
+        ) : (
+          <div className={`cc-panel speak m-${step.mood || "idle"}`}>
+            <span className="cc-tagname">
+              {nameOf(step)}
+              {step.name && <small> · {step.role || WHO[step.who].label}</small>}
             </span>
-            <span className="imc-note-m">{first.say}</span>
-          </button>
+            <span className="cc-fig">
+              <Who s={step} mood={step.mood} size={108} />
+            </span>
+            <Bubble mood={step.mood}>
+              <Typed text={step.say} onDone={said} />
+            </Bubble>
+          </div>
         )}
-        <div className="imc-foot" style={{ ["--d" as string]: `${noteAt + 500}ms` } as CSSProperties}>
-          <div className="imc-cast" aria-label="In this story">
-            {cast.map((w) => (
-              <span key={w} className="imc-who">
-                <Ava who={w} size={40} />
-                <small>{nameOf(steps.find((s) => s.who === w)!)}</small>
-              </span>
-            ))}
-            {me && (
-              <span className="imc-who">
-                <span className="im-ava you" style={{ width: 40, height: 40 }} aria-hidden="true">
-                  <Chibi look={me.look} equipped={me.equipped} variant="bust" size={40} mood="happy" still />
-                </span>
-                <small>You</small>
+
+        {showReply && reply && (
+          <div className="cc-panel you">
+            <Bubble side="r">{reply.t}</Bubble>
+            <span className="cc-fig">
+              <Chibi look={meLook} equipped={me?.equipped} variant="full" size={96} mood="idle" />
+            </span>
+            <span className="cc-tagname r">You</span>
+          </div>
+        )}
+
+        {showReact && reply && (
+          <div className={`cc-panel react m-${reactMood}`}>
+            <p className="cc-caption">{reply.then}</p>
+            {reactor && (
+              <span className="cc-fig">
+                <Who s={reactor} mood={reactMood} size={96} />
               </span>
             )}
+            {SFX[reactMood] && <span className="cc-sfx">{SFX[reactMood]}</span>}
           </div>
-          <p className="imc-how">Read each message and pick your reply. No going back — just like real life.</p>
-          <button type="button" className="btn primary block" onClick={() => setStage("chat")} data-autofocus>
-            Open the conversation →
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ---------------- the conversation ---------------- */
-  const doneHere = picks.length > scene; // reply sent in this scene
-  const head = step.who === "narrator" ? steps.slice(0, scene + 1).reverse().find((s) => s.who !== "narrator") || step : step;
-  const replying = phase === "choose" || phase === "compose";
-  return (
-    <div className="im" onClick={skip}>
-      <header className="im-head">
-        <span key={head.who + (head.name || "")} className="im-head-who">
-          <Ava who={head.who} size={40} />
-          <b>{nameOf(head)} ›</b>
-        </span>
-        <small className="im-head-sub">{phase === "typing" && step.who !== "narrator" ? "typing…" : `${WHO[head.who].label} · scene ${scene + 1} of ${steps.length}`}</small>
-        <span className="im-prog" aria-hidden="true">
-          {steps.map((_, i) => (
-            <i key={i} className={i < scene || (i === scene && doneHere) ? "done" : i === scene ? "cur" : ""} />
-          ))}
-        </span>
-      </header>
-
-      <div className="im-feed" role="log" aria-live="polite">
-        <span className="im-stamp">
-          <b>Today</b> {at}
-        </span>
-        <p className="im-note intro">{st.intro}</p>
-        {steps.slice(0, scene + 1).map((s, i) => {
-          const cur = i === scene;
-          const said = !cur || phase !== "typing";
-          const mine = picks[i];
-          const showThen = mine != null && (!cur || phase === "outcome" || phase === "ready");
-          return (
-            <div key={i} className="im-scene">
-              {i > 0 && <span className="im-stamp">Scene {i + 1}</span>}
-              {s.who === "narrator" ? (
-                said && <p className="im-note">{s.say}</p>
-              ) : (
-                <div className="im-row in">
-                  <Ava who={s.who} />
-                  <div className="im-col">
-                    <span className="im-name">{nameOf(s)}</span>
-                    {said ? (
-                      <p className="im-b in tail">{s.say}</p>
-                    ) : (
-                      <p className="im-b in tail typing">
-                        <TypingDots />
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-              {mine != null && (
-                <div className="im-row out">
-                  <div className="im-col">
-                    <p className="im-b out tail">{s.choices[mine].t}</p>
-                    {cur && <span className="im-receipt">{phase === "sent" ? "Delivered" : "Read"}</span>}
-                  </div>
-                </div>
-              )}
-              {showThen && <p className="im-then">{s.choices[mine!].then}</p>}
-            </div>
-          );
-        })}
+        )}
       </div>
 
-      <div className="im-compose" onClick={(e) => e.stopPropagation()}>
-        {replying && (
-          <div className={`im-sugg ${phase === "compose" ? "sending" : ""}`} role="group" aria-label="Choose your reply">
-            <span className="im-sugg-k">Choose your reply</span>
+      <div className="cc-act" onClick={(e) => e.stopPropagation()}>
+        {phase === "choose" && (
+          <div className="cc-choices" role="group" aria-label="What do you do?">
+            <span className="cc-ask">What do you do?</span>
             {step.choices.map((c, k) => (
-              <button key={k} type="button" className={`im-opt ${pending === k ? "chosen" : ""}`} style={{ ["--i" as string]: k } as CSSProperties} onClick={() => pick(k)} disabled={phase !== "choose"}>
-                {c.t}
+              <button key={k} type="button" className="cc-choice" style={{ ["--i" as string]: k } as CSSProperties} onClick={() => pick(k)}>
+                <span className="cc-choice-k">{"ABC"[k]}</span>
+                <span>{c.t}</span>
               </button>
             ))}
           </div>
         )}
-        {phase === "ready" ? (
-          last ? (
-            <button type="button" className="btn primary block im-next" disabled={busy} onClick={() => onSubmit(picks.join(","))} data-autofocus>
-              {busy ? "Writing the ending…" : "See how it ends →"}
+        {phase === "ready" &&
+          (last ? (
+            <button type="button" className="cc-btn" disabled={busy} onClick={() => onSubmit(picks.join(","))} data-autofocus>
+              {busy ? "Drawing the ending…" : "See how it ends"}
             </button>
           ) : (
-            <button type="button" className="btn primary block im-next" onClick={nextScene} data-autofocus>
-              Next scene →
+            <button type="button" className="cc-btn" onClick={turn} data-autofocus>
+              Turn the page
             </button>
-          )
-        ) : (
-          <div className={`im-bar ${phase === "compose" ? "full" : ""}`} aria-hidden="true">
-            <span className="im-field">{phase === "compose" && pending != null ? <span className="im-draft">{step.choices[pending].t}</span> : <span className="im-ph">{replying ? "Pick a reply above" : "Message"}</span>}</span>
-            <span className="im-send">↑</span>
-          </div>
-        )}
+          ))}
       </div>
-      <div ref={end} className="im-end" />
+      <div ref={end} className="cc-endmark" />
     </div>
   );
 }

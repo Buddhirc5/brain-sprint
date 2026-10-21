@@ -10,6 +10,7 @@
      WHY    | the lesson
      END */
 import { blankDraft, draftProblem, LIMITS, type DraftQ, type DraftScene } from "./answers";
+import { MOOD_WORDS, parseLook, parseScript, whoOfRole, type CastMember } from "./storyScript";
 import type { StoryWho } from "../types";
 import { cleanText } from "./security";
 import { newId } from "./util";
@@ -29,7 +30,7 @@ const TYPE_WORDS: Record<string, DraftQ["type"]> = {
   bucket: "bucket", buckets: "bucket", "sort into buckets": "bucket", categories: "bucket",
   story: "story", "case study": "story", scenario: "story",
 };
-const STORY_ROWS = ["intro", "scene", "choice", "reply", "ending", "why", "lesson", "end"];
+const STORY_ROWS = ["intro", "cast", "scene", "choice", "reply", "ending", "why", "lesson", "end"];
 const WHO_WORDS: Record<string, StoryWho> = { customer: "customer", client: "customer", manager: "manager", boss: "manager", colleague: "colleague", coworker: "colleague", teammate: "colleague", narrator: "narrator", narration: "narrator", scene: "narrator" };
 const QUALITY: Record<string, 0 | 1 | 2> = { best: 2, great: 2, "2": 2, "✓": 2, okay: 1, ok: 1, good: 1, "1": 1, poor: 0, bad: 0, worst: 0, "0": 0, "✕": 0 };
 const ENDING_IX: Record<string, number> = { best: 0, star: 0, good: 1, save: 1, okay: 1, learn: 2, lesson: 2, poor: 2 };
@@ -52,6 +53,31 @@ function takeWhy(c: string[]): [string[], string] {
 }
 
 export function parseImport(text: string, topics: string[], live: boolean): ImportResult {
+  // Story Mode scripts ("Title: …" then "Name (mood): …" scenes) can sit among the rows: each runs from its
+  // Title line to the next typed row (MCQ | …, STORY | …)
+  const all = text.split(/\r?\n/);
+  const isRow = (l: string) => /^\s*(mcq|mc|tf|match|order|swipe|bucket|story|case study|scenario)\s*(\||\t)/i.test(l);
+  const scriptLines = new Set<number>();
+  const scripts: { from: number; text: string }[] = [];
+  for (let i = 0; i < all.length; i++) {
+    if (!/^\s*(title\s*:|# )/i.test(all[i])) continue;
+    let j = i;
+    while (j + 1 < all.length && !isRow(all[j + 1]) && !/^\s*(title\s*:|# )/i.test(all[j + 1])) j++;
+    for (let k = i; k <= j; k++) scriptLines.add(k);
+    scripts.push({ from: i, text: all.slice(i, j + 1).join("\n") });
+    i = j;
+  }
+  const fromScripts: ImportResult = { drafts: [], skipped: [] };
+  for (const sc of scripts) {
+    if (live) {
+      fromScripts.skipped.push({ line: sc.from + 1, why: "live quizzes use multiple choice and true/false only" });
+      continue;
+    }
+    const r = parseScript(sc.text, topics);
+    fromScripts.drafts.push(...r.drafts);
+    fromScripts.skipped.push(...r.problems.map((x) => ({ line: x.line + sc.from, why: x.why })));
+  }
+  if (scripts.length) text = all.map((l, i) => (scriptLines.has(i) ? "" : l)).join("\n");
   const drafts: DraftQ[] = [];
   const skipped: ImportResult["skipped"] = [];
   const topicOf = (s: string) => topics.find((t) => t.toLowerCase() === s.trim().toLowerCase()) || topics[0] || "General Knowledge";
@@ -186,28 +212,66 @@ export function parseImport(text: string, topics: string[], live: boolean): Impo
     drafts.push({ ...d, q: q300(qText) || d.q, steps, explain: q300(why) });
   });
   closeStory();
-  return { drafts, skipped };
+  return { drafts: [...drafts, ...fromScripts.drafts], skipped: [...skipped, ...fromScripts.skipped].sort((x, y) => x.line - y.line) };
 }
 
-/** One row inside a STORY block. Problems are kept so the whole case study is skipped with a reason. */
-function readStoryRow(st: { d: DraftQ; bad: string }, head: string, c: string[]) {
+/** One row inside a STORY block. Problems are kept so the whole case study is skipped with a reason.
+ *  CAST | name | role | look        SCENE | who or role | name | words | mood | look
+ *  CHOICE | Best | reply | what happens | mood */
+function readStoryRow(st: { d: DraftQ; bad: string; cast?: Map<string, CastMember> }, head: string, c: string[]) {
   const s = st.d.story!;
+  const cast = (st.cast ||= new Map());
   const fail = (why: string) => void (st.bad ||= why);
   const scene = s.scenes[s.scenes.length - 1] as DraftScene | undefined;
+  const moodOf = (x?: string) => (x ? MOOD_WORDS[x.trim().toLowerCase()] : undefined);
   if (head === "intro") s.intro = cleanText(c.join(" "), 400).trim();
   else if (head === "why" || head === "lesson") st.d.explain = cleanText(c.join(" "), 300).trim();
-  else if (head === "scene") {
+  else if (head === "cast") {
+    if (!c[0]) return fail("CAST rows look like  CAST | name | role | look");
+    const m: CastMember = { who: c[1] ? whoOfRole(c[1]) : "customer", ...(c[1] ? { role: c[1].trim() } : {}) };
+    if (c[2]) {
+      const lk = parseLook(c[2]);
+      if (lk == null) return fail(`looks are numbered 1 and up (or wren / puff), not “${c[2]}”`);
+      m.look = lk;
+    }
+    cast.set(c[0].trim().toLowerCase(), m);
+  } else if (head === "scene") {
     if (s.scenes.length >= LIMITS.scenes[1]) return fail(`${LIMITS.scenes[1]} scenes at most`);
-    const who = WHO_WORDS[(c[0] || "").toLowerCase()];
-    // SCENE | who | name | text · SCENE | who | text · SCENE | text (a customer)
-    const [name, say] = !who ? ["", c.join(" ")] : who === "narrator" || c.length < 3 ? ["", c.slice(1).join(" ")] : [c[1], c.slice(2).join(" ")];
-    s.scenes.push({ who: who || "customer", name: cleanText(name, 30).trim(), say: cleanText(say, 300).trim(), choices: [] });
+    const first = (c[0] || "").trim();
+    const narr = /^(narrator|narration|scene)$/i.test(first);
+    // SCENE | who/role | name | words | mood | look — or SCENE | narrator | words — or SCENE | words
+    const known = narr || WHO_WORDS[first.toLowerCase()] != null || c.length >= 3;
+    const [name, say, mood, look] = narr
+      ? ["", c.slice(1).join(" "), undefined, undefined]
+      : known && c.length >= 3
+        ? [c[1] || "", c[2] ?? "", c[3], c[4]]
+        : known
+          ? ["", c[1] ?? "", undefined, undefined]
+          : ["", c.join(" "), undefined, undefined];
+    const m: CastMember = { ...(cast.get(name.trim().toLowerCase()) || { who: narr ? "narrator" : first ? whoOfRole(first) : "customer", ...(first && !narr && !WHO_WORDS[first.toLowerCase()] ? { role: first } : {}) }) };
+    if (mood && !moodOf(mood)) return fail(`unknown mood “${mood}”`);
+    if (look) {
+      const lk = parseLook(look);
+      if (lk == null) return fail(`looks are numbered 1 and up (or wren / puff), not “${look}”`);
+      m.look = lk;
+    }
+    s.scenes.push({
+      who: narr ? "narrator" : m.who === "narrator" ? "customer" : m.who,
+      name: narr ? "" : cleanText(name, 30).trim(),
+      ...(narr || !m.role ? {} : { role: cleanText(m.role, 30) }),
+      ...(narr || m.look == null ? {} : { look: m.look }),
+      ...(!narr && moodOf(mood) ? { mood: moodOf(mood) } : {}),
+      say: cleanText(say, 300).trim(),
+      choices: [],
+    });
   } else if (head === "choice" || head === "reply") {
     if (!scene) return fail("put a SCENE row before its CHOICE rows");
     const q = QUALITY[(c[0] || "").toLowerCase()];
     if (q === undefined) return fail("start each CHOICE with Best, Okay or Poor");
     if (scene.choices.length >= LIMITS.replies[1]) return fail(`${LIMITS.replies[1]} choices per scene at most`);
-    scene.choices.push({ q, t: cleanText(c[1] || "", 160).trim(), then: cleanText(c.slice(2).join(" "), 200).trim() });
+    if (c[3] && !moodOf(c[3])) return fail(`unknown mood “${c[3]}”`);
+    const mood = moodOf(c[3]);
+    scene.choices.push({ q, t: cleanText(c[1] || "", 160).trim(), then: cleanText(c[2] || "", 200).trim(), ...(mood ? { mood } : {}) });
   } else if (head === "ending") {
     const k = ENDING_IX[(c[0] || "").toLowerCase()];
     if (k === undefined) return fail("start each ENDING with Best, Good or Learn");

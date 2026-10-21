@@ -22,9 +22,11 @@ export const RULES = {
   tooFastMs: 700, // answers quicker than this are flagged for review
 };
 
-/** Whole-quiz time. Sprints: 0.5–10 min. Certification exams: 1–180 min. (Mirrored in SQL private.limit_ms.) */
+/** Whole-quiz time. Sprints: 0.5–10 min. Certification exams: 1–180 min. Story Mode: no timer (an hour).
+ *  (Mirrored in SQL private.limit_ms.) */
+export const STORY_MS = 60 * 60_000;
 export const limitMs = (g: Pick<Game, "minutes"> & { kind?: Game["kind"] }) =>
-  g.kind === "cert" ? clamp(Number(g.minutes) || 10, 1, 180) * 60_000 : clamp(Number(g.minutes) || 2, 0.5, 10) * 60_000;
+  g.kind === "story" ? STORY_MS : g.kind === "cert" ? clamp(Number(g.minutes) || 10, 1, 180) * 60_000 : clamp(Number(g.minutes) || 2, 0.5, 10) * 60_000;
 export const shareMs = (g: Game) => limitMs(g) / Math.max(1, g.questions.length);
 
 /** Points for one answer. */

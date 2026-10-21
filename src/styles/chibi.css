@@ -9,6 +9,13 @@
 .chibi.m-cheer .arm-r { animation: wave-r .6s ease-in-out infinite alternate; }
 .chibi.m-sad .body { animation: droop 3.2s ease-in-out infinite; }
 .chibi.m-sad .tear { animation: tear 1.8s ease-in infinite; }
+.chibi.m-angry .body { animation: chibi-fume .32s ease-in-out infinite; }
+.chibi.m-angry .vein { animation: chibi-vein .8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.chibi.m-shock .body { animation: chibi-jolt .5s cubic-bezier(.3,1.6,.5,1) 1; }
+.chibi.m-shock .jolt { animation: chibi-vein .5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes chibi-fume { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-1.2px); } 75% { transform: translateX(1.2px); } }
+@keyframes chibi-vein { 50% { transform: scale(1.25); } }
+@keyframes chibi-jolt { 0% { transform: translateY(0); } 40% { transform: translateY(-7px); } 100% { transform: translateY(0); } }
 .chibi.m-think .head { transform-box: view-box; transform-origin: 50% 56%; animation: tilt 2.6s ease-in-out infinite; }
 .chibi.m-cheer .shadow, .chibi.m-happy .shadow { animation: shadow .6s cubic-bezier(.3,.8,.4,1) infinite; transform-box: fill-box; transform-origin: center; }
 .chibi.still .body, .chibi.still .eye, .chibi.still .arm, .chibi.still .head, .chibi.still .shadow { animation: none !important; }

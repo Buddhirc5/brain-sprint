@@ -12,12 +12,23 @@ export type StoryWho = "customer" | "manager" | "colleague" | "narrator";
  *  Which reply is best is NOT here — it lives in the answer key on the server. */
 export interface Story {
   intro: string; // the setting: "Monday, 9:05. A customer storms in…"
-  steps: { who: StoryWho; name?: string; say: string; choices: { t: string; then: string }[] }[];
+  steps: StoryStep[];
   endings?: [string, string, string]; // optional custom endings: best, good, learn
+}
+/** A character's face in a story panel (the Chibi moods). */
+export type StoryMood = "idle" | "happy" | "cheer" | "sad" | "think" | "angry" | "shock";
+export interface StoryStep {
+  who: StoryWho;
+  name?: string;
+  role?: string; // label under the name ("Patient", "Store manager"…); none = the who's label
+  look?: number; // which character design draws this person (the player's own looks)
+  mood?: StoryMood; // their face while they speak
+  say: string;
+  choices: { t: string; then: string; mood?: StoryMood }[]; // mood: their face after hearing this reply
 }
 export type UnitType = "branch" | "dept"; // labelled per tenant (Branch/Department, Location/Department…)
 export type GameStatus = "draft" | "pending" | "live" | "closed";
-export type QuizKind = "sprint" | "live" | "cert";
+export type QuizKind = "sprint" | "live" | "cert" | "story"; // story: Story Mode, comic-book case studies
 export type CardColor = "lime" | "orange" | "pink" | "blue" | "blush" | "ink";
 export type Role = "owner" | "admin" | "editor" | "host" | "viewer";
 
