@@ -2,11 +2,12 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { Api } from "./api/Api";
 import { createApi } from "./api";
 import { ApiProvider } from "./app/ApiCtx";
-import { href, parse, useRoute, type Route } from "./app/router";
+import { href, pagePath, parse, useRoute, type Route } from "./app/router";
 import { applyBranding, setTitle } from "./app/theme";
 import { Mascot } from "./components/Chibi";
 import { LogoMark } from "./components/Logo";
 import { Home } from "./pages/Home";
+import { HOME_META, SECTION_META } from "./pages/seo";
 import { HAS_LIVE_BACKEND, exitSandbox, sandboxOn } from "./app/sandbox";
 
 // Everything except the landing page loads on demand, so the first visit only downloads what it shows.
@@ -36,15 +37,16 @@ export default function App() {
       started.current = true;
       createApi(HAS_LIVE_BACKEND && sandboxOn()).then(setApi, (e) => setFail(String(e?.message || e)));
     };
-    if (route.r !== "home") return start();
-    // landing page: paint first, start the backend when the browser is idle
-    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-    if (w.requestIdleCallback) {
-      const id = w.requestIdleCallback(start, { timeout: 2500 });
-      return () => w.cancelIdleCallback?.(id);
-    }
-    const t = window.setTimeout(start, 1200);
-    return () => window.clearTimeout(t);
+    if (route.r !== "home" || sandboxOn()) return start();
+    // the public pages need no data: start the backend on the visitor's first interaction (or when
+    // they leave for the app), so loading the landing page does nothing but paint
+    const evs = ["pointerdown", "pointerover", "keydown", "touchstart", "scroll"] as const;
+    const go = () => {
+      evs.forEach((e) => window.removeEventListener(e, go));
+      start();
+    };
+    evs.forEach((e) => window.addEventListener(e, go, { passive: true, once: true }));
+    return () => evs.forEach((e) => window.removeEventListener(e, go));
   }, [route.r]);
   if (fail)
     return (
@@ -89,7 +91,7 @@ function SandboxBar() {
 
 /** Pages outside a company: default Ant Arena look + their own tab title. */
 const SITE_TITLES: Partial<Record<Route["r"], string>> = {
-  home: "Ant Arena — Gamified employee training: daily quizzes, live quiz games & polls",
+  home: HOME_META.title,
   experience: "Try Ant Arena free — interactive demo",
   signin: "Sign in · Ant Arena",
   contact: "Contact sales · Ant Arena",
@@ -98,14 +100,76 @@ const SITE_TITLES: Partial<Record<Route["r"], string>> = {
   notfound: "Page not found · Ant Arena",
 };
 
+/** Routes search engines may index; everything else (company portals, admin, sign-in…) is noindex. */
+const PUBLIC: Route["r"][] = ["home", "experience", "contact"];
+
+/** Keep <title>, description, canonical and robots in step with the page (the build writes them for
+ *  the first load; this covers moving between pages in the app). */
+function useHead(route: Route) {
+  useEffect(() => {
+    const meta = (sel: string) => document.head.querySelector<HTMLMetaElement>(sel);
+    const robots = meta('meta[name="robots"]');
+    if (robots) robots.content = PUBLIC.includes(route.r) ? "index, follow, max-image-preview:large" : "noindex, nofollow";
+    if (route.r !== "home") return;
+    const m = route.page ? SECTION_META[route.page] : HOME_META;
+    setTitle(m.title);
+    const desc = meta('meta[name="description"]');
+    if (desc) desc.content = m.description;
+    const canon = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (canon) canon.href = new URL(m.path, canon.href).href;
+  }, [route]);
+}
+
+/** Start downloading the next page while the pointer is on its link (or a finger touches it). */
+const PREFETCH: Record<string, () => Promise<unknown>> = {
+  "#/experience": () => import("./pages/Experience"),
+  "#/signin": () => import("./pages/SignIn"),
+  "#/contact": () => import("./pages/Contact"),
+  "#/join": () => import("./live/JoinPage"),
+  "#/vote": () => import("./polls/VotePage"),
+};
+function usePrefetch() {
+  useEffect(() => {
+    const done = new Set<string>();
+    const f = (e: Event) => {
+      const h = ((e.target as Element | null)?.closest?.("a[href^='#/']") as HTMLAnchorElement | null)?.getAttribute("href")?.split("/").slice(0, 2).join("/");
+      if (!h || done.has(h) || !PREFETCH[h]) return;
+      done.add(h);
+      PREFETCH[h]().catch(() => done.delete(h));
+    };
+    document.addEventListener("pointerover", f, { passive: true });
+    document.addEventListener("touchstart", f, { passive: true });
+    return () => {
+      document.removeEventListener("pointerover", f);
+      document.removeEventListener("touchstart", f);
+    };
+  }, []);
+}
+
 function Router({ route }: { route: Route }) {
+  useHead(route);
+  usePrefetch();
   useEffect(() => {
     const t = SITE_TITLES[route.r];
-    if (t) {
-      applyBranding(undefined);
-      setTitle(t);
-    }
+    if (t && route.r !== "home") setTitle(t);
+    if (t) applyBranding(undefined);
   }, [route.r]);
+  // on a section page (/features …), in-app #/ links lead back to the main site: a section link to
+  // its own page, anything else to the landing page with that #route
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (!pagePath(location.pathname) || (location.hash && location.hash !== "#")) return;
+      const a = (e.target as Element | null)?.closest?.("a[href^='#']") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank") return;
+      const h = a.getAttribute("href") || "#/";
+      e.preventDefault();
+      const r = parse(h);
+      location.assign(r.r === "home" && r.section ? SECTION_META[r.section].path : "/" + (h === "#/" ? "" : h));
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
   // a link to the page you're already on scrolls to its top (or to its section) instead of doing nothing
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -124,7 +188,7 @@ function Router({ route }: { route: Route }) {
     return () => document.removeEventListener("click", onClick);
   }, []);
   // new page → start at the top (section links scroll themselves)
-  const pageKey = route.r === "home" ? "home" : href(route);
+  const pageKey = route.r === "home" ? "home" + (route.page || "") : href(route);
   const first = useRef(true);
   useEffect(() => {
     if (first.current) {
@@ -136,7 +200,7 @@ function Router({ route }: { route: Route }) {
   let el: JSX.Element;
   switch (route.r) {
     case "home":
-      el = <Home section={route.section} />;
+      el = <Home section={route.section} page={route.page} />;
       break;
     case "experience":
       el = <Experience />;

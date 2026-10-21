@@ -9,6 +9,8 @@ import { Icon } from "../components/ui";
 import { CONTACT_EMAIL, SiteFooter, SiteHeader } from "./site";
 import type { Section } from "../app/router";
 import { FAQ } from "./faq";
+import { SECTION_META } from "./seo";
+import { SECTIONS } from "../app/router";
 
 /** Fades sections up as they scroll into view. Sections already on screen stay put (no flicker),
  *  and nothing is hidden without JavaScript or when reduced motion is requested. */
@@ -32,9 +34,21 @@ function useReveal() {
     els.forEach((e) => io.observe(e));
     return () => io.disconnect();
   }, []);
+  // characters only animate while on screen: their SVG animations repaint every frame
+  useEffect(() => {
+    if (!("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => e.target.classList.toggle("paused", !e.isIntersecting)), { rootMargin: "120px 0px" });
+    document.querySelectorAll(".home .chibi").forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
 }
 
-export function Home({ section }: { section?: Section } = {}) {
+export function Home({ section, page }: { section?: Section; page?: Section } = {}) {
+  if (page) return <SectionPage section={page} />;
+  return <Landing section={section} />;
+}
+
+function Landing({ section }: { section?: Section }) {
   useReveal();
   // #/features, #/faq … open the landing page scrolled to that section
   useEffect(() => {
@@ -54,6 +68,48 @@ export function Home({ section }: { section?: Section } = {}) {
       <HowItWorks />
       <Security />
       <Faq />
+      <FinalCta />
+      <SiteFooter />
+    </div>
+  );
+}
+
+/* ---------------- a page of its own for each section (/features, /faq …) ---------------- */
+const SECTION_BODY: Record<Section, () => JSX.Element> = {
+  features: Features,
+  "how-it-works": HowItWorks,
+  "use-cases": UseCases,
+  security: Security,
+  faq: Faq,
+};
+const SECTION_LABEL: Record<Section, string> = { features: "Features", "how-it-works": "How it works", "use-cases": "Who it's for", security: "Security", faq: "FAQ" };
+
+function SectionPage({ section }: { section: Section }) {
+  useReveal();
+  const m = SECTION_META[section];
+  const Body = SECTION_BODY[section];
+  return (
+    <div className="home h-page">
+      <SiteHeader />
+      <section className="h-page-hero">
+        <nav className="h-crumbs" aria-label="Breadcrumb">
+          <a href="/">Home</a> <span aria-hidden="true">›</span> <span aria-current="page">{SECTION_LABEL[section]}</span>
+        </nav>
+        <span className="h-tag">{m.tag}</span>
+        <h1 className="h-page-h1">{m.h1}</h1>
+        <p className="h-sub">{m.lead}</p>
+        <div className="h-hero-cta">
+          <a className="btn primary" href="#/experience">Try it free — no sign-up</a>
+          {CONTACT_EMAIL || section !== "features" ? <SalesCta /> : <a className="btn white" href="/how-it-works">How it works</a>}
+        </div>
+      </section>
+      <Body />
+      <nav className="h-more" aria-label="More about Ant Arena">
+        <b>More about Ant Arena</b>
+        {SECTIONS.filter((s) => s !== section).map((s) => (
+          <a key={s} href={SECTION_META[s].path}>{SECTION_LABEL[s]} →</a>
+        ))}
+      </nav>
       <FinalCta />
       <SiteFooter />
     </div>
@@ -349,7 +405,7 @@ function Faq() {
               <span>{q}</span>
               <span className="h-faq-x" aria-hidden="true">+</span>
             </button>
-            {open === i && <p>{a}</p>}
+            <p hidden={open !== i}>{a}</p>
           </div>
         ))}
       </div>
