@@ -93,6 +93,7 @@ export function markRetry(q: Question, canon: string | undefined, choice: string
 /** Sprint: 100 + up to 50 speed bonus. Certification: 1 point per right answer (no speed element). */
 export function scoreAnswer(g: Game, ok: boolean, ms: number) {
   if (g.kind === "cert") return ok ? 1 : 0;
+  if (g.kind === "story") return ok ? RULES.base : 0; // read at your own pace: no speed bonus
   return answerPoints(ok, ms, shareMs(g));
 }
 /** A small grace for network latency before an answer counts as late. */

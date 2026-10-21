@@ -703,7 +703,7 @@ class DemoApi implements Api {
       const cfg = normalizeCfg(t.cfg, t.template);
       const g = db.t[tid].games[gid];
       if (!g || g.kind === "live") throw err("not_found", "Quiz not found.");
-      if ((g.kind === "sprint" && !cfg.features.sprint) || (g.kind === "cert" && !cfg.features.cert)) throw err("forbidden", "This mode is turned off.");
+      if (((g.kind === "sprint" || g.kind === "story") && !cfg.features.sprint) || (g.kind === "cert" && !cfg.features.cert)) throw err("forbidden", "This mode is turned off.");
       if (!isOpen(g)) throw err("closed", "This quiz isn't open.");
       if (!g.questions.length) throw err("invalid", "This quiz has no questions.");
       p.runs ||= {};
@@ -818,7 +818,8 @@ class DemoApi implements Api {
       const cfg = normalizeCfg(t.cfg, t.template);
       const prev = s.games[d.game.id];
       const g: Game = { ...structuredClone(d.game), updatedAt: Date.now(), editedBy: this.actor(db), createdBy: prev?.createdBy || this.actor(db) };
-      if (!["sprint", "live", "cert"].includes(g.kind)) throw err("invalid", "Unknown quiz type.");
+      if (!["sprint", "live", "cert", "story"].includes(g.kind)) throw err("invalid", "Unknown quiz type.");
+      if (g.kind === "story" && g.questions.some((q) => q.type !== "story")) throw err("invalid", "Story Mode holds case studies only.");
       if (g.questions.length > 50) throw err("invalid", "50 questions at most.");
       for (const q of g.questions) if (!d.key.answers[q.id]) throw err("invalid", "Every question needs an answer.");
       if (g.kind === "live" && g.questions.some((q) => q.type !== "mcq" && q.type !== "tf")) throw err("invalid", "Live quizzes use multiple-choice and true/false questions.");

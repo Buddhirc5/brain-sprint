@@ -1,6 +1,6 @@
 /* Demo world: two fictional companies, a super admin, and a year of play history.
    Loaded lazily (dynamic import) so it never ships in the production chunk. */
-import { showcaseQuiz } from "../../data/showcase";
+import { showcaseQuiz, showcaseStories } from "../../data/showcase";
 import seed from "../../demo/seed.json";
 import library from "../../data/library.json";
 import type { AnswerKey, Game, LibraryItem, Player, Poll, PollResponse, Tenant } from "../../types";
@@ -104,6 +104,10 @@ export async function buildDemoDB(): Promise<DB> {
   const hShow = showcaseQuiz("bank", "g-new-types", { date: dk(0), order: 0 });
   hs.games[hShow.g.id] = hShow.g;
   hs.keys[hShow.g.id] = hShow.k;
+  for (const x of showcaseStories("bank", "g-hb", dk(-1))) {
+    hs.games[x.g.id] = x.g;
+    hs.keys[x.g.id] = x.k;
+  }
   hs.members = [
     { email: DEMO_ACCOUNTS.harbor, role: "owner", invitedAt: now - 120 * DAY },
     { email: DEMO_ACCOUNTS.harborHost, role: "host", invitedAt: now - 60 * DAY },
@@ -134,6 +138,10 @@ export async function buildDemoDB(): Promise<DB> {
   const nShow = showcaseQuiz("any", "g-nw-new-types", { date: dk(0), order: 0 });
   ns.games[nShow.g.id] = nShow.g;
   ns.keys[nShow.g.id] = nShow.k;
+  for (const x of showcaseStories("any", "g-nw", dk(-1))) {
+    ns.games[x.g.id] = x.g;
+    ns.keys[x.g.id] = x.k;
+  }
   const nwPlayers: [string, string, string, number][] = [
     ["NW-001", "Ava Thompson", "Head Office", 1], ["NW-002", "Liam Carter", "North Office", 9], ["NW-003", "Maya Patel", "South Office", 3], ["NW-004", "Noah Kim", "Remote", 12],
   ];

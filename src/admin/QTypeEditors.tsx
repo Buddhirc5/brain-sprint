@@ -1,6 +1,9 @@
 /* Editors for the newer question types: swipe sort, buckets and case studies (QEditor in Quizzes.tsx). */
 import { blankScene, LIMITS, SWIPE_PRESETS, WHO, type DraftQ, type DraftScene } from "../lib/answers";
-import type { StoryWho } from "../types";
+import { MOOD_NAME } from "../lib/storyScript";
+import type { StoryMood, StoryWho } from "../types";
+
+const MOODS = Object.keys(MOOD_NAME) as StoryMood[];
 
 type Props = { q: DraftQ; i: number; setQ: (i: number, p: Partial<DraftQ>) => void };
 const QUAL: [0 | 1 | 2, string][] = [[2, "Best"], [1, "Okay"], [0, "Poor"]];
@@ -177,6 +180,14 @@ export function StoryEdit({ q, i, setQ }: Props) {
                   <input className="inp" id={`q${i}s${k}n`} value={c.name} maxLength={30} placeholder={c.who === "manager" ? "e.g. Ms. Perera" : c.who === "colleague" ? "e.g. Maya" : "e.g. Nimal"} onChange={(e) => setScene(k, { name: e.target.value })} />
                 </div>
               )}
+              {named && (
+                <div className="field">
+                  <label htmlFor={`q${i}s${k}m`}>Their mood</label>
+                  <select className="inp" id={`q${i}s${k}m`} value={c.mood || "idle"} onChange={(e) => setScene(k, { mood: e.target.value as StoryMood })}>
+                    {MOODS.map((m) => <option key={m} value={m}>{MOOD_NAME[m]}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="field">
               <label htmlFor={`q${i}s${k}t`}>{named ? "What they say" : "What happens"}</label>
@@ -195,6 +206,10 @@ export function StoryEdit({ q, i, setQ }: Props) {
                   </div>
                   <input className="inp" value={x.t} maxLength={160} placeholder={`Reply ${"ABC"[r]} — what you say or do`} aria-label={`Scene ${k + 1} reply ${"ABC"[r]}`} onChange={(e) => setScene(k, { choices: c.choices.map((y, j) => (j === r ? { ...y, t: e.target.value } : y)) })} />
                   <input className="inp" value={x.then} maxLength={200} placeholder="…and what happens next" aria-label={`Scene ${k + 1} reply ${"ABC"[r]} outcome`} onChange={(e) => setScene(k, { choices: c.choices.map((y, j) => (j === r ? { ...y, then: e.target.value } : y)) })} />
+                  <select className="inp qe-mood" value={x.mood || ""} aria-label={`Their mood after reply ${"ABC"[r]}`} onChange={(e) => setScene(k, { choices: c.choices.map((y, j) => (j === r ? { ...y, mood: (e.target.value || undefined) as StoryMood | undefined } : y)) })}>
+                    <option value="">mood after…</option>
+                    {MOODS.map((m) => <option key={m} value={m}>{MOOD_NAME[m]}</option>)}
+                  </select>
                   {c.choices.length > LIMITS.replies[0] && (
                     <button type="button" className="x" aria-label={`Remove reply ${"ABC"[r]}`} onClick={() => setScene(k, { choices: c.choices.filter((_, j) => j !== r) })}>
                       ✕

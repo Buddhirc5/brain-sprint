@@ -1,10 +1,12 @@
 /* Demo content for the newer question types (swipe sort, buckets, case study): one daily quiz per
    demo company, so the sandbox shows them off. Written as admin drafts and sealed like the editor does. */
 import { sealQuestion, type DraftQ, type DraftScene } from "../lib/answers";
-import type { AnswerKey, Game } from "../types";
+import type { AnswerKey, Game, StoryMood } from "../types";
 
-type Reply = [string, string, 0 | 1 | 2]; // what you say · what happens · 2 best, 1 okay, 0 poor
-const scene = (who: DraftScene["who"], name: string, say: string, replies: Reply[]): DraftScene => ({ who, name, say, choices: replies.map(([t, then, q]) => ({ t, then, q })) });
+type Reply = [string, string, 0 | 1 | 2, StoryMood?]; // what you say · what happens · 2 best, 1 okay, 0 poor · their face after
+const scene = (who: DraftScene["who"], name: string, say: string, replies: Reply[], look?: number, mood?: StoryMood): DraftScene => ({
+  who, name, say, ...(look != null ? { look } : {}), ...(mood ? { mood } : {}), choices: replies.map(([t, then, q, m]) => ({ t, then, q, ...(m ? { mood: m } : {}) })),
+});
 const base = (id: string, topic: string, q: string, explain: string) => ({ id, topic, q, explain, options: [], answer: 0, tf: true, pairs: [], steps: [] });
 
 const BANK: DraftQ[] = [
@@ -41,20 +43,20 @@ const BANK: DraftQ[] = [
       intro: "Monday, 9:05 am. The branch has just opened. A customer hurries to your counter, phone in hand.",
       scenes: [
         scene("customer", "Nimal", "My card got blocked and I fly to Dubai in two hours! Fix it NOW!", [
-          ["I'm sorry — let's sort this out together. May I see your ID?", "Nimal takes a breath and hands over his ID.", 2],
-          ["Please call our hotline, they handle card blocks.", "Nimal sighs: “I'm already standing here…”", 1],
-          ["Cards aren't my department, sorry.", "Nimal's voice rises: “Then whose department IS it?”", 0],
-        ]),
+          ["I'm sorry — let's sort this out together. May I see your ID?", "Nimal takes a breath and hands over his ID.", 2, "idle"],
+          ["Please call our hotline, they handle card blocks.", "Nimal sighs: “I'm already standing here…”", 1, "sad"],
+          ["Cards aren't my department, sorry.", "Nimal's voice rises: “Then whose department IS it?”", 0, "angry"],
+        ], 10, "angry"),
         scene("narrator", "", "The system shows the card was blocked after three wrong PIN tries at an ATM last night.", [
-          ["Explain why, verify him, and unblock it with a fresh PIN", "Nimal relaxes: “That was me — I forgot my new PIN!”", 2],
-          ["Unblock it straight away, no questions", "It works — but you skipped the checks the bank requires.", 0],
-          ["Ask him to come back tomorrow", "He'd miss his flight. Nimal asks for your manager.", 0],
+          ["Explain why, verify him, and unblock it with a fresh PIN", "Nimal relaxes: “That was me — I forgot my new PIN!”", 2, "happy"],
+          ["Unblock it straight away, no questions", "It works — but you skipped the checks the bank requires.", 0, "think"],
+          ["Ask him to come back tomorrow", "He'd miss his flight. Nimal asks for your manager.", 0, "angry"],
         ]),
         scene("manager", "Ms. Perera", "Everything okay here? I saw a queue building.", [
-          ["All sorted — I verified him and unblocked the card. He's on his way.", "Ms. Perera smiles: “That's exactly how we do it.”", 2],
-          ["I think so — I'm not sure I followed every step.", "Ms. Perera walks you through the checklist — useful for next time.", 1],
-          ["It was chaos, the customer was rude.", "Ms. Perera frowns: “And what did you do to help him?”", 0],
-        ]),
+          ["All sorted — I verified him and unblocked the card. He's on his way.", "Ms. Perera smiles: “That's exactly how we do it.”", 2, "cheer"],
+          ["I think so — I'm not sure I followed every step.", "Ms. Perera walks you through the checklist — useful for next time.", 1, "think"],
+          ["It was chaos, the customer was rude.", "Ms. Perera frowns: “And what did you do to help him?”", 0, "angry"],
+        ], 4, "think"),
       ],
       endings: ["", "", ""],
     },
@@ -95,19 +97,19 @@ const GENERAL: DraftQ[] = [
       intro: "Tuesday morning. Maya joined the team yesterday — and she looks a little lost at her desk.",
       scenes: [
         scene("colleague", "Maya", "Sorry to bother you… I can't work out how to log in to the CRM.", [
-          ["No bother — let me show you, then I'll send you the guide.", "Maya is logged in within five minutes, and smiles for the first time today.", 2],
-          ["Check your onboarding email, it's in there somewhere.", "Maya scrolls for ages, but finds it eventually.", 1],
-          ["Ask IT, I'm swamped.", "Maya waits two hours for a reply to her ticket.", 0],
-        ]),
+          ["No bother — let me show you, then I'll send you the guide.", "Maya is logged in within five minutes, and smiles for the first time today.", 2, "happy"],
+          ["Check your onboarding email, it's in there somewhere.", "Maya scrolls for ages, but finds it eventually.", 1, "think"],
+          ["Ask IT, I'm swamped.", "Maya waits two hours for a reply to her ticket.", 0, "sad"],
+        ], 7, "sad"),
         scene("manager", "Sam", "Could you take Maya along to the team meeting?", [
-          ["Sure — I'll introduce her and say what she'll be working on.", "The team gives Maya a warm welcome.", 2],
-          ["I'll tell her which room it's in.", "Maya slips in late and sits at the back.", 1],
-          ["It's on the calendar, she'll find it.", "Maya misses the first ten minutes looking for the room.", 0],
-        ]),
+          ["Sure — I'll introduce her and say what she'll be working on.", "The team gives Maya a warm welcome.", 2, "happy"],
+          ["I'll tell her which room it's in.", "Maya slips in late and sits at the back.", 1, "think"],
+          ["It's on the calendar, she'll find it.", "Maya misses the first ten minutes looking for the room.", 0, "sad"],
+        ], 11, "idle"),
         scene("narrator", "", "In the meeting, someone asks Maya a question she can't answer yet.", [
-          ["Step in: “Maya started yesterday — I'll loop her in after.”", "The room nods; Maya mouths “thank you”.", 2],
-          ["Stay quiet — she'll work it out.", "Maya goes red, but manages an answer.", 1],
-          ["Joke that new people never know anything.", "A few laugh. Maya doesn't.", 0],
+          ["Step in: “Maya started yesterday — I'll loop her in after.”", "The room nods; Maya mouths “thank you”.", 2, "cheer"],
+          ["Stay quiet — she'll work it out.", "Maya goes red, but manages an answer.", 1, "shock"],
+          ["Joke that new people never know anything.", "A few laugh. Maya doesn't.", 0, "sad"],
         ]),
       ],
       endings: ["", "", ""],
@@ -115,13 +117,58 @@ const GENERAL: DraftQ[] = [
   },
 ];
 
-/** A demo daily quiz with one of each new type. */
+const PHISH: DraftQ = {
+  ...base("sh-ph", "Cyber Security", "The urgent email", "Urgent + secret + gift cards = phishing. Report it fast, help the people it caught, and share what you learned."),
+  type: "story",
+  story: {
+    intro: "Friday, 4:52 pm. Everyone is packing up when an email from “the CEO” lands in your inbox.",
+    scenes: [
+      scene("narrator", "", "“I need 5 gift cards for a client — urgent. Don't tell anyone, I'll explain later.”", [
+        ["Report it with the phishing button", "IT security thanks you — and starts warning everyone.", 2],
+        ["Reply to ask if it's really them", "The scammer replies at once: “Yes. Hurry.”", 0],
+        ["Ignore it and go home", "It's still there on Monday — and it went to everyone.", 1],
+      ]),
+      scene("colleague", "Kasun", "Wait — I already bought two cards for that email!", [
+        ["Let's report it to IT security right now, together.", "IT freezes the cards in time. Kasun breathes again.", 2, "happy"],
+        ["Call the shop and ask for a refund.", "The shop can't help — the codes are already used.", 1, "sad"],
+        ["That's your own problem, honestly.", "Kasun goes pale and doesn't say another word.", 0, "sad"],
+      ], 15, "shock"),
+      scene("manager", "Sam", "Why didn't anyone flag this sooner?", [
+        ["We reported it in minutes — I'll share a quick tip at stand-up.", "Sam grins: “That's the team I like to see.”", 2, "cheer"],
+        ["I didn't think it mattered.", "Sam explains how much these scams cost each year.", 1, "think"],
+        ["Checking emails isn't my job.", "Sam's eyebrows go up. The room goes quiet.", 0, "angry"],
+      ], 11, "think"),
+    ],
+    endings: ["", "", ""],
+  },
+};
+
+const seal = (drafts: DraftQ[]) => drafts.map((d) => sealQuestion(d));
+const keyOf = (gid: string, sealed: ReturnType<typeof seal>, now: number): AnswerKey => ({ gid, answers: Object.fromEntries(sealed.map((s) => [s.q.id, s.canon])), updatedAt: now });
+
+/** A demo daily quiz with swipe sort and buckets. */
 export function showcaseQuiz(industry: "bank" | "any", gid: string, extra: Partial<Game>): { g: Game; k: AnswerKey } {
   const now = Date.now();
-  const sealed = (industry === "bank" ? BANK : GENERAL).map((d) => sealQuestion(d));
+  const sealed = seal((industry === "bank" ? BANK : GENERAL).filter((d) => d.type !== "story"));
   const g: Game = {
-    id: gid, kind: "sprint", title: "New: swipe, sort & a story", desc: "Try the newest question types.", minutes: 4, color: "blue", status: "live",
+    id: gid, kind: "sprint", title: "New: swipe & sort", desc: "Try the newest question types.", minutes: 2, color: "blue", status: "live",
     questions: sealed.map((s) => s.q), createdAt: now, updatedAt: now, ...extra,
   };
-  return { g, k: { gid, answers: Object.fromEntries(sealed.map((s) => [s.q.id, s.canon])), updatedAt: now } };
+  return { g, k: keyOf(gid, sealed, now) };
+}
+
+/** Demo Story Mode episodes: one comic case study each. */
+export function showcaseStories(industry: "bank" | "any", prefix: string, date: string): { g: Game; k: AnswerKey }[] {
+  const now = Date.now();
+  const own = (industry === "bank" ? BANK : GENERAL).filter((d) => d.type === "story");
+  const more = industry === "bank" ? GENERAL.filter((d) => d.type === "story") : [];
+  return [...own, PHISH, ...more].map((d, i) => {
+    const gid = `${prefix}-story-${i + 1}`;
+    const sealed = seal([{ ...d, id: `${d.id}-${i + 1}` }]);
+    const g: Game = {
+      id: gid, kind: "story", title: d.q, desc: d.story?.intro.split(". ")[0] || "", minutes: 0, color: (["orange", "blue", "pink"] as const)[i % 3], status: "live", date, order: i,
+      questions: sealed.map((s) => s.q), createdAt: now, updatedAt: now,
+    };
+    return { g, k: keyOf(gid, sealed, now) };
+  });
 }

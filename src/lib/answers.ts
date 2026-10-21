@@ -8,7 +8,7 @@
      story  per scene, how good each reply is (2 best, 1 okay, 0 poor): "2,1,0;0,2,1"
    Swipe, bucket and story score partially (see partialScore).
    ===================================================================== */
-import type { Question, QType, Story, StoryWho } from "../types";
+import type { Question, QType, Story, StoryMood, StoryWho } from "../types";
 import { shuffle } from "./util";
 
 export const TYPE_LABEL: Record<QType, string> = {
@@ -34,8 +34,11 @@ export const SWIPE_PRESETS: [string, string][] = [["Risky", "Safe"], ["False", "
 export interface DraftScene {
   who: StoryWho;
   name: string;
+  role?: string; // shown label ("Patient"); none = the who's label
+  look?: number; // character design (Chibi look); none = the role's default
+  mood?: StoryMood;
   say: string;
-  choices: { t: string; then: string; q: 0 | 1 | 2 }[];
+  choices: { t: string; then: string; q: 0 | 1 | 2; mood?: StoryMood }[];
 }
 
 /** Editable (unsealed) form of a question — only ever held by admins. */
@@ -92,7 +95,15 @@ export function sealQuestion(d: DraftQ, prev?: Question): { q: Question; canon: 
     const s = d.story || { intro: "", scenes: [], endings: ["", "", ""] };
     const story: Story = {
       intro: s.intro,
-      steps: s.scenes.map((c) => ({ who: c.who, ...(c.name.trim() ? { name: c.name.trim() } : {}), say: c.say, choices: c.choices.map((x) => ({ t: x.t, then: x.then })) })),
+      steps: s.scenes.map((c) => ({
+        who: c.who,
+        ...(c.name.trim() ? { name: c.name.trim() } : {}),
+        ...(c.role?.trim() && c.who !== "narrator" ? { role: c.role.trim() } : {}),
+        ...(c.look != null && c.who !== "narrator" ? { look: c.look } : {}),
+        ...(c.mood && c.mood !== "idle" ? { mood: c.mood } : {}),
+        say: c.say,
+        choices: c.choices.map((x) => ({ t: x.t, then: x.then, ...(x.mood ? { mood: x.mood } : {}) })),
+      })),
       ...(s.endings.some((e) => e.trim()) ? { endings: s.endings.map((e) => e.trim()) as [string, string, string] } : {}),
     };
     return { q: { ...base, story }, canon: s.scenes.map((c) => c.choices.map((x) => x.q).join(",")).join(";") };
@@ -120,7 +131,10 @@ export function unseal(q: Question, canon: string | undefined): DraftQ {
     const st = q.story || { intro: "", steps: [] };
     d.story = {
       intro: st.intro,
-      scenes: st.steps.map((s, i) => ({ who: s.who, name: s.name || "", say: s.say, choices: s.choices.map((c, k) => ({ t: c.t, then: c.then, q: (qual[i]?.[k] ?? 0) as 0 | 1 | 2 })) })),
+      scenes: st.steps.map((s, i) => ({
+        who: s.who, name: s.name || "", ...(s.role ? { role: s.role } : {}), ...(s.look != null ? { look: s.look } : {}), ...(s.mood ? { mood: s.mood } : {}), say: s.say,
+        choices: s.choices.map((c, k) => ({ t: c.t, then: c.then, q: (qual[i]?.[k] ?? 0) as 0 | 1 | 2, ...(c.mood ? { mood: c.mood } : {}) })),
+      })),
       endings: st.endings ? [...st.endings] : ["", "", ""],
     };
   } else d.steps = idx.map((i) => q.items?.[i] ?? "");

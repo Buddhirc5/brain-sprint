@@ -8,7 +8,7 @@ import { SPECIALS, SpecialChar, type SpecialKey } from "./Specials";
 import type { Equipped } from "../types";
 import { BG_FILL } from "../lib/catalog";
 
-export type Mood = "idle" | "happy" | "sad" | "cheer" | "think";
+export type Mood = "idle" | "happy" | "sad" | "cheer" | "think" | "angry" | "shock";
 type Hair = "long" | "twin" | "bun" | "bob" | "pony" | "wavy" | "crew" | "side" | "curly" | "spiky" | "quiff" | "buzz";
 
 interface Look {
@@ -252,8 +252,16 @@ export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", si
     );
   if (mood === "sad") mouth = <path d="M55 79 Q60 74.5 65 79" stroke={L.beard ? K.white : mouthCol} strokeWidth="2.2" fill="none" strokeLinecap="round" />;
   if (mood === "think") mouth = <ellipse cx="63" cy="77" rx="2.3" ry="2.7" fill={mouthCol} />;
+  if (mood === "angry")
+    mouth = (
+      <g>
+        <path d="M53 79 Q60 72.5 67 79 Z" fill={mouthCol} />
+        <path d="M54.5 77.6 L65.5 77.6" stroke={K.white} strokeWidth="1.4" />
+      </g>
+    );
+  if (mood === "shock") mouth = <ellipse cx="60" cy="77.5" rx="3.6" ry="4.8" fill={mouthCol} />;
 
-  const browY = mood === "sad" ? 1 : 0;
+  const browY = mood === "sad" ? 1 : mood === "shock" ? -3.5 : 0;
   const brow = shade(H, -0.2);
   const eyeClosed = mood === "cheer";
 
@@ -272,9 +280,9 @@ export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", si
 
   /* ---- body (full variant only needs legs/arms; bust shows shoulders) ---- */
   const armL =
-    mood === "cheer" ? "rotate(150deg)" : mood === "happy" ? "rotate(40deg)" : mood === "sad" ? "rotate(6deg)" : mood === "think" ? "rotate(-20deg)" : "rotate(14deg)";
+    mood === "cheer" || mood === "shock" ? "rotate(150deg)" : mood === "happy" ? "rotate(40deg)" : mood === "sad" ? "rotate(6deg)" : mood === "think" ? "rotate(-20deg)" : mood === "angry" ? "rotate(-55deg)" : "rotate(14deg)";
   const armR =
-    mood === "cheer" ? "rotate(-150deg)" : mood === "happy" ? "rotate(-40deg)" : mood === "sad" ? "rotate(-6deg)" : mood === "think" ? "rotate(-150deg)" : "rotate(-14deg)";
+    mood === "cheer" || mood === "shock" ? "rotate(-150deg)" : mood === "happy" ? "rotate(-40deg)" : mood === "sad" ? "rotate(-6deg)" : mood === "think" ? "rotate(-150deg)" : mood === "angry" ? "rotate(55deg)" : "rotate(-14deg)";
 
   const vb = variant === "bust" ? "14 12 92 92" : "0 0 120 162";
   const w = size ?? (variant === "bust" ? 48 : 120);
@@ -390,8 +398,8 @@ export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", si
             <path d="M40 30 Q52 23 66 25" stroke={K.white} strokeWidth="3" fill="none" strokeLinecap="round" opacity=".28" />
             {/* brows */}
             <g stroke={brow} strokeWidth={f ? 1.8 : 2.6} strokeLinecap="round" fill="none">
-              <path d={mood === "sad" ? "M40 53 Q46 50 52 48" : `M41 ${51 + browY} Q47 ${47.5 + browY} 53 ${50 + browY}`} />
-              <path d={mood === "sad" ? "M68 48 Q74 50 80 53" : `M67 ${50 + browY} Q73 ${47.5 + browY} 79 ${51 + browY}`} />
+              <path d={mood === "sad" ? "M40 53 Q46 50 52 48" : mood === "angry" ? "M40 47 Q47 49 54 54" : `M41 ${51 + browY} Q47 ${47.5 + browY} 53 ${50 + browY}`} />
+              <path d={mood === "sad" ? "M68 48 Q74 50 80 53" : mood === "angry" ? "M66 54 Q73 49 80 47" : `M67 ${50 + browY} Q73 ${47.5 + browY} 79 ${51 + browY}`} />
             </g>
             {eye(47)}
             {eye(73)}
@@ -406,6 +414,8 @@ export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", si
             <path d="M59 69.5 Q60 71 61 69.5" stroke={shade(L.skin, -0.3)} strokeWidth="1.4" fill="none" strokeLinecap="round" />
             {mouth}
             {mood === "sad" && <path d="M84 50 C82 54 84 57 86 57 C88 57 89 54 84 50 Z" fill="#7FC8FF" className="tear" />}
+            {mood === "angry" && <path d="M82 30 q4 4 8 1 M86 24 q-2 5 3 8 M78 26 q2 3 -1 6" stroke="#E5383B" strokeWidth="2.6" fill="none" strokeLinecap="round" className="vein" />}
+            {mood === "shock" && <path d="M34 40 l-5 -5 M30 48 l-7 -1 M86 40 l5 -5 M90 48 l7 -1" stroke={K.ink} strokeWidth="2.2" strokeLinecap="round" className="jolt" />}
             {acc}
           </g>
         </g>

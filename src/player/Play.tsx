@@ -55,6 +55,7 @@ export function Play({ gid }: { gid: string }) {
   const { api, tid, d, me, go, toast } = useApp();
   const g = d.games[gid];
   const cert = g?.kind === "cert";
+  const story = g?.kind === "story"; // Story Mode: no timer, the comic is the whole screen
   const [run, setRun] = useState<Run | null>(null);
   const [phase, setPhase] = useState<"load" | "q" | "sending" | "reveal" | "saving">("load");
   const [qi, setQi] = useState(0); // question on screen
@@ -282,6 +283,7 @@ export function Play({ gid }: { gid: string }) {
           {qi + 1}/{n}
         </span>
       </div>
+      {!story && (
       <div className={`gtimer ${rv ? "paused" : ""}`} role="timer" aria-label={`Time left ${fmtClock(left)}`}>
         <Icon.clock />
         <div className="tbar">
@@ -289,18 +291,25 @@ export function Play({ gid }: { gid: string }) {
         </div>
         <b className="num">{fmtClock(left)}</b>
       </div>
+      )}
       {cert && g.cert && (
         <p className="fine" style={{ textAlign: "center" }}>
           {g.title} · attempt {run.attempt || 1} of {g.cert.attempts} · pass mark {g.cert.passPct}%
         </p>
       )}
 
-      <section className="qcard" aria-live="polite">
-        <div className="qhead">
-          <span className="qtype">{TYPE_LABEL[q.type]}</span>
-          <span className="chip">{q.topic}</span>
-        </div>
-        <h2 className="qtext">{q.q}</h2>
+      <section className={`qcard ${story ? "comic" : ""}`} aria-live="polite">
+        {story ? (
+          <h2 className="sr">{q.q}</h2>
+        ) : (
+          <>
+            <div className="qhead">
+              <span className="qtype">{TYPE_LABEL[q.type]}</span>
+              <span className="chip">{q.topic}</span>
+            </div>
+            <h2 className="qtext">{q.q}</h2>
+          </>
+        )}
         {q.img && <img className="qimg" src={q.img} alt="" />}
         <QBody key={q.id + qi} q={q} qs={qs} setQs={setQs} rv={rv} busy={phase === "sending"} last={last} onSubmit={submit} />
       </section>
@@ -320,7 +329,16 @@ export function Play({ gid }: { gid: string }) {
         </section>
       )}
 
-      {rv && last && !cert && (
+      {rv && last && story && (
+        <section ref={sheetRef} className="reveal sheet story-bar">
+          <span className="pts num">+{last.pts} points</span>
+          <button type="button" className="btn primary" onClick={next} disabled={phase === "saving"}>
+            {phase === "saving" ? "Saving…" : isLast ? "See my scorecard" : "Next story"}
+          </button>
+        </section>
+      )}
+
+      {rv && last && !cert && !story && (
         <section ref={sheetRef} className={`reveal sheet ${last.ok ? "ok" : "no"}`}>
           <div className="top">
             <Chibi look={me.look} equipped={me.equipped} variant="full" size={72} mood={last.ok ? "happy" : "sad"} />
@@ -352,7 +370,13 @@ export function Play({ gid }: { gid: string }) {
       {quit && (
         <Modal label={cert ? "Leave the exam?" : "Leave the quiz?"} onClose={() => setQuit(false)}>
           <h3>{cert ? "Leave the exam?" : "Leave the quiz?"}</h3>
-          <p>{cert ? "Your answers so far are saved, but the exam clock keeps running while you're away." : "You only get one try, and the clock keeps running while you're away."}</p>
+          <p>
+            {cert
+              ? "Your answers so far are saved, but the exam clock keeps running while you're away."
+              : story
+                ? "You can come back later — the story starts again from its cover."
+                : "You only get one try, and the clock keeps running while you're away."}
+          </p>
           <div className="row end">
             <button type="button" className="btn ghost small" onClick={() => setQuit(false)} data-autofocus>
               Keep going
@@ -436,7 +460,7 @@ export function QBody({ q, qs, setQs, rv, busy, last, onSubmit }: { q: Question;
   const right = rv ? last?.canon ?? null : null;
   if (q.type === "swipe" || q.type === "bucket" || q.type === "story") {
     const C = q.type === "swipe" ? SwipeQ : q.type === "bucket" ? BucketQ : StoryQ;
-    return <C q={q} rv={rv} busy={busy} canon={right} choice={rv ? last?.choice ?? null : null} onSubmit={onSubmit} />;
+    return <C q={q} rv={rv} busy={busy} canon={right} choice={rv ? last?.choice ?? null : null} onSubmit={onSubmit} explain={rv ? last?.explain : undefined} />;
   }
   const mine = rv ? last?.choice ?? null : null;
   const hidden = rv && right == null; // certification: show what you picked, not whether it was right

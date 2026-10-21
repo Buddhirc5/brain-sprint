@@ -7,6 +7,7 @@ import { board, limitMs, runCorrect, runPoints, windowStart } from "../lib/scori
 import { fmtDate, fmtMin, todayKey } from "../lib/util";
 import type { Game } from "../types";
 import { buildMap } from "../lib/arenaMap";
+import { WHO } from "../lib/answers";
 import { Avatar, certInfo, firstName, pubName } from "./common";
 
 export function Lobby() {
@@ -15,6 +16,7 @@ export function Lobby() {
   const t = todayKey();
   const all = useMemo(() => sortGames(Object.values(d.games)), [d.games]);
   const sprints = features.sprint ? all.filter((g) => g.kind === "sprint") : [];
+  const stories = features.sprint ? all.filter((g) => g.kind === "story" && isOpen(g, todayKey())) : [];
   const certs = features.cert ? all.filter((g) => g.kind === "cert" && (g.status === "live" || g.status === "closed")) : [];
   const weekBoard = useMemo(() => board(players, d.dq, windowStart("week")), [players, d.dq]);
   if (!me || !s) return null;
@@ -193,6 +195,20 @@ export function Lobby() {
         </>
       )}
 
+      {stories.length > 0 && (
+        <>
+          <div className="sec-h">
+            <h2 className="sm-h">Story Mode</h2>
+            <span className="sub">Comic case studies · no timer</span>
+          </div>
+          <div className="sm-shelf">
+            {stories.map((g, i) => (
+              <StoryCover key={g.id} g={g} n={i + 1} />
+            ))}
+          </div>
+        </>
+      )}
+
       {catchUp.length > 0 && (
         <>
           <div className="sec-h">
@@ -314,6 +330,32 @@ export function Lobby() {
 }
 
 const dotColor = (g: Game) => `var(--${g.color === "ink" ? "ink" : g.color === "blush" ? "pink" : g.color})`;
+
+/** A Story Mode episode as a little comic cover: its first character, NEW or the rank you got. */
+function StoryCover({ g, n }: { g: Game; n: number }) {
+  const { me, go } = useApp();
+  const run = me?.runs?.[g.id];
+  const done = run?.status === "done";
+  const steps = g.questions[0]?.story?.steps || [];
+  const lead = steps.find((s) => s.who !== "narrator");
+  const share = done ? (run!.ans.length ? run!.ans.reduce((t, a) => t + (a.ok ? 1 : a.f || 0), 0) / run!.ans.length : 0) : 0;
+  const rank = share >= 1 ? "S" : share >= 0.5 ? "A" : "B";
+  return (
+    <button type="button" className={`sm-cover c-${g.color}`} onClick={() => go(done ? { v: "results", gid: g.id } : { v: "play", gid: g.id })} aria-label={`Story ${n}: ${g.title}${done ? `, rank ${rank}` : ""}`}>
+      <span className="sm-ep">EP. {n}</span>
+      {done ? <span className="sm-rank">{rank}</span> : !run && <span className="sm-new">NEW!</span>}
+      {lead && (
+        <span className="sm-fig" aria-hidden="true">
+          <Chibi look={lead.look ?? WHO[lead.who].look} variant="bust" size={92} mood={lead.mood || "idle"} still />
+        </span>
+      )}
+      <b className="sm-t">{g.title}</b>
+      <small>
+        {g.questions[0]?.topic} · {steps.length} pages
+      </small>
+    </button>
+  );
+}
 
 function GameCard({ g, today }: { g: Game; today?: boolean }) {
   const { me, go } = useApp();
