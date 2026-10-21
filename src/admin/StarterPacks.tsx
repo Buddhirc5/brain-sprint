@@ -6,12 +6,14 @@ import { Modal, Seg } from "../components/ui";
 import { sealQuestion, type DraftQ } from "../lib/answers";
 import { newId, randHex } from "../lib/util";
 import { blankPoll, LIVE } from "../api/engine";
-import { STARTER_PACKS, type PackQ, type QuizPack, type StarterPack } from "../data/starterPacks";
+import { STARTER_PACKS, type PackQ, type QuizPack, type StarterPack, type StoryPack } from "../data/starterPacks";
+import { parseScript } from "../lib/storyScript";
+import { todayKey } from "../lib/util";
 import type { AnswerKey, Game, LibraryItem, Poll } from "../types";
 
-const KIND_LABEL: Record<StarterPack["kind"], string> = { cert: "Certification", live: "Live quiz", poll: "Live poll" };
+const KIND_LABEL: Record<StarterPack["kind"], string> = { cert: "Certification", live: "Live quiz", poll: "Live poll", story: "Story Mode" };
 type Tab = "sprint" | StarterPack["kind"];
-const TAB_LABEL: Record<Tab, string> = { sprint: "Daily sprints", cert: "Certifications", live: "Live quizzes", poll: "Live polls" };
+const TAB_LABEL: Record<Tab, string> = { sprint: "Daily sprints", story: "Story Mode", cert: "Certifications", live: "Live quizzes", poll: "Live polls" };
 
 function toDraft(q: PackQ, i: number, topic: string, live: boolean): DraftQ {
   const base = { id: `q${i + 1}-${randHex(3)}`, topic, explain: "", options: ["", "", "", ""], answer: 0, tf: true, pairs: [], steps: [], ...(live ? { seconds: LIVE.defaultSeconds } : {}) };
@@ -34,6 +36,19 @@ function quizFrom(p: QuizPack): { game: Game; key: AnswerKey } {
     createdAt: now, updatedAt: now,
   };
   return { game, key: { gid: id, answers: Object.fromEntries(sealed.map((s) => [s.q.id, s.canon])), updatedAt: now } };
+}
+
+/** A Story Mode pack → one Story Mode quiz (its script read the same way the editor reads it). */
+function storyFrom(p: StoryPack, topics: string[]): { game: Game; key: AnswerKey } {
+  const d = parseScript(p.script, topics).drafts[0];
+  if (!d) throw new Error("This story couldn't be read.");
+  // file it under the closest topic the company has
+  const topic = p.topics.map((x) => topics.find((t) => t.toLowerCase() === x.toLowerCase())).find(Boolean) || topics[0] || p.topics[0];
+  const sealed = sealQuestion({ ...d, topic });
+  const id = newId("g-");
+  const now = Date.now();
+  const game: Game = { id, kind: "story", title: p.title, desc: p.desc.slice(0, 110), minutes: 0, color: "orange", status: "draft", date: todayKey(), order: 0, questions: [sealed.q], createdAt: now, updatedAt: now };
+  return { game, key: { gid: id, answers: { [sealed.q.id]: sealed.canon }, updatedAt: now } };
 }
 
 export function StarterPacks({ kinds, onClose }: { kinds: Tab[]; onClose: () => void }) {
@@ -66,9 +81,9 @@ export function StarterPacks({ kinds, onClose }: { kinds: Tab[]; onClose: () => 
 }
 
 function PackGrid({ kind, ind, onClose }: { kind: StarterPack["kind"]; ind: "all" | "bank" | "any"; onClose: () => void }) {
-  const { api, tid, run, toast, features } = useApp();
+  const { api, tid, run, toast, features, d } = useApp();
   const [busy, setBusy] = useState("");
-  const on = (k: StarterPack["kind"]) => (k === "cert" ? features.cert : k === "live" ? features.live : features.polls);
+  const on = (k: StarterPack["kind"]) => (k === "cert" ? features.cert : k === "live" ? features.live : k === "story" ? features.sprint : features.polls);
   const packs = STARTER_PACKS.filter((p) => p.kind === kind && (ind === "all" || p.industry === ind));
   const add = async (p: StarterPack) => {
     setBusy(p.id);
@@ -76,7 +91,8 @@ function PackGrid({ kind, ind, onClose }: { kind: StarterPack["kind"]; ind: "all
       if (p.kind === "poll") {
         const poll: Poll = { ...blankPoll(newId("poll"), tid, ""), title: p.title, slides: p.slides.map((s, i) => ({ ...s, id: `s${i + 1}${randHex(2)}` }) as Poll["slides"][number]) };
         await api.savePoll(tid, poll);
-      } else await api.saveQuiz(tid, quizFrom(p));
+      } else if (p.kind === "story") await api.saveQuiz(tid, storyFrom(p, d.cfg.topics));
+      else await api.saveQuiz(tid, quizFrom(p));
       return true;
     });
     setBusy("");
@@ -87,7 +103,7 @@ function PackGrid({ kind, ind, onClose }: { kind: StarterPack["kind"]; ind: "all
       {packs.length ? (
         <div className="sp-grid">
           {packs.map((p) => {
-            const n = p.kind === "poll" ? p.slides.length : p.questions.length;
+            const n = p.kind === "poll" ? p.slides.length : p.kind === "story" ? (p.script.match(/^\s*- /gm) || []).length : p.questions.length;
             const off = !on(p.kind);
             return (
               <article key={p.id} className={`sp-card k-${p.kind}`}>
@@ -97,7 +113,7 @@ function PackGrid({ kind, ind, onClose }: { kind: StarterPack["kind"]; ind: "all
                 </div>
                 <b className="sp-title">{p.title}</b>
                 <span className="fine">{p.desc}</span>
-                <span className="fine num">{n} {p.kind === "poll" ? "slides" : "questions"}</span>
+                <span className="fine num">{p.kind === "story" ? `3 pages · ${n} replies` : `${n} ${p.kind === "poll" ? "slides" : "questions"}`}</span>
                 <button type="button" className="btn primary small" disabled={!!busy || off} onClick={() => void add(p)}>
                   {busy === p.id ? "Adding…" : off ? "Turned off in Settings" : "Add as draft"}
                 </button>

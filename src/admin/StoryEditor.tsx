@@ -1,16 +1,14 @@
 /* Story Mode in the admin: write a comic case study as a plain-text script (or with the form), pick each
-   character's look and role, preview it exactly as players see it, and bulk-import many stories at once. */
+   character's look and role, and preview it exactly as players see it. Bulk import (many stories, scripts or
+   spreadsheet rows) is the editor's Bulk import panel. */
 import { useMemo, useRef, useState } from "react";
-import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
 import { Modal, Seg } from "../components/ui";
 import { sealQuestion, WHO, type DraftQ } from "../lib/answers";
-import { parseImport } from "../lib/importQs";
-import { lookName, MOOD_NAME, parseScript, SCRIPT_EXAMPLE, toScript, whoOfRole } from "../lib/storyScript";
-import { newId, todayKey } from "../lib/util";
+import { lookName, MOOD_NAME, parseScript, toScript, whoOfRole } from "../lib/storyScript";
 import { LOOK_COUNT } from "../api/engine";
 import { StoryQ } from "../player/qtypes";
-import type { AnswerKey, Game, StoryMood } from "../types";
+import type { StoryMood } from "../types";
 import { StoryEdit } from "./QTypeEditors";
 
 const MOODS = Object.keys(MOOD_NAME) as StoryMood[];
@@ -185,110 +183,4 @@ function StoryPreview({ q, onClose }: { q: DraftQ; onClose: () => void }) {
       </div>
     </Modal>
   );
-}
-
-const ROWS_EXAMPLE = `STORY | Customer Experience | The lost luggage
-CAST | Anya | Passenger | 3
-CAST | Raj | Shift lead | 12
-INTRO | Gate 14, 6 am. A passenger marches up to the desk.
-SCENE | Passenger | Anya | My bag never arrived! | furious
-CHOICE | Best | I'm so sorry — let me track it right now. | She exhales. | calm
-CHOICE | Poor | That's not my desk. | She glares at you. | angry
-SCENE | narrator | The tracker shows her bag is in Dubai.
-CHOICE | Best | Book delivery to her hotel tonight | Relief all round. | happy
-CHOICE | Okay | Hand her the claim form | She sighs and starts writing. | worried
-SCENE | Shift lead | Raj | All good here? | thinking
-CHOICE | Best | Sorted — delivery's booked for tonight. | Raj gives a thumbs up. | excited
-CHOICE | Okay | Mostly, I think. | Raj double-checks the booking. | thinking
-WHY | Own the problem: apologise, act, and close the loop.
-END`;
-
-/** Bulk import: many stories at once (script or spreadsheet rows), each becomes a Story Mode draft. */
-export function ImportStories({ onClose }: { onClose: () => void }) {
-  const { d, api, tid, toast } = useApp();
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const file = useRef<HTMLInputElement>(null);
-  const res = useMemo(() => (text.trim() ? parseImport(text, d.cfg.topics, false) : null), [text, d.cfg.topics]);
-  const stories = (res?.drafts || []).filter((x) => x.type === "story");
-  const load = async (f?: File) => {
-    if (!f) return;
-    if (f.size > 1_000_000) return toast("That file is too big — 1 MB at most.");
-    const t = (await f.text()).replace(/^﻿/, "");
-    setText((x) => (x.trim() ? x.replace(/\s*$/, "\n\n") : "") + (/\.csv$/i.test(f.name) && !t.includes("\t") && !t.includes("|") ? t.split(/\r?\n/).map(csvLine).join("\n") : t));
-    if (file.current) file.current.value = "";
-  };
-  const create = async () => {
-    setBusy(true);
-    try {
-      const now = Date.now();
-      for (const s of stories) {
-        const sealed = sealQuestion(s);
-        const id = newId("g-");
-        const game: Game = { id, kind: "story", title: s.q.slice(0, 60), desc: (s.story?.intro || "").split(". ")[0].slice(0, 110), minutes: 0, color: "orange", status: "draft", date: todayKey(), questions: [sealed.q], createdAt: now, updatedAt: now };
-        const key: AnswerKey = { gid: id, answers: { [sealed.q.id]: sealed.canon }, updatedAt: now };
-        await api.saveQuiz(tid, { game, key });
-      }
-      toast(`${stories.length} stor${stories.length === 1 ? "y" : "ies"} added as drafts — publish them when ready`);
-      onClose();
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "Couldn't save the stories.");
-      setBusy(false);
-    }
-  };
-  return (
-    <Modal label="Import stories" onClose={onClose} wide>
-      <div className="stack">
-        <h3>Import stories</h3>
-        <p className="fine">
-          Paste one or many stories — as a script (each starts with <code>Title:</code>) or as spreadsheet rows (<code>STORY</code> … <code>END</code>, from Excel or a .csv). Each story becomes its own Story Mode quiz, saved as a draft.
-        </p>
-        <div className="row">
-          <button type="button" className="link" onClick={() => setText(SCRIPT_EXAMPLE)}>Script example</button>
-          <button type="button" className="link" onClick={() => setText(ROWS_EXAMPLE)}>Spreadsheet rows example</button>
-          <input ref={file} type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" className="sr" tabIndex={-1} aria-hidden="true" onChange={(e) => void load(e.target.files?.[0])} />
-          <button type="button" className="btn ghost tiny" onClick={() => file.current?.click()}>Upload .csv / .txt</button>
-        </div>
-        <textarea className="inp script" rows={14} value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste stories here" aria-label="Stories to import" />
-        {res && (
-          <div className="bulk-prev" aria-live="polite">
-            {stories.map((s) => (
-              <span key={s.id} className="chip ok">
-                {s.q} · {s.story?.scenes.length} pages
-              </span>
-            ))}
-            {!stories.length && <span className="fine">No stories recognised yet.</span>}
-            {res.skipped.slice(0, 5).map((x, k) => (
-              <span key={k} className="chip warn">Line {x.line}: {x.why}</span>
-            ))}
-          </div>
-        )}
-        <div className="row end">
-          <button type="button" className="btn ghost small" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn primary small" disabled={!stories.length || busy} onClick={create}>
-            {busy ? "Saving…" : stories.length ? `Create ${stories.length} stor${stories.length === 1 ? "y" : "ies"}` : "Create stories"}
-          </button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-/** One CSV line → tab-separated cells (quoted cells kept whole). */
-function csvLine(line: string) {
-  const out: string[] = [];
-  let cur = "", q = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (q && ch === '"' && line[i + 1] === '"') {
-      cur += '"';
-      i++;
-    } else if (ch === '"') q = !q;
-    else if (ch === "," && !q) {
-      out.push(cur);
-      cur = "";
-    } else cur += ch;
-  }
-  out.push(cur);
-  return out.map((c) => c.replace(/\t/g, " ")).join("\t");
 }

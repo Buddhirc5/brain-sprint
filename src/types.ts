@@ -210,7 +210,9 @@ export interface Equipped {
   face?: string;
   head?: string;
   ears?: string;
-  bg?: string;
+  bg?: string; // retired: backgrounds are no longer sold
+  pet?: string; // walks beside you (Companions.tsx)
+  ride?: string; // carries you on the map
 }
 export interface Purchase {
   id: string;

@@ -25,9 +25,81 @@ export interface PollPack {
   desc: string;
   slides: Omit<Slide, "id">[];
 }
-export type StarterPack = QuizPack | PollPack;
+/** A Story Mode case study, written as a script (lib/storyScript.ts). */
+export interface StoryPack {
+  id: string;
+  kind: "story";
+  industry: "bank" | "any";
+  title: string;
+  desc: string;
+  script: string;
+  topics: string[]; // the company topic to file it under, best first
+}
+export type StarterPack = QuizPack | PollPack | StoryPack;
 
 export const STARTER_PACKS: StarterPack[] = [
+  /* ---------------- Story Mode ---------------- */
+  {
+    id: "story-bank",
+    kind: "story",
+    industry: "bank",
+    title: "The pension-day call",
+    desc: "An elderly customer is rushing to hand her savings to a phone scammer.",
+    topics: ["Fraud Awareness", "Fraud", "Customer Experience", "Customer Service", "Cyber Security", "AML & Compliance"],
+    script: `Title: The pension-day call
+Topic: Fraud Awareness
+Cast: Mrs. Fonseka = Pensioner, look 5; Mr. Jayasinghe = Branch manager, look 15
+Intro: Pension day, 10:40 am. The queue reaches the door when Mrs. Fonseka hurries to your counter, clutching her passbook.
+
+Mrs. Fonseka (worried): A man from the bank called. He says my account is in danger — I must take out everything today and give it to his courier!
+- Best: Please sit with me a moment. The bank will never ask you to hand cash to anyone. -> (thinking) She sits down, still holding the passbook tight.
+- Okay: I can do the withdrawal, but please be careful with that caller. -> (worried) She nods, but keeps glancing at her phone.
+- Poor: Sure — how much would you like to take out? -> (happy) She looks relieved. The scammer is about to win.
+
+Narrator: Her phone rings again. It's the same “bank officer”, telling her to hurry.
+- Best: Offer to call the bank's official number together, right now. -> (shocked) The real bank confirms: nobody called her. She goes pale.
+- Okay: Tell her to hang up and ignore him. -> (worried) She hangs up, but she isn't sure who to believe.
+- Poor: Take her phone and argue with the caller yourself. -> (angry) The caller shouts and hangs up. Mrs. Fonseka is more upset than ever.
+
+Mr. Jayasinghe (thinking): I saw what happened. Do we need to do anything else?
+- Best: Yes — I'll file a fraud report and flag her account for extra checks. -> (excited) “Exactly right. That's how we protect our customers.”
+- Okay: I'll mention it at the next team meeting. -> (thinking) “Good — but let's report it today, while it's fresh.”
+- Poor: No, she kept her money, so it's done. -> (angry) “The same caller will try someone else this afternoon.”
+
+Ending best: Mrs. Fonseka leaves with her savings safe — and comes back next week with a cake for the whole branch.
+Lesson: Stop, explain, verify through official channels — and report suspected fraud even when no money was lost.`,
+  },
+  {
+    id: "story-any",
+    kind: "story",
+    industry: "any",
+    title: "Aisle three",
+    desc: "A busy Saturday, a spill, a worried parent and a colleague in a hurry.",
+    topics: ["Workplace Safety", "Health & Safety", "Safety", "Customer Service", "Customer Experience", "Operations"],
+    script: `Title: Aisle three
+Topic: Workplace Safety
+Cast: Mrs. Silva = Shopper, look 8; Dinesh = Colleague, look 13
+Intro: Saturday, 11 am. The store is packed. A little boy has just knocked a big bottle of juice off the shelf in aisle three.
+
+Narrator: Juice spreads across the floor. Shoppers keep walking past with their trolleys.
+- Best: Put a wet-floor sign down and stay by the spill. -> Shoppers steer around it. Nobody slips.
+- Okay: Hurry off to find a mop. -> (shocked) While you're gone, a shopper skids — and only just stays on her feet.
+- Poor: Keep stacking shelves — the cleaners will get to it. -> (shocked) A trolley wheel spins in the juice. Someone nearly falls.
+
+Mrs. Silva (worried): I'm so sorry! He didn't mean it. Will we have to pay for that?
+- Best: Not at all — accidents happen. Is he okay? -> (happy) She smiles, and her son peeks out from behind her.
+- Okay: Let me check with my manager. -> (worried) She waits, red-faced, while the queue watches.
+- Poor: Please keep a closer eye on him. -> (sad) She apologises again and leaves her basket behind.
+
+Dinesh (thinking): I'll mop it. Can you get back to the tills? The queue's huge.
+- Best: Let's clean it together, then I'll log it in the incident book. -> (excited) “Done in two minutes. Teamwork!”
+- Okay: Sure, thanks — I'll head back. -> (calm) Dinesh gets to work on his own.
+- Poor: Just leave the sign, it'll dry by itself. -> (shocked) “On a Saturday? Someone will fall.”
+
+Ending best: The floor is dry, the queue is moving, and the incident book shows the shelf needs a guard rail — fitted on Monday.
+Lesson: Make it safe first, be kind to the customer, and log incidents so the cause gets fixed.`,
+  },
+
   /* ---------------- certifications ---------------- */
   {
     id: "cert-bank",

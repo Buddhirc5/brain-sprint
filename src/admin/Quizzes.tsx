@@ -18,7 +18,7 @@ import { LIVE } from "../api/engine";
 import type { AnswerKey, CardColor, CertSettings, Game, GameStatus, QType, QuizKind } from "../types";
 import { useAdmin } from "./Admin";
 import { BucketEdit, StoryEdit, SwipeEdit } from "./QTypeEditors";
-import { ImportStories, StoryEpisode } from "./StoryEditor";
+import { StoryEpisode } from "./StoryEditor";
 import { parseScript, SCRIPT_EXAMPLE } from "../lib/storyScript";
 import { KIND } from "./common";
 
@@ -35,7 +35,6 @@ export function Quizzes() {
   const [kind, setKind] = useState<"all" | QuizKind>("all");
   const [picker, setPicker] = useState(false);
   const [packs, setPacks] = useState(false);
-  const [stories, setStories] = useState(false);
   const all = sortGames(Object.values(d.games));
   const gs = all.filter((g) => kind === "all" || (g.kind || "sprint") === kind);
   const count = (k: QuizKind) => all.filter((g) => (g.kind || "sprint") === k).length;
@@ -82,11 +81,6 @@ export function Quizzes() {
         {can("editor") && (
           <button className="btn lime small" onClick={() => setPacks(true)}>
             ✨ Starter library
-          </button>
-        )}
-        {can("editor") && features.sprint && (
-          <button className="btn ghost small" onClick={() => setStories(true)}>
-            Import stories
           </button>
         )}
         <button className="btn primary" onClick={() => setPicker(true)}>
@@ -190,8 +184,7 @@ export function Quizzes() {
         )}
       </div>
       {picker && <KindPicker onClose={() => setPicker(false)} onPick={(k) => { setPicker(false); setTab("edit", "new:" + k); }} />}
-      {stories && <ImportStories onClose={() => setStories(false)} />}
-      {packs && <StarterPacks kinds={["sprint", "cert", "live", "poll"]} onClose={() => setPacks(false)} />}
+      {packs && <StarterPacks kinds={["sprint", "story", "cert", "live", "poll"]} onClose={() => setPacks(false)} />}
     </>
   );
 }

@@ -2,16 +2,17 @@ import { useState } from "react";
 import { errMsg } from "../app/ApiCtx";
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
+import { Kit, Pet, Ride } from "../components/Companions";
 import { coinBurst, confetti, Icon, Modal } from "../components/ui";
 import { ITEMS, type Item, type Slot } from "../lib/catalog";
 import type { Equipped } from "../types";
 import { TopBar } from "./common";
 
-const TABS: [Slot, string][] = [["head", "Hats & phones"], ["face", "Glasses"], ["ears", "Earrings"], ["bg", "Backgrounds"], ["power", "Power-ups"]];
+const TABS: [Slot, string][] = [["pet", "Pets"], ["ride", "Rides"], ["head", "Hats & phones"], ["face", "Glasses"], ["ears", "Earrings"], ["power", "Power-ups"]];
 
 export function Store() {
   const { api, tid, me, stats, go, toast, features } = useApp();
-  const [tab, setTab] = useState<Slot>("head");
+  const [tab, setTab] = useState<Slot>("pet");
   const [trying, setTrying] = useState<Equipped | null>(null);
   const [confirm, setConfirm] = useState<Item | null>(null);
   const [busy, setBusy] = useState(false);
@@ -60,7 +61,7 @@ export function Store() {
   };
 
   const tabs = TABS.filter(([k]) => k !== "power" || features.streaks);
-  const items = ITEMS.filter((i) => i.slot === tab);
+  const items = ITEMS.filter((i) => i.slot === tab && !i.retired);
   return (
     <div className="phone">
       <TopBar title="Store" back={() => go({ v: "lobby" })} />
@@ -70,7 +71,7 @@ export function Store() {
             <div className="nm">{me.name.split(" ")[0]}</div>
             <div className="lv">Level {s.level.level}</div>
           </div>
-          <Chibi look={me.look} equipped={look} variant="full" size={130} mood={trying ? "happy" : "idle"} />
+          <Kit look={me.look} equipped={look} size={124} mood={trying ? "happy" : "idle"} className="store-kit" />
         </div>
         <div className="row" style={{ gap: 8 }}>
           <span className="pill num" data-coin-target>
@@ -105,6 +106,10 @@ export function Store() {
                   <span className="shield-ic">
                     <Icon.shield />
                   </span>
+                ) : it.slot === "pet" || it.slot === "ride" ? (
+                  <button className="item-art" aria-label={`Try ${it.name}`} onClick={() => setTrying({ ...eq, [slotKey(it)]: it.id })}>
+                    {it.slot === "pet" ? <Pet id={it.id} size={96} /> : <Ride id={it.id} size={128} />}
+                  </button>
                 ) : (
                   <button aria-label={`Try on ${it.name}`} onClick={() => setTrying({ ...eq, [slotKey(it)]: it.id })} style={{ borderRadius: "50%" }}>
                     <Chibi look={me.look} equipped={{ ...eq, [slotKey(it)]: it.id }} size={86} still />
@@ -124,7 +129,7 @@ export function Store() {
                   </>
                 ) : have ? (
                   <button className={`btn ${isOn ? "ghost" : "primary"} tiny`} onClick={() => equip(it, !isOn)}>
-                    {isOn ? "Take off" : "Wear"}
+                    {isOn ? (it.slot === "pet" ? "Send home" : it.slot === "ride" ? "Park it" : "Take off") : it.slot === "pet" ? "Take along" : it.slot === "ride" ? "Ride" : "Wear"}
                   </button>
                 ) : (
                   <>

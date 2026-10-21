@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
+import { Kit } from "../components/Companions";
 import { Icon } from "../components/ui";
 import { DARK_CARDS, isOpen, isScheduled, sortGames } from "../lib/games";
 import { board, limitMs, runCorrect, runPoints, windowStart } from "../lib/scoring";
@@ -77,7 +78,7 @@ export function Lobby() {
           {myWeek ? ` · #${myWeek} this week` : ""}
         </div>
         <div className="me-char" aria-hidden="true">
-          <Chibi look={me.look} equipped={me.equipped} variant="full" size={150} mood={hasToday ? "idle" : "happy"} />
+          <Kit look={me.look} equipped={me.equipped} size={150} mood={hasToday ? "idle" : "happy"} />
         </div>
         <div className="xp" role="progressbar" aria-label="Progress to next level" aria-valuenow={Math.round(lv.progress * 100)} aria-valuemin={0} aria-valuemax={100}>
           <span style={{ width: `${Math.round(lv.progress * 100)}%` }} />
