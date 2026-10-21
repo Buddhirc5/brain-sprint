@@ -92,6 +92,14 @@ export interface AnswerResult {
   run: Run;
 }
 
+export interface RetryResult {
+  fixed: boolean;
+  canon: string | null;
+  explain?: string;
+  rp: number; // points this fix added
+  run: Run;
+}
+
 export interface QuizDraft {
   game: Game;
   key: AnswerKey;
@@ -165,6 +173,8 @@ export interface Api {
   startRun(tenantId: string, gid: string): Promise<Run>;
   showQuestion(tenantId: string, gid: string, index: number): Promise<Run>; // stamps qAt
   answer(tenantId: string, gid: string, index: number, choice: string | null, blur: number): Promise<AnswerResult>;
+  /** Second chance on question `index` of a finished daily quiz (once per question). */
+  retryAnswer(tenantId: string, gid: string, index: number, choice: string | null): Promise<RetryResult>;
   finishRun(tenantId: string, gid: string): Promise<{ run: Run; key?: Record<string, string> }>; // key only for cert with showAnswers
 
   /* ---- tenant admin ---- */

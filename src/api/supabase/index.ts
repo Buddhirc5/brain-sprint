@@ -7,7 +7,7 @@
 import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
 import {
   ApiError,
-  type Access, type Api, type AnswerResult, type AuthUser, type LookupCard, type MfaState, type NewTenantInput,
+  type Access, type Api, type AnswerResult, type RetryResult, type AuthUser, type LookupCard, type MfaState, type NewTenantInput,
   type QuizDraft, type RegisterInput, type TenantData, type Unsub,
 } from "../Api";
 import type {
@@ -358,6 +358,11 @@ class SupabaseApi implements Api {
   }
   async answer(tenantId: string, gid: string, index: number, choice: string | null, blur: number): Promise<AnswerResult> {
     return this.rpc<AnswerResult>("answer", { p_tid: tenantId, p_gid: gid, p_index: index, p_choice: choice, p_blur: Math.max(0, Math.floor(blur || 0)) });
+  }
+  async retryAnswer(tenantId: string, gid: string, index: number, choice: string | null) {
+    const r = await this.rpc<RetryResult>("retry_answer", { p_tid: tenantId, p_gid: gid, p_index: index, p_choice: choice });
+    this.refresh(tenantId);
+    return r;
   }
   async finishRun(tenantId: string, gid: string) {
     const r = await this.rpc<{ run: Run; key?: Record<string, string> }>("finish_run", { p_tid: tenantId, p_gid: gid });

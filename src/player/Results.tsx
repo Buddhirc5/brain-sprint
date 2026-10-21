@@ -4,7 +4,7 @@ import { Chibi } from "../components/Chibi";
 import { coinBurst, confetti, CountUp, Icon } from "../components/ui";
 import { choiceText } from "../lib/answers";
 import { isOpen } from "../lib/games";
-import { board, gameBoard, RULES, runCoins, runMs, runPoints, windowStart } from "../lib/scoring";
+import { board, gameBoard, retryable, retryPoints, RULES, runCoins, runMs, runPoints, windowStart } from "../lib/scoring";
 import { dayKey, pct, reducedMotion } from "../lib/util";
 import { runKey, type Game, type Run } from "../types";
 import { Avatar, certHref, certInfo, CoinPill, finishCache, fmtLongDate, pubName, scorePct, TopBar } from "./common";
@@ -191,6 +191,9 @@ function SprintResult({ g, fresh }: { g: Game; fresh?: boolean }) {
   const rank = gb.findIndex((r) => r.uid === me.uid) + 1;
   const hand = acc >= 90 ? "Legend status!" : acc >= 70 ? "Great run!" : acc >= 50 ? "Solid effort!" : "Every miss is a lesson.";
   const mood = acc >= 70 ? "cheer" : acc >= 40 ? "happy" : "think";
+  const misses = retryable(run);
+  const fixUpTo = misses.reduce((t, i) => t + retryPoints({ ...run.ans[i], rt: 1, rp: RULES.retry }), 0);
+  const partly = run.ans.some((a) => !a.ok && a.f);
   const weak: Record<string, number> = {};
   run.ans.forEach((a, i) => {
     if (!a.ok) {
@@ -228,6 +231,7 @@ function SprintResult({ g, fresh }: { g: Game; fresh?: boolean }) {
               Correct answers{" "}
               <span className="muted">
                 {correct} × {RULES.base}
+                {partly ? " + part marks" : ""}
               </span>
             </span>
             <span className="v">{pts.base}</span>
@@ -244,6 +248,14 @@ function SprintResult({ g, fresh }: { g: Game; fresh?: boolean }) {
             </span>
             <span className="v">{pts.perfect ? `+${pts.perfect}` : "—"}</span>
           </div>
+          {pts.retry > 0 && (
+            <div className="ln">
+              <span>
+                Second chance <span className="muted">fixed misses</span>
+              </span>
+              <span className="v">+{pts.retry}</span>
+            </div>
+          )}
           <div className="ln tot">
             <span>Points</span>
             <span className="v">{pts.total}</span>
@@ -293,6 +305,25 @@ function SprintResult({ g, fresh }: { g: Game; fresh?: boolean }) {
           </div>
         )}
       </section>
+
+      {misses.length > 0 ? (
+        <button type="button" className="sc-cta" onClick={() => go({ v: "retry", gid })}>
+          <span className="sc-ic" aria-hidden="true">🎯</span>
+          <span>
+            <b>Second chance</b>
+            <small>
+              Fix your {misses.length} miss{misses.length > 1 ? "es" : ""} · up to +{fixUpTo} points
+            </small>
+          </span>
+          <span className="sc-go" aria-hidden="true">→</span>
+        </button>
+      ) : (
+        correct === run.total && (
+          <p className="sc-flawless">
+            <span aria-hidden="true">✨</span> Flawless — no second chance needed.
+          </p>
+        )
+      )}
 
       <Climb gid={gid} animate={!!fresh} />
 

@@ -6,6 +6,7 @@ import { Welcome, Setup } from "../player/Setup";
 import { Lobby } from "../player/Lobby";
 import { Play } from "../player/Play";
 import { Results } from "../player/Results";
+import { Retry } from "../player/Retry";
 import { Board } from "../player/Board";
 import { Store } from "../player/Store";
 import { Guide } from "../player/Guide";
@@ -81,6 +82,9 @@ function PlayerShell() {
         break;
       case "results":
         screen = <Results gid={view.gid} fresh={view.fresh} />;
+        break;
+      case "retry":
+        screen = <Retry key={view.gid} gid={view.gid} />;
         break;
       case "board":
         screen = <Board />;

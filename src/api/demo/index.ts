@@ -6,7 +6,7 @@
    ===================================================================== */
 import {
   ApiError, PIN_RE, SLUG_RE,
-  type Access, type Api, type AnswerResult, type AuthUser, type LookupCard, type MfaState, type NewTenantInput,
+  type Access, type Api, type AnswerResult, type RetryResult, type AuthUser, type LookupCard, type MfaState, type NewTenantInput,
   type QuizDraft, type RegisterInput, type TenantData, type Unsub,
 } from "../Api";
 import type {
@@ -17,8 +17,8 @@ import type {
 import { runKey } from "../../types";
 import * as store from "./db";
 import type { DB } from "./db";
-import { GRACE_MS, LABELS, LIVE, aggregate, audiencePoll, cleanSlide, pollSlidesProblem, defaultCfg, isRight, livePoints, normalizeCfg, pollValueProblem, scoreAnswer, DEFAULT_BRANDING, LOOK_COUNT } from "../engine";
-import { limitMs, runPoints, statsOf, levelOf } from "../../lib/scoring";
+import { GRACE_MS, LABELS, LIVE, aggregate, audiencePoll, cleanSlide, pollSlidesProblem, defaultCfg, isRight, livePoints, markAnswer, markRetry, normalizeCfg, pollValueProblem, DEFAULT_BRANDING, LOOK_COUNT } from "../engine";
+import { limitMs, retryPoints, runPoints, statsOf, levelOf } from "../../lib/scoring";
 import { ITEM } from "../../lib/catalog";
 import { isOpen } from "../../lib/games";
 import { cleanName, cleanText, maskId, normEmpId, sha256, validEmpId, validName } from "../../lib/security";
@@ -752,15 +752,36 @@ class DemoApi implements Api {
       let c = choice == null ? null : String(choice).slice(0, 40);
       if (ms > left + GRACE_MS) c = null; // too late: the quiz clock ran out
       ms = Math.max(0, Math.min(ms, Math.max(0, left)));
-      const ok = isRight(canon, c);
-      const pts = scoreAnswer(g, ok, ms);
-      run.ans.push({ ok: ok ? 1 : 0, ms, c, pts });
+      const { ok, f, pts } = markAnswer(g, q, canon, c, ms);
+      run.ans.push({ ok: ok ? 1 : 0, ms, c, pts, ...(f ? { f } : {}) });
       run.qAt = undefined;
       run.blur = Math.max(run.blur || 0, blur | 0);
       run.correct = run.ans.filter((a) => a.ok).length;
       p.updatedAt = now;
       const hide = g.kind === "cert";
       return { ok: hide ? null : ok, canon: hide ? null : canon ?? null, explain: hide ? undefined : q.explain, pts: hide ? 0 : pts, run: hide ? maskCertRun(structuredClone(run)) : structuredClone(run) };
+    });
+  }
+  /** Second chance: one more try at a question missed in a finished daily quiz (no timer, no speed bonus). */
+  async retryAnswer(tid: string, gid: string, index: number, choice: string | null): Promise<RetryResult> {
+    return store.tx((db) => {
+      const p = this.needMe(db, tid);
+      const g = db.t[tid].games[gid];
+      if (!g) throw err("not_found", "Quiz not found.");
+      if (g.kind === "cert") throw err("forbidden", "Exams don't have a second chance.");
+      const { run } = this.currentRun(p, g);
+      if (!run || run.status !== "done") throw err("closed", "Finish the quiz first.");
+      const a = run.ans[index], q = g.questions[index];
+      if (!a || !q) throw err("invalid", "No such question.");
+      if (a.ok) throw err("conflict", "You got this one right the first time.");
+      if (a.rt) throw err("conflict", "This question has had its second chance.");
+      const canon = db.t[tid].keys[gid]?.answers[q.id];
+      const c = choice == null ? null : String(choice).slice(0, 40);
+      const { fixed, rp } = markRetry(q, canon, c);
+      Object.assign(a, { rt: 1 as const, rc: c, rp });
+      run.score = runPoints(run).total;
+      p.updatedAt = Date.now();
+      return { fixed, canon: canon ?? null, explain: q.explain, rp: retryPoints(a), run: structuredClone(run) };
     });
   }
   async finishRun(tid: string, gid: string) {

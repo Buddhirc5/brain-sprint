@@ -312,9 +312,9 @@ export function jsonToSets(text: string): { sets: LibraryItem[]; errors: string[
       if (bad) return;
       const q = q0 as Question;
       const n = i + 1;
-      if (!q || typeof q.q !== "string" || !["mcq", "tf", "match", "order"].includes(q.type)) {
+      if (!q || typeof q.q !== "string" || !["mcq", "tf", "match", "order", "swipe", "bucket", "story"].includes(q.type)) {
         bad = true;
-        return errors.push(`${at}, question ${n}: needs "type" (mcq/tf/match/order) and "q".`);
+        return errors.push(`${at}, question ${n}: needs "type" (mcq/tf/match/order/swipe/bucket/story) and "q".`);
       }
       const id = typeof q.id === "string" && q.id && !seen.has(q.id) ? q.id : `q${randHex(2)}${n}`;
       seen.add(id);
@@ -335,6 +335,14 @@ export function jsonToSets(text: string): { sets: LibraryItem[]; errors: string[
       if ((q.type === "match" && (!Array.isArray(q.left) || !Array.isArray(q.right) || q.left.length !== q.right.length)) || (q.type === "order" && !Array.isArray(q.items))) {
         bad = true;
         return errors.push(`${at}, question ${n}: incomplete ${q.type} question.`);
+      }
+      if ((q.type === "swipe" || q.type === "bucket") && (!Array.isArray(q.options) || !Array.isArray(q.items) || String(canon).split(",").length !== q.items.length || String(canon).split(",").some((v) => !/^\d$/.test(v) || Number(v) >= q.options!.length))) {
+        bad = true;
+        return errors.push(`${at}, question ${n}: the answer needs one ${q.type === "swipe" ? "side (0 or 1)" : "bucket index"} per item.`);
+      }
+      if (q.type === "story" && (!q.story || !Array.isArray(q.story.steps) || String(canon).split(";").length !== q.story.steps.length || !/^[0-2](,[0-2])*(;[0-2](,[0-2])*)*$/.test(String(canon)))) {
+        bad = true;
+        return errors.push(`${at}, question ${n}: a case study's answer rates each reply 2 (best), 1 or 0, scenes split by ";".`);
       }
       const idx = String(canon).split(",").map(Number);
       const len = q.type === "match" ? q.right!.length : q.type === "order" ? q.items!.length : 0;

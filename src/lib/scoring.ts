@@ -3,7 +3,7 @@
    These are the exact rules shown to staff in the in-app guide, so
    change them here and the guide stays truthful (it reads RULES).
    ===================================================================== */
-import type { Game, Player, Run, Disqualified } from "../types";
+import type { Ans, Game, Player, Run, Disqualified } from "../types";
 import { ITEM } from "./catalog";
 import { clamp, dayKey, monthStart, pct, weekStart } from "./util";
 
@@ -11,6 +11,7 @@ export const RULES = {
   base: 100, // points for a correct answer
   speedMax: 50, // extra points for answering instantly, falling to 0 at your time share
   perfect: 50, // bonus points when every answer in a quiz is right
+  retry: 50, // second chance: points for fixing a missed question (no speed bonus, never more than a first-try right answer)
   coinPerCorrect: 10,
   coinFinish: 5,
   coinPerfect: 25,
@@ -32,19 +33,39 @@ export function answerPoints(ok: boolean, ms: number, share: number): number {
   return RULES.base + Math.round(RULES.speedMax * Math.max(0, 1 - ms / share));
 }
 
+/** Swipe, bucket and case-study answers that are partly right: a share of the base points, no speed bonus. */
+export const partialPoints = (f: number) => Math.round(RULES.base * clamp(f, 0, 0.99));
+
+/** Points a second chance may add to one answer: the fix is worth RULES.retry, and the answer's total never
+ *  reaches a first-try right answer (so players who were right first time always stay ahead). */
+export function retryPoints(a: Ans): number {
+  if (!a.rt || a.ok) return 0;
+  const first = a.f ? partialPoints(a.f) : 0;
+  return clamp(Math.round(a.rp || 0), 0, Math.min(RULES.retry, Math.max(0, RULES.base - 1 - first)));
+}
+
 /** Points are re-derived from each answer and capped, so an edited score can't inflate the board. */
-export function runPoints(r: Run): { total: number; base: number; speed: number; perfect: number } {
+export function runPoints(r: Run): { total: number; base: number; speed: number; perfect: number; retry: number } {
   let base = 0,
-    speed = 0;
+    speed = 0,
+    retry = 0;
   for (const a of r.ans || []) {
-    if (!a.ok) continue;
+    retry += retryPoints(a);
+    if (!a.ok) {
+      if (a.f) base += Math.min(partialPoints(a.f), Math.max(0, Math.round(a.pts || 0)));
+      continue;
+    }
     base += RULES.base;
     speed += clamp((a.pts || 0) - RULES.base, 0, RULES.speedMax);
   }
   const allRight = r.status === "done" && r.total > 0 && (r.ans || []).length === r.total && r.ans.every((a) => a.ok);
   const perfect = allRight ? RULES.perfect : 0;
-  return { total: base + speed + perfect, base, speed, perfect };
+  return { total: base + speed + perfect + retry, base, speed, perfect, retry };
 }
+
+/** Questions this play can still fix with a second chance (daily quizzes only, once each). */
+export const retryable = (r: Run | undefined) =>
+  r && r.status === "done" && r.kind !== "cert" ? (r.ans || []).map((a, i) => (!a.ok && !a.rt ? i : -1)).filter((i) => i >= 0) : [];
 export const runCorrect = (r: Run) => (r.ans || []).filter((a) => a.ok).length;
 export const runMs = (r: Run) => (r.ans || []).reduce((s, a) => s + Math.max(0, a.ms || 0), 0);
 

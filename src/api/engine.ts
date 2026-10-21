@@ -2,8 +2,9 @@
    Pure game logic shared by the demo engine and mirrored 1:1 in SQL
    (supabase/migrations/*_functions.sql). Change both together.
    ===================================================================== */
-import type { Branding, Features, Game, Labels, OrgConfig, Poll, PollResponse, SignIn, Slide, SlideResults, Tenant, UnitType } from "../types";
-import { answerPoints, shareMs } from "../lib/scoring";
+import type { Branding, Features, Game, Labels, OrgConfig, Poll, PollResponse, Question, SignIn, Slide, SlideResults, Tenant, UnitType } from "../types";
+import { answerPoints, partialPoints, RULES, shareMs } from "../lib/scoring";
+import { partialScore } from "../lib/answers";
 import { MAX_POLL_IMG_CHARS, MAX_SLIDE_IMG_CHARS, validImg } from "../lib/image";
 
 export const DEFAULT_BRANDING: Branding = {
@@ -72,6 +73,23 @@ export function normalizeCfg(c: Partial<OrgConfig> | undefined, template: Tenant
 
 /* ---------------- sprint & certification scoring ---------------- */
 export const isRight = (canon: string | undefined, choice: string | null) => choice != null && canon != null && canon === choice;
+
+/** Marks one answer: right or wrong, or for swipe / bucket / case study the share right (f).
+ *  Sprints: 100 + speed bonus when fully right, 100 × f when partly right. Certification: 1 per right answer. */
+export function markAnswer(g: Game, q: Question, canon: string | undefined, choice: string | null, ms: number): { ok: boolean; f?: number; pts: number } {
+  const f = partialScore(q.type, canon, choice);
+  const ok = f == null ? isRight(canon, choice) : f >= 1;
+  if (g.kind === "cert") return { ok, pts: ok ? 1 : 0 };
+  if (ok) return { ok, pts: scoreAnswer(g, true, ms) };
+  return f ? { ok, f, pts: partialPoints(f) } : { ok, pts: 0 };
+}
+
+/** A second chance on a missed question: fixed only when fully right, worth RULES.retry (capped in retryPoints). */
+export function markRetry(q: Question, canon: string | undefined, choice: string | null): { fixed: boolean; rp: number } {
+  const f = partialScore(q.type, canon, choice);
+  const fixed = f == null ? isRight(canon, choice) : f >= 1;
+  return { fixed, rp: fixed ? RULES.retry : 0 };
+}
 /** Sprint: 100 + up to 50 speed bonus. Certification: 1 point per right answer (no speed element). */
 export function scoreAnswer(g: Game, ok: boolean, ms: number) {
   if (g.kind === "cert") return ok ? 1 : 0;
