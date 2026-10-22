@@ -3,26 +3,12 @@
    penguins on the frost peaks and a little dragon over the volcano. The animals are painted 3D-toy
    pictures (src/assets/critters, the same style as the characters) standing on the islands as sprites,
    wandering between free tiles of their own island. Tap one and it hops and "says" something.
-   Butterflies and fireflies stay tiny 3D shapes. */
-import {
-  CapsuleGeometry, CircleGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, MeshLambertMaterial, PlaneGeometry, Scene, SphereGeometry,
-  SRGBColorSpace, Sprite, SpriteMaterial, Texture, TextureLoader, Vector3, type BufferGeometry, type Material,
-} from "three";
+   Butterflies are painted too; fireflies stay tiny glowing dots. */
+import { CircleGeometry, Group, Mesh, MeshBasicMaterial, Scene, SphereGeometry, SRGBColorSpace, Sprite, SpriteMaterial, Texture, TextureLoader, Vector3 } from "three";
 import type { Land } from "../../lib/arenaMap";
 
 export interface Critter { obj: Group; name: string; say: string; height: number; pos: () => Vector3; poke: () => void }
 type Tick = (t: number, dt: number) => void;
-
-const L = (color: string, extra: Partial<{ emissive: string; e: number; transparent: boolean; opacity: number }> = {}) =>
-  new MeshLambertMaterial({ color, flatShading: true, emissive: extra.emissive || "#000", emissiveIntensity: extra.e || 0, transparent: !!extra.transparent, opacity: extra.opacity ?? 1 });
-
-function part(g: Group, geo: BufferGeometry, mat: Material, x = 0, y = 0, z = 0, cast = true) {
-  const m = new Mesh(geo, mat);
-  m.position.set(x, y, z);
-  m.castShadow = cast;
-  g.add(m);
-  return m;
-}
 
 /** Wander: pick a free tile on the same island, walk (or hop) to it, rest, repeat. */
 function wanderer(g: Group, tiles: [number, number][], o: { speed: number; rest: [number, number]; hop?: number; onStep?: (t: number, moving: boolean, k: number) => void }): Tick {
@@ -92,11 +78,11 @@ export function makeCritters(scene: Scene, lands: Land[], tilesOf: (land: number
     if (kind === "Rookie Meadow") {
       for (let i = 0; i < n(2); i++) add(sheep(tiles, anim), "Sheep", "Baa! 🐑", 0.5);
       for (let i = 0; i < n(2); i++) add(rabbit(tiles, anim), "Rabbit", "Hop hop!", 0.4);
-      for (let i = 0; i < 3; i++) add(butterfly(tiles, anim, ["#FF7EB6", "#FFD84D", "#8FD3FF"][i]), "Butterfly", "Flutter flutter", 0.1, 2.6);
+      for (let i = 0; i < 3; i++) add(butterfly(tiles, anim, ["#FFFFFF", "#FFF0B0", "#D6ECFF"][i]), "Butterfly", "Flutter flutter", 0.1, 2.6);
     } else if (kind === "Coral Coast") {
       for (let i = 0; i < n(3); i++) add(crab(tiles, anim), "Crab", "Click clack!", 0.3);
       add(turtle(tiles, anim), "Turtle", "Slow and steady wins 🐢", 0.35);
-      for (let i = 0; i < 2; i++) add(butterfly(tiles, anim, i ? "#FF9F43" : "#FFFFFF"), "Butterfly", "Flutter flutter", 0.1, 2.6);
+      for (let i = 0; i < 2; i++) add(butterfly(tiles, anim, i ? "#FFE0C0" : "#FFFFFF"), "Butterfly", "Flutter flutter", 0.1, 2.6);
     } else if (kind === "Sunset Canyon") {
       for (let i = 0; i < n(3); i++) add(lizard(tiles, anim), "Lizard", "Zip!", 0.25);
     } else if (kind === "Crystal Caves") {
@@ -114,8 +100,20 @@ export function makeCritters(scene: Scene, lands: Land[], tilesOf: (land: number
 }
 
 /* ---------------- the animals ---------------- */
-const ART = import.meta.glob("../../assets/critters/*.webp", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
+const ART = import.meta.glob(["../../assets/critters/*.webp", "../../assets/deco/*.webp"], { eager: true, query: "?url", import: "default" }) as Record<string, string>;
 const texCache = new Map<string, Texture>();
+/** a painted picture as a texture, shared: "critters/sheep", "deco/tree"… */
+export function paintedTexture(key: string): Texture {
+  const src = ART[`../../assets/${key}.webp`];
+  let tex = texCache.get(src);
+  if (!tex) {
+    tex = new TextureLoader().load(src);
+    tex.colorSpace = SRGBColorSpace;
+    tex.userData.shared = true;
+    texCache.set(src, tex);
+  }
+  return tex;
+}
 const shadowGeo = new CircleGeometry(0.5, 16).rotateX(-Math.PI / 2);
 const shadowMat = new MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.13, depthWrite: false });
 
@@ -124,13 +122,7 @@ const shadowMat = new MeshBasicMaterial({ color: "#000", transparent: true, opac
 function painted(name: string, h: number, o: { left?: boolean; tint?: string; shadow?: number } = {}) {
   const g = new Group(), body = new Group();
   g.add(body);
-  const src = ART[`../../assets/critters/${name}.webp`];
-  let tex = texCache.get(src);
-  if (!tex) {
-    tex = new TextureLoader().load(src);
-    tex.colorSpace = SRGBColorSpace;
-    texCache.set(src, tex);
-  }
+  const tex = paintedTexture(`critters/${name}`);
   const sp = new Sprite(new SpriteMaterial({ map: tex, color: o.tint || "#FFFFFF", alphaTest: 0.3, transparent: true }));
   sp.center.set(0.5, 0.04);
   let aspect = 1;
@@ -181,20 +173,17 @@ function rabbit(tiles: [number, number][], anim: Tick[]) {
   return a.g;
 }
 
-function butterfly(tiles: [number, number][], anim: Tick[], color: string) {
-  const g = new Group(), wingM = new MeshBasicMaterial({ color, side: DoubleSide }), bodyM = L("#2A2522");
-  part(g, new CapsuleGeometry(0.012, 0.06, 2, 4).rotateX(Math.PI / 2), bodyM, 0, 0, 0, false);
-  const wl = part(g, new PlaneGeometry(0.11, 0.09).translate(-0.055, 0, 0).rotateX(-Math.PI / 2), wingM, 0, 0, 0, false);
-  const wr = part(g, new PlaneGeometry(0.11, 0.09).translate(0.055, 0, 0).rotateX(-Math.PI / 2), wingM, 0, 0, 0, false);
+function butterfly(tiles: [number, number][], anim: Tick[], tint: string) {
+  const g = new Group();
+  const sp = new Sprite(new SpriteMaterial({ map: paintedTexture("deco/butterfly"), color: tint, alphaTest: 0.35, transparent: true }));
+  g.add(sp);
   const [u, v] = tiles[Math.floor(Math.random() * tiles.length)];
   const ph = Math.random() * 10, r = 0.6 + Math.random() * 0.8;
   anim.push((t) => {
     const a = t * 0.6 + ph;
     g.position.set(u + Math.cos(a) * r, 0.55 + Math.sin(t * 2.3 + ph) * 0.18, v + Math.sin(a * 1.3) * r);
-    g.rotation.y = -a;
-    const f = Math.sin(t * 22 + ph) * 1.1;
-    wl.rotation.z = f;
-    wr.rotation.z = -f;
+    // wings beat: the picture narrows and opens again
+    sp.scale.set(0.12 * (0.35 + Math.abs(Math.sin(t * 22 + ph)) * 0.65), 0.11, 1);
   });
   return g;
 }

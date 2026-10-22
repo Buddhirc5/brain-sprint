@@ -4,16 +4,16 @@
    Drag to move along the map, pinch or ctrl+wheel to zoom. HTML labels (stops, signs) are positioned
    over the canvas every frame by projecting their 3D anchor points. */
 import {
-  AmbientLight, BoxGeometry, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry,
-  DirectionalLight, DodecahedronGeometry, DoubleSide, Euler, Fog, Group, HemisphereLight, IcosahedronGeometry, InstancedMesh, Material, Matrix4,
-  Mesh, MeshBasicMaterial, MeshLambertMaterial, Object3D, OctahedronGeometry, OrthographicCamera, PCFShadowMap, Plane, PlaneGeometry,
+  AmbientLight, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry,
+  DirectionalLight, DoubleSide, Euler, Fog, Group, HemisphereLight, IcosahedronGeometry, InstancedMesh, Material, Matrix4,
+  Mesh, MeshBasicMaterial, MeshLambertMaterial, Object3D, OrthographicCamera, PCFShadowMap, Plane, PlaneGeometry,
   Quaternion, Raycaster, RepeatWrapping, Scene, SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace, TorusGeometry, Vector2, Vector3, WebGLRenderer,
 } from "three";
 import type { Deco, Land } from "../../lib/arenaMap";
 import { hash, key, type World } from "../../lib/arenaWorld";
 import type { Player } from "../../types";
 import { CHIBI_ASPECT, chibiTexture, companionTexture, PET_ASPECT, RIDE_ASPECT } from "./chibiTexture";
-import { makeCritters, type Critter } from "./critters";
+import { makeCritters, paintedTexture, type Critter } from "./critters";
 /** a soft painted backdrop per land, far behind the islands (tiny webps, fetched only for the land in view) */
 const BACKDROP = import.meta.glob("../../assets/map/bg-*.webp", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
 import { Billboards, faceCamera, landKey, landmark, LIGHT, makeLanterns, makeParticles, mute, skyFor, softDot, timeOfDay, type Tod } from "./ambience";
@@ -37,6 +37,14 @@ export interface Arena3DInput {
 }
 
 const OFF = new Vector3(10, 8.2, 10); // camera direction: 2:1 isometric, looking toward −u −v
+/** painted props (src/assets/deco) stand upright facing the camera; height on the map, and width ÷ height of the picture */
+const DECO: Record<Deco, [number, number]> = {
+  tree: [1.1, 0.905], pine: [1.15, 0.68], snowpine: [1.15, 0.7], flower: [0.32, 1.156], palm: [1.3, 0.905],
+  cactus: [0.75, 0.795], rock: [0.38, 1.22], crystal: [0.62, 0.965], lava: [0.42, 1.176],
+};
+const SWAYS = new Set<Deco>(["tree", "pine", "snowpine", "palm", "flower"]);
+/** painted art is already lit, so it is only tinted for the time of day */
+const ART_TINT: Record<Tod, string> = { morning: "#FFF4E8", day: "#FFFFFF", dusk: "#FFDCC6", night: "#8D9BCB" };
 const UP = new Vector3(0, 1, 0);
 const ME_H = 1.25, MATE_H = 0.95;
 const PER_STOP = 4;
@@ -522,7 +530,7 @@ export class Arena3D {
         const k = walked ? 1 : 0.86;
         B.add("stone", gStone, lambert, mat(t.u, 0.02, t.v, k, 1, k, hash(t.u, t.v, 6) * 3), c, { recv: true });
       }
-      if (t.prop) this.prop(B, t.prop, t.u + (hash(t.u, t.v, 9) - 0.5) * 0.4, t.v + (hash(t.u, t.v, 10) - 0.5) * 0.4, hash(t.u, t.v, 15), lambert);
+      if (t.prop) this.prop(B, t.prop, t.u + (hash(t.u, t.v, 9) - 0.5) * 0.4, t.v + (hash(t.u, t.v, 10) - 0.5) * 0.4, hash(t.u, t.v, 15));
       const grass = TUFT[th.name.replace(/ [IVX]+$/, "")];
       if (grass && !t.spot && t.kind === "ground" && !t.prop && hash(t.u, t.v, 21) < 0.35) {
         // tufts of grass for texture
@@ -664,47 +672,18 @@ export class Arena3D {
     void pathIdx;
   }
 
-  private prop(B: Batch, kind: Deco, x: number, z: number, r: number, mat: MeshLambertMaterial) {
-    const m = (px: number, py: number, pz: number, s = 1, sy = s, ry = 0, rz = 0) => new Matrix4().compose(new Vector3(px, py, pz), new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), ry).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), rz)), new Vector3(s, sy, s));
-    const s = 0.85 + r * 0.35;
-    const sway = { sway: true, cast: true };
-    switch (kind) {
-      case "tree":
-        B.add("trunk", G.trunk, mat, m(x, 0, z, s), new Color("#7A5230"), { cast: true });
-        B.add("crown", G.crown, mat, m(x, 0.55 * s, z, s * 1.05), new Color(r < 0.5 ? "#4DA436" : "#5BB43F"), sway);
-        B.add("crown", G.crown, mat, m(x + 0.08, 0.78 * s, z - 0.05, s * 0.7), new Color("#7ACB55"), sway);
-        return;
-      case "pine":
-      case "snowpine": {
-        const snow = kind === "snowpine";
-        B.add("trunk", G.trunk, mat, m(x, 0, z, s * 0.8), new Color("#6B4528"), { cast: true });
-        for (let i = 0; i < 3; i++) B.add("cone", G.cone, mat, m(x, (0.3 + i * 0.22) * s, z, s * (1 - i * 0.22)), new Color(snow ? (i === 2 ? "#FFFFFF" : "#5F8FA0") : i === 2 ? "#3E9C6B" : "#2C7A52"), sway);
-        return;
-      }
-      case "flower":
-        for (let i = 0; i < 3; i++) B.add("bloom", G.bloom, mat, m(x + (i - 1) * 0.12, 0.1 + i * 0.03, z + ((i * 7) % 3) * 0.06 - 0.06), new Color(["#FF7EB6", "#FFFFFF", "#FFD84D"][i]), {});
-        return;
-      case "palm": {
-        B.add("palm", G.palmTrunk, mat, m(x, 0, z, s, s, r * 6, 0.12), new Color("#9A6B3C"), { cast: true });
-        for (let i = 0; i < 6; i++) B.add("leaf", G.leaf, mat, m(x + 0.1 * s, 0.98 * s, z, s, s, (i / 6) * Math.PI * 2 + r, -0.5), new Color(i % 2 ? "#2FA36B" : "#36B577"), sway);
-        return;
-      }
-      case "cactus":
-        B.add("cactus", G.cactus, mat, m(x, 0.3 * s, z, s), new Color("#3E9A57"), { cast: true });
-        B.add("cactus", G.cactusArm, mat, m(x - 0.13 * s, 0.38 * s, z, s, s, r * 3), new Color("#36894D"), { cast: true });
-        return;
-      case "rock":
-        B.add("rock", G.rock, mat, m(x, 0.08, z, s * 0.9, s * 0.65, r * 6), new Color(r < 0.5 ? "#9A958B" : "#8A857C"), { cast: true, recv: true });
-        return;
-      case "crystal":
-        B.add("crystal", G.crystal, M.crystal, m(x, 0.3 * s, z, s * 0.8, s * 1.6, r * 6, 0.15), new Color("#C9B8FF"), { cast: true, glow: true });
-        B.add("crystal", G.crystal, M.crystal, m(x + 0.16, 0.18 * s, z + 0.08, s * 0.5, s * 1.1, r * 3, -0.3), new Color("#B39CFF"), { cast: true, glow: true });
-        return;
-      case "lava":
-        B.add("rock", G.rock, mat, m(x, 0.08, z, s, s * 0.6, r * 6), new Color("#4A3633"), { cast: true });
-        B.add("ember", G.bloom, M.ember, m(x, 0.18, z, s * 1.4), new Color("#FF8A1F"), { glow: true });
-        return;
+  private decoKit = new Map<Deco, { geo: BufferGeometry; mat: MeshBasicMaterial }>();
+  private prop(B: Batch, kind: Deco, x: number, z: number, r: number) {
+    let kit = this.decoKit.get(kind);
+    if (!kit) {
+      const [, aspect] = DECO[kind];
+      kit = { geo: new PlaneGeometry(aspect, 1).translate(0, 0.5, 0), mat: new MeshBasicMaterial({ map: paintedTexture(`deco/${kind}`), alphaTest: 0.5, color: ART_TINT[this.tod] }) };
+      this.decoKit.set(kind, kit);
     }
+    const h = DECO[kind][0] * (0.85 + r * 0.35);
+    // upright and turned to the camera (it looks from +u +v), its base on the ground
+    const m = new Matrix4().compose(new Vector3(x, 0, z), new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.atan2(OFF.x, OFF.z)), new Vector3(h * (r < 0.5 ? -1 : 1), h, h));
+    B.add(`deco-${kind}`, kit.geo, kit.mat, m, new Color("#FFFFFF"), { cast: true, sway: SWAYS.has(kind) });
   }
 
   private spotMesh(spot: World["spots"][number]["spot"], u: number, v: number) {
@@ -920,34 +899,26 @@ export class Arena3D {
         far.set(d.i, d.x, -10, d.z, d.s * 1.6, d.s);
       }
     });
-    // a few birds circling
-    const wing = new ConeGeometry(0.09, 0.42, 3).rotateZ(-Math.PI / 2).translate(0.21, 0, 0).scale(1, 0.25, 1);
-    const dark = new MeshLambertMaterial({ color: "#FFFFFF", emissive: "#FFFFFF", emissiveIntensity: 0.3, flatShading: true });
-    const bodyGeo = new SphereGeometry(0.07, 8, 6).scale(1.8, 1, 1);
-    const bodyMat = new MeshLambertMaterial({ color: "#E9EEF3" });
+    // a few gulls circling (painted, like the props)
+    const gull = new SpriteMaterial({ map: paintedTexture("deco/bird"), alphaTest: 0.4, transparent: true, color: ART_TINT[this.tod] });
     for (let f = 0; f < 2; f++) {
       const flock = new Group();
-      const birds: { l: Mesh; r: Mesh }[] = [];
+      const birds: Sprite[] = [];
       for (let b = 0; b < 3; b++) {
-        const l = new Mesh(wing, dark), r = new Mesh(wing, dark);
-        r.rotation.y = Math.PI;
-        const bird = new Group();
-        bird.add(l, r, new Mesh(bodyGeo, bodyMat));
+        const bird = new Sprite(gull);
+        bird.scale.set(0.5, 0.31, 1);
         bird.position.set(b * 0.5 - 0.5, (b % 2) * 0.2, Math.abs(b - 1) * 0.5);
         flock.add(bird);
-        birds.push({ l, r });
+        birds.push(bird);
       }
       this.scene.add(flock);
       const cx = (u0 + u1) / 2, cv = (v0 + v1) / 2, rad = 5 + f * 3;
       this.anim.push((t) => {
         const a = t * (0.18 + f * 0.05) + f * 3;
         flock.position.set(this.target.x + Math.cos(a) * rad, 3.2 + f, this.target.z + Math.sin(a) * rad);
-        flock.rotation.y = -a;
-        birds.forEach((b, i) => {
-          const w = Math.sin(t * 9 + i) * 0.6;
-          b.l.rotation.z = w;
-          b.r.rotation.z = -w;
-        });
+        // heading along the circle, seen from the camera: face left or right; wings beat as a squash
+        const dx = -Math.sin(a), dz = Math.cos(a), dir = dx - dz > 0 ? 1 : -1;
+        birds.forEach((b, i) => b.scale.set(0.5 * dir, 0.31 * (1 + Math.sin(t * 9 + i) * 0.22), 1));
       });
       void cx;
       void cv;
@@ -1179,25 +1150,10 @@ export class Arena3D {
 /* tufts of grass, by land */
 const TUFT: Record<string, string> = { "Rookie Meadow": "#5FAE3A", "Coral Coast": "#9BBF5A" };
 
-/* shared low-poly prop shapes */
+/* shared low-poly shapes */
 const G = {
-  trunk: new CylinderGeometry(0.06, 0.09, 0.5, 6).translate(0, 0.25, 0),
-  crown: new IcosahedronGeometry(0.3, 0),
-  cone: new ConeGeometry(0.34, 0.42, 7),
-  bloom: new SphereGeometry(0.06, 6, 5),
-  palmTrunk: new CylinderGeometry(0.05, 0.08, 1, 6).translate(0, 0.5, 0),
-  leaf: new BoxGeometry(0.62, 0.025, 0.15).translate(0.31, 0, 0),
-  cactus: new CapsuleGeometry(0.1, 0.42, 4, 8),
-  cactusArm: new CapsuleGeometry(0.06, 0.18, 4, 6).translate(0, 0.1, 0).rotateZ(0.6),
-  rock: new DodecahedronGeometry(0.22, 0),
-  crystal: new OctahedronGeometry(0.16, 0),
   tuft: new ConeGeometry(0.035, 0.16, 3).translate(0, 0.08, 0),
 };
-const M = {
-  crystal: new MeshLambertMaterial({ flatShading: true, emissive: "#6A4CF0", emissiveIntensity: 0.55 }),
-  ember: new MeshBasicMaterial({ color: "#FF7A1A" }),
-};
-
 /** Collects many copies of the same shape and draws them as one InstancedMesh each. */
 class Batch {
   private items = new Map<string, { geo: BufferGeometry; mat: Material; list: { m: Matrix4; c: Color }[]; o: { cast?: boolean; recv?: boolean; sway?: boolean; glow?: boolean } }>();

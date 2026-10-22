@@ -164,7 +164,7 @@
 .h-feats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
 .h-feat { border-radius: var(--r-lg); padding: 18px; display: grid; gap: 8px; align-content: start; box-shadow: var(--shadow); }
 .h-feat-art { height: 84px; display: flex; align-items: center; }
-.h-feat-art svg { height: 80px; width: auto; }
+.h-feat-art svg, .h-feat-art img { height: 80px; width: auto; object-fit: contain; }
 .h-feat h3 { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; text-transform: uppercase; }
 .h-feat p { font-size: 14px; font-weight: 600; opacity: .88; }
 .h-feat.c-lime { background: var(--lime); }
@@ -241,7 +241,7 @@
   .h-feats { gap: 10px; }
   .h-feat { grid-template-columns: 92px 1fr; gap: 2px 14px; padding: 14px; }
   .h-feat-art { grid-row: span 2; height: auto; align-self: center; }
-  .h-feat-art svg { width: 92px; height: auto; }
+  .h-feat-art svg, .h-feat-art img { width: 92px; height: auto; }
   .h-feat h3 { font-size: 22px; align-self: end; }
   .h-feat p { font-size: 13px; }
 }
