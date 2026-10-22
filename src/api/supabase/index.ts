@@ -456,8 +456,10 @@ class SupabaseApi implements Api {
   }
 
   /* ================= live quiz ================= */
-  async liveCreate(tenantId: string, gid: string, opts: { guests: boolean }) {
-    const s = await this.adminCall<LiveSession>(tenantId, "live_create", { p_gid: gid, p_guests: !!opts.guests });
+  async liveCreate(tenantId: string, gid: string, opts: { guests: boolean; race?: boolean }) {
+    let s = await this.adminCall<LiveSession>(tenantId, "live_create", { p_gid: gid, p_guests: !!opts.guests });
+    // race mode is switched on in the lobby, before anyone plays (migration 0021)
+    if (opts.race) s = await this.rpc<LiveSession>("live_set_race", { p_sid: s.id, p_race: true });
     return this.localLive(s);
   }
   async liveControl(sessionId: string, action: "start" | "reveal" | "board" | "next" | "end" | "kick", arg?: string) {

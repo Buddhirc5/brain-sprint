@@ -202,13 +202,13 @@ export interface Api {
   download(filename: string, text: string, mime?: string): void;
 
   /* ---- live quiz (game-show style) ---- */
-  liveCreate(tenantId: string, gid: string, opts: { guests: boolean }): Promise<LiveSession>;
+  liveCreate(tenantId: string, gid: string, opts: { guests: boolean; race?: boolean }): Promise<LiveSession>;
   /** host actions: start → question → reveal → board → next question … → ended */
   liveControl(sessionId: string, action: "start" | "reveal" | "board" | "next" | "end" | "kick", arg?: string): Promise<void>;
   watchLiveHost(sessionId: string, cb: (v: LiveHostView) => void): Unsub;
   liveFind(pin: string): Promise<{ sessionId: string; tenantId: string; slug: string; title: string; guests: boolean } | null>;
   liveJoin(sessionId: string, nick?: string): Promise<{ livePlayerId: string }>; // uses the player card when signed in
-  watchLivePlayer(sessionId: string, livePlayerId: string, cb: (v: { session: LiveSession; me: import("../types").LivePlayer | null; rank: number; count: number; answered: boolean; lastOk: boolean | null; ahead?: { nick: string; score: number } | null }) => void): Unsub;
+  watchLivePlayer(sessionId: string, livePlayerId: string, cb: (v: { session: LiveSession; me: import("../types").LivePlayer | null; rank: number; count: number; answered: boolean; lastOk: boolean | null; ahead?: { nick: string; score: number } | null; race?: import("../types").LiveRaceMe }) => void): Unsub;
   liveAnswer(sessionId: string, livePlayerId: string, qIndex: number, choice: string): Promise<void>;
 
   /* ---- live polls (interactive) ---- */

@@ -10,8 +10,8 @@ import { ApiError } from "../api/Api";
 import { Chibi, Mascot } from "../components/Chibi";
 import { CountUp, Icon, confetti } from "../components/ui";
 import { Loading } from "../App";
-import type { LivePlayer, LiveSession, Player, TenantPublic } from "../types";
-import { Shape, TILES, fmtPts, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
+import type { LivePlayer, LiveRaceMe, LiveSession, Player, TenantPublic } from "../types";
+import { Shape, TILES, fmtPts, fmtRaceTime, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
 import "../styles/live.css";
 import { setReturnTo } from "../app/returnTo";
 import { LIVE_PASS, getJoinKey, setJoinKey } from "../app/joinKey";
@@ -305,7 +305,9 @@ function JoinFlow({ found, pub, onLeave }: { found: Found; pub: TenantPublic; on
 }
 
 /* ---------------- the controller ---------------- */
-type PView = { session: LiveSession; me: LivePlayer | null; rank: number; count: number; answered: boolean; lastOk: boolean | null; ahead?: { nick: string; score: number } | null };
+type PView = { session: LiveSession; me: LivePlayer | null; rank: number; count: number; answered: boolean; lastOk: boolean | null; ahead?: { nick: string; score: number } | null; race?: LiveRaceMe };
+/** race mode: how long the right/wrong card shows after each answer (the same for everyone, so it's fair on time) */
+const RACE_FEEDBACK_MS = 1500;
 
 function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: TenantPublic; lpid: string; onGone: () => void; onLeave: () => void }) {
   const { api, toast } = useApi();
@@ -313,6 +315,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
   const [picked, setPicked] = useState<{ q: number; c: string } | null>(null);
   const [late, setLate] = useState(-1); // qIndex we were too late for
   const [sending, setSending] = useState(false);
+  const [fbFor, setFbFor] = useState(-1); // race: the question whose right/wrong card is showing
   const everMe = useRef(false);
   const [mode, toggleMode] = useStageMode();
 
@@ -371,6 +374,34 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
     setSending(false);
   };
 
+  // race: answer my own next question, then show right/wrong briefly before the next one
+  const raceAnswer = async (qi: number, c: string) => {
+    if (sending) return;
+    setSending(true);
+    try {
+      navigator.vibrate?.(30);
+    } catch {
+      /* ignore */
+    }
+    try {
+      await api.liveAnswer(found.sessionId, lpid, qi, c);
+      setFbFor(qi);
+      setTimeout(() => setFbFor((x) => (x === qi ? -1 : x)), RACE_FEEDBACK_MS);
+    } catch (e) {
+      if (!(e instanceof ApiError && e.code === "conflict")) toast(errMsg(e));
+    }
+    setSending(false);
+  };
+  const lastOkKey = v?.race?.last && fbFor === v.race.last.qIndex ? `${v.race.last.qIndex}:${v.race.last.ok}` : "";
+  useEffect(() => {
+    if (lastOkKey.endsWith(":true"))
+      try {
+        navigator.vibrate?.([40, 40, 80]);
+      } catch {
+        /* ignore */
+      }
+  }, [lastOkKey]);
+
   // reveal feedback: buzz + confetti for a right answer
   const revealKey = s && (s.state === "reveal" ? `r${s.qIndex}` : s.state === "ended" ? "end" : "");
   useEffect(() => {
@@ -405,11 +436,15 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
     <header className="lv-ptop">
       <span className="lv-pbrand">
         {pub.branding.logo && <img src={pub.branding.logo} alt="" />}
-        {s.state === "lobby" || s.state === "ended" ? pub.branding.productName : `${s.qIndex + 1} of ${s.total}`}
+        {s.state === "lobby" || s.state === "ended"
+          ? pub.branding.productName
+          : v.race
+            ? v.race.finished ? "Finished" : `${v.race.index + 1} of ${s.total}`
+            : `${s.qIndex + 1} of ${s.total}`}
       </span>
       <span className="lv-pright">
         <StageModeToggle mode={mode} onToggle={toggleMode} className="lv-pmode" />
-        <span className="lv-pscore num">{me ? fmtPts(me.score) : ""}</span>
+        <span className="lv-pscore num">{v.race ? `${v.race.correct} right` : me ? fmtPts(me.score) : ""}</span>
       </span>
     </header>
   );
@@ -433,9 +468,71 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
       <div className="lv-pmsg">
         {me && <Chibi look={me.look} variant="full" size={200} mood="cheer" />}
         <h1>You're in!</h1>
-        <p>See your name on the screen? Get ready…</p>
+        <p>{s.race ? "It's a race with no timer — answer every question at your own pace. Most right answers wins; a tie goes to the fastest." : "See your name on the screen? Get ready…"}</p>
       </div>
     );
+  } else if (s.state === "question" && s.race && v.race) {
+    const r = v.race;
+    const fb = r.last && fbFor === r.last.qIndex ? r.last : null;
+    if (fb) {
+      // right or wrong, and the right answer, for a moment before the next question
+      tone = fb.ok ? "good" : "bad";
+      body = (
+        <div className="lv-pmsg lv-verdict">
+          <span className="lv-vicon">{fb.ok ? <Icon.check /> : <Icon.close />}</span>
+          <h1 className="lv-vstamp">{fb.ok ? "Correct!" : "Not quite"}</h1>
+          {!fb.ok && fb.explain && <p>{fb.explain}</p>}
+          <p className="lv-prank">{v.rank > 0 && `You're ${ordinal(v.rank)} in the race`}</p>
+        </div>
+      );
+    } else if (r.finished || !r.q) {
+      tone = "brand";
+      body = (
+        <div className="lv-pmsg">
+          {me && <Chibi look={me.look} variant="full" size={150} mood="cheer" />}
+          <h1>You finished!</h1>
+          <p>
+            <b className="num">{r.correct}/{s.total}</b> right · <b className="num">{fmtRaceTime(r.ms)}</b> · {v.rank > 0 ? `${ordinal(v.rank)} so far` : ""}
+          </p>
+          <ol className="lv-minirace">
+            {r.board.map((p, i) => (
+              <li key={p.id} className={p.id === me?.id ? "me" : ""}>
+                <span className="num">{i + 1}</span>
+                <b>{p.nick}</b>
+                <span className="num">{p.finished ? `${p.correct}/${s.total} · ${fmtRaceTime(p.ms || 0)}` : `${p.done}/${s.total} answered`}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="fine">Waiting for the others to cross the line…</p>
+        </div>
+      );
+    } else {
+      const rq = r.q;
+      const opts = optionsOf(rq);
+      body = (
+        <div className="lv-pq">
+          <p className="lv-prace">
+            {v.rank > 0 ? `${ordinal(v.rank)} of ${v.count}` : ""} · no timer, take your time
+          </p>
+          <p className="lv-pqtext">{rq.q}</p>
+          {rq.img && <img className="lv-pqimg" src={rq.img} alt="" />}
+          <div className={`lv-pads n${opts.length}`}>
+            {opts.map((o, i) => {
+              const t = tileOf(rq, i);
+              return (
+                <button key={o.choice} type="button" className="lv-pad" style={tileVars(t, i)} disabled={sending} onClick={() => void raceAnswer(r.index, o.choice)} aria-label={`${TILES[t].letter}: ${o.label}`}>
+                  <span className="lv-badge">
+                    <Shape i={t} size={34} />
+                    <em>{TILES[t].letter}</em>
+                  </span>
+                  <span className="tx">{o.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
   } else if (s.state === "question") {
     const opts = optionsOf(q);
     const locked = v.answered || (picked && picked.q === s.qIndex);
@@ -537,7 +634,15 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
         <h1>{me ? (v.rank === 1 ? "You won!" : v.rank <= 3 ? `${ordinal(v.rank)} place!` : `${ordinal(v.rank)} place`) : "Game over"}</h1>
         {me && (
           <p>
-            <b className="num">{fmtPts(me.score)}</b> points · {v.count} players
+            {v.race ? (
+              <>
+                <b className="num">{v.race.correct}/{s.total}</b> right · <b className="num">{fmtRaceTime(v.race.ms)}</b> · {v.count} players
+              </>
+            ) : (
+              <>
+                <b className="num">{fmtPts(me.score)}</b> points · {v.count} players
+              </>
+            )}
           </p>
         )}
         <div className="lv-endbtns">
@@ -555,7 +660,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
   return (
     <div className={`lv-player tone-${tone} st-${s.state} ${mode}`}>
       {top}
-      <main className="lv-pmain" key={`${s.state}-${s.qIndex}`}>
+      <main className="lv-pmain" key={`${s.state}-${s.race ? `r${v.race?.index}-${fbFor}` : s.qIndex}`}>
         {body}
       </main>
       {foot}

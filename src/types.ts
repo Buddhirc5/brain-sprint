@@ -295,6 +295,9 @@ export interface LiveSession {
   guests: boolean;
   music?: boolean;
   players?: number; // how many joined (admin lists)
+  /** Race mode: no timer — everyone plays every question at their own pace while the big screen shows the race.
+   *  The winner has the most right answers; ties go to the fastest total time. */
+  race?: boolean;
 }
 export interface LivePlayer {
   id: string; // live player id
@@ -325,6 +328,22 @@ export interface LiveBoardRow {
   streak: number;
   lastPts: number;
   lastOk: boolean;
+  /** race mode: questions answered, right answers, total answering time (ms), and whether they've finished */
+  done?: number;
+  correct?: number;
+  ms?: number;
+  finished?: boolean;
+}
+/** Race mode, the player's own view: their current question (no answer), how they're doing, and the last answer's result. */
+export interface LiveRaceMe {
+  q?: Question; // the next question to answer (absent once finished)
+  index: number; // its index
+  done: number;
+  correct: number;
+  ms: number;
+  finished: boolean;
+  last?: { qIndex: number; ok: boolean; canon: string; c: string; explain?: string };
+  board: LiveBoardRow[]; // the top of the race
 }
 export interface LiveHostView {
   session: LiveSession;

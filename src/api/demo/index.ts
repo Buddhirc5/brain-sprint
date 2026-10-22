@@ -10,7 +10,7 @@ import {
   type QuizDraft, type RegisterInput, type TenantData, type Unsub,
 } from "../Api";
 import type {
-  AuditEntry, Branding, Disqualified, Equipped, Game, Gift, Labels, LibraryItem, LiveBoardRow, LiveHostView,
+  AuditEntry, Branding, Disqualified, Equipped, Game, Gift, Labels, LibraryItem, LiveBoardRow, LiveHostView, LiveRaceMe,
   LivePlayer, LiveSession, OrgConfig, Player, Poll, PollResponse, PollValue, Role, Roster, Run, SlideResults, Tenant, TenantPublic,
   TenantUsage, UnitType,
 } from "../../types";
@@ -1094,7 +1094,7 @@ class DemoApi implements Api {
     const { canon: _c, lastRevealQ: _r, _qs: _q, ...rest } = l as typeof l & { _qs?: unknown };
     return { ...structuredClone(rest), players: Object.keys(store.read().lp[l.id] || {}).length };
   }
-  async liveCreate(tid: string, gid: string, opts: { guests: boolean }) {
+  async liveCreate(tid: string, gid: string, opts: { guests: boolean; race?: boolean }) {
     return store.tx((db) => {
       this.req(db, tid, "host");
       const t = db.tenants[tid];
@@ -1113,7 +1113,7 @@ class DemoApi implements Api {
       const s: DB["live"][string] = {
         id, tenantId: tid, gid, title: g.title, pin, state: "lobby", qIndex: -1, qStartedAt: 0, qSeconds: LIVE.defaultSeconds, total: qs.length,
         hostId: this.sess!.userId, createdAt: Date.now(), guests: !!opts.guests && cfg.signIn.liveGuests,
-        canon: qs.map((q) => key[q.id]),
+        canon: qs.map((q) => key[q.id]), race: !!opts.race,
       };
       (s as any)._qs = qs;
       db.live[id] = s;
@@ -1157,6 +1157,14 @@ class DemoApi implements Api {
       };
       if (action === "start") {
         if (s.state !== "lobby") return;
+        if (s.race) {
+          // race: everyone starts question 1 now and goes at their own pace; there's no shared question
+          s.state = "question";
+          s.qIndex = 0;
+          s.qStartedAt = Date.now();
+          for (const lp of Object.values(db.lp[sid] || {})) lp.qShownAt = s.qStartedAt;
+          return;
+        }
         open(0);
       } else if (action === "reveal") {
         if (s.state !== "question") return;
@@ -1190,6 +1198,13 @@ class DemoApi implements Api {
     });
   }
   private liveBoard(db: DB, sid: string): LiveBoardRow[] {
+    if (db.live[sid]?.race) {
+      // race: most right answers first, then the fastest total time, then the furthest along
+      return Object.values(db.lp[sid] || {})
+        .map((p) => ({ id: p.id, nick: p.nick, look: p.look, score: p.score, streak: p.streak, lastPts: p.lastPts || 0, lastOk: !!p.lastOk, done: p.raceQ || 0, correct: p.correct || 0, ms: p.totalMs || 0, finished: !!p.finishedAt, joinedAt: p.joinedAt }))
+        .sort((a, b) => b.correct - a.correct || a.ms - b.ms || b.done - a.done || a.joinedAt - b.joinedAt)
+        .map(({ joinedAt: _j, ...r }) => r);
+    }
     return Object.values(db.lp[sid] || {})
       .map((p) => ({ id: p.id, nick: p.nick, look: p.look, score: p.score, streak: p.streak, lastPts: p.lastPts || 0, lastOk: !!p.lastOk, joinedAt: p.joinedAt }))
       .sort((a, b) => b.score - a.score || a.joinedAt - b.joinedAt)
@@ -1261,6 +1276,7 @@ class DemoApi implements Api {
       while (Object.values(lps).some((x) => x.nick.toLowerCase() === nickFinal.toLowerCase())) nickFinal = `${name} ${k++}`;
       const id = newId("lp");
       lps[id] = { id, sessionId: sid, playerId: card?.uid, nick: nickFinal, look, score: 0, streak: 0, joinedAt: Date.now(), auth: u.id };
+      if (s.race && s.state === "question") lps[id].qShownAt = Date.now(); // joined mid-race: their clock starts now
       return { livePlayerId: id };
     });
   }
@@ -1283,13 +1299,27 @@ class DemoApi implements Api {
         ? { id: lp.id, sessionId: sid, playerId: lp.playerId, nick: lp.nick, look: lp.look, score: revealed ? lp.score : lp.score - (answered ? lp.lastPts || 0 : 0), streak: hide ? lp.prevStreak ?? 0 : lp.streak, joinedAt: lp.joinedAt, lastPts: revealed ? lp.lastPts : undefined, lastOk: revealed ? lp.lastOk : undefined }
         : null;
       const above = revealed && rank > 1 ? board[rank - 2] : null;
-      cb({ session: pub, me, rank, count: board.length, answered, lastOk: revealed && lp ? !!lp.lastOk : null, ahead: above ? { nick: above.nick, score: above.score } : null });
+      let race: LiveRaceMe | undefined;
+      if (s.race && lp) {
+        const qs = this.liveQs(db, s);
+        const i = lp.raceQ || 0;
+        const nq = qs[i];
+        const prev = i > 0 ? db.la[sid].find((a) => a.livePlayerId === lpid && a.qIndex === i - 1) : undefined;
+        race = {
+          q: nq && s.state === "question" ? (({ explain: _e, ...pub }) => pub)(nq) : undefined,
+          index: i, done: i, correct: lp.correct || 0, ms: lp.totalMs || 0, finished: !!lp.finishedAt,
+          last: prev ? { qIndex: i - 1, ok: prev.ok, canon: s.canon?.[i - 1] || "", c: prev.c, explain: qs[i - 1]?.explain } : undefined,
+          board: board.slice(0, 5),
+        };
+      }
+      cb({ session: pub, me, rank, count: board.length, answered, lastOk: revealed && lp ? !!lp.lastOk : null, ahead: above ? { nick: above.nick, score: above.score } : null, race });
     };
     setTimeout(run, 0);
     return store.subscribe(run);
   }
   async liveAnswer(sid: string, lpid: string, qIndex: number, choice: string) {
     const u = this.need();
+    if (store.read().live[sid]?.race) return this.raceAnswer(sid, lpid, qIndex, choice, u.id);
     store.tx((db) => {
       const s = db.live[sid];
       if (!s || s.state !== "question" || s.qIndex !== qIndex) throw err("closed", "Too late — this question has closed.");
@@ -1310,6 +1340,45 @@ class DemoApi implements Api {
       lp.lastPts = pts;
       lp.lastOk = ok;
       db.la[sid].push({ sessionId: sid, livePlayerId: lpid, qIndex, c, ms, ok, pts });
+    });
+  }
+
+  /** Race mode: each player answers their own next question; no time limit, the answering time is kept for tie-breaks. */
+  private raceAnswer(sid: string, lpid: string, qIndex: number, choice: string, uid: string) {
+    store.tx((db) => {
+      const s = db.live[sid];
+      if (!s || s.state !== "question") throw err("closed", "This game isn't running.");
+      const lp = db.lp[sid]?.[lpid];
+      if (!lp || lp.auth !== uid) throw err("forbidden", "Not your player.");
+      const qs = this.liveQs(db, s);
+      const i = lp.raceQ || 0;
+      if (qIndex !== i || i >= qs.length) throw err("conflict", "Already answered.");
+      const q = qs[i];
+      const c = String(choice).slice(0, 4);
+      if (q.type === "tf" ? !["T", "F"].includes(c) : !(Number(c) >= 0 && Number(c) < (q.options || []).length)) throw err("invalid", "Pick an answer.");
+      const now = Date.now();
+      const ms = Math.min(10 * 60_000, Math.max(0, now - (lp.qShownAt || s.qStartedAt)));
+      const ok = isRight(s.canon?.[i], c);
+      // points stay for the record (base 500–1000 against a 30 s yardstick, plus the streak); the race is ranked on right answers, then time
+      const pts = livePoints(ok, Math.min(ms, 30_000), 30_000, lp.streak);
+      lp.raceQ = i + 1;
+      lp.correct = (lp.correct || 0) + (ok ? 1 : 0);
+      lp.totalMs = (lp.totalMs || 0) + ms;
+      lp.qShownAt = now;
+      lp.streak = ok ? lp.streak + 1 : 0;
+      lp.score += pts;
+      lp.lastPts = pts;
+      lp.lastOk = ok;
+      lp.lastC = c;
+      if (lp.raceQ >= qs.length) lp.finishedAt = now;
+      db.la[sid].push({ sessionId: sid, livePlayerId: lpid, qIndex: i, c, ms, ok, pts });
+      // everyone's across the line: the race is over
+      const all = Object.values(db.lp[sid] || {});
+      if (all.length && all.every((p) => p.finishedAt)) {
+        s.state = "ended";
+        s.endedAt = now;
+        this.logT(db, s.tenantId, { action: "Live game ended", target: s.title, detail: `${all.length} players · race finished` });
+      }
     });
   }
 

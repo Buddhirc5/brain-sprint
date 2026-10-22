@@ -15,7 +15,7 @@ import { LogoMark } from "../components/Logo";
 import { CountUp, Icon, Modal, confetti } from "../components/ui";
 import { Loading } from "../App";
 import type { LiveBoardRow, LiveHostView, Role, TenantPublic } from "../types";
-import { Shape, TILES, choiceIndex, fmtPts, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
+import { Shape, TILES, choiceIndex, fmtPts, fmtRaceTime, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
 import { sound } from "./sound";
 import { StageModeToggle, useStageMode } from "../app/stageTheme";
 import "../styles/live.css";
@@ -118,6 +118,8 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
   const qIndex = s?.qIndex ?? -1;
   const players = useMemo(() => v?.players ?? [], [v]);
   const last = !!s && qIndex + 1 >= s.total;
+  const race = !!s?.race; // everyone at their own pace, no timer: the host only starts it and can end it early
+  const finished = players.filter((p) => p.finished).length;
 
   const act = useCallback(
     async (action: "start" | "reveal" | "board" | "next" | "end" | "kick", arg?: string) => {
@@ -131,20 +133,21 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
 
   const primary = useMemo((): { label: string; go: () => void; disabled?: boolean } | null => {
     if (!s) return null;
-    if (state === "lobby") return { label: "Start", go: () => void act("start"), disabled: !players.length };
+    if (state === "lobby") return { label: race ? "Start the race" : "Start", go: () => void act("start"), disabled: !players.length };
+    if (state === "question" && race) return { label: "Final results", go: () => void act("end") };
     if (state === "question") return { label: "Skip", go: () => void act("reveal") };
     if (state === "reveal") return last ? { label: "Final results", go: () => void act("next") } : { label: "Scoreboard", go: () => void act("board") };
     if (state === "board") return { label: "Next question", go: () => void act("next") };
     return null;
-  }, [s, state, players.length, last, act]);
+  }, [s, state, players.length, last, act, race]);
 
   /* auto-reveal: when time is up or everyone has answered */
-  const now = useNow(state === "question", 200);
+  const now = useNow(state === "question" && !race, 200);
   const left = remainingMs(s, now);
   const revealed = useRef(-2);
   const allIn = state === "question" && players.length > 0 && (v?.answered ?? 0) >= players.length;
   useEffect(() => {
-    if (state !== "question" || revealed.current === qIndex) return;
+    if (state !== "question" || race || revealed.current === qIndex) return;
     const wait = allIn ? 900 : left + 250;
     const t = setTimeout(() => {
       if (revealed.current === qIndex) return;
@@ -154,7 +157,7 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
     return () => clearTimeout(t);
     // left is recomputed often; only (re)arm on the second boundary
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, qIndex, allIn, Math.ceil(left / 1000), api, sessionId]);
+  }, [state, qIndex, allIn, Math.ceil(left / 1000), api, sessionId, race]);
 
   /* sounds */
   useEffect(() => {
@@ -171,8 +174,8 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
   }, [state, qIndex, soundOn]);
   const secLeft = Math.ceil(left / 1000);
   useEffect(() => {
-    if (state === "question" && secLeft > 0 && secLeft <= 5) sound.tick(secLeft === 1);
-  }, [secLeft, state]);
+    if (state === "question" && !race && secLeft > 0 && secLeft <= 5) sound.tick(secLeft === 1);
+  }, [secLeft, state, race]);
   const seen = useRef<Set<string>>(new Set());
   useEffect(() => {
     let fresh = false;
@@ -243,6 +246,10 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
         <div className="lv-top-mid">
           {state === "lobby" || state === "ended" ? (
             <span className="lv-title">{s.title}</span>
+          ) : race ? (
+            <span className="lv-qcount">
+              Race · <b>{s.total}</b> questions
+            </span>
           ) : (
             <span className="lv-qcount">
               Question <b>{qIndex + 1}</b> of {s.total}
@@ -259,7 +266,8 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
 
       <main className="lv-main">
         {state === "lobby" && <Lobby v={v} pub={pub} onKick={(id) => void act("kick", id)} />}
-        {(state === "question" || state === "reveal") && <QuestionView v={v} left={left} />}
+        {state === "question" && race && <RaceView v={v} />}
+        {(state === "question" || state === "reveal") && !race && <QuestionView v={v} left={left} />}
         {state === "board" && <Board v={v} />}
         {state === "ended" && <Podium v={v} pub={pub} who={user?.email || "host"} />}
       </main>
@@ -271,7 +279,12 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
               {players.length ? `${players.length} player${players.length === 1 ? "" : "s"} in · press Space to start` : "Waiting for players…"}
             </span>
           )}
-          {state === "question" && <span className="lv-hint">Answers close automatically when time is up or everyone has answered.</span>}
+          {state === "question" && race && (
+            <span className="lv-hint">
+              {finished} of {players.length} finished · the race ends by itself when everyone's done
+            </span>
+          )}
+          {state === "question" && !race && <span className="lv-hint">Answers close automatically when time is up or everyone has answered.</span>}
           {state === "reveal" && s.reveal && (
             <span className="lv-hint">
               {(() => {
@@ -292,7 +305,7 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
       {ending && (
         <Modal label="End game" onClose={() => setEnding(false)}>
           <h3>End this game now?</h3>
-          <p>Everyone goes straight to the final results. You can't restart it.</p>
+          <p>{race ? "The race stops now and the final results show who's ahead." : "Everyone goes straight to the final results."} You can't restart it.</p>
           <div className="row end">
             <button type="button" className="btn ghost small" onClick={() => setEnding(false)}>
               Keep playing
@@ -516,6 +529,43 @@ function QuestionView({ v, left }: { v: LiveHostView; left: number }) {
 }
 
 /* ---------------- scoreboard: a race to the finish line ---------------- */
+/** Race mode: every player's lane, live. Position = how far through the questions; ranked by right answers, then time. */
+function RaceView({ v }: { v: LiveHostView }) {
+  const total = Math.max(1, v.session.total);
+  const rows = v.players.slice(0, 8);
+  const more = v.players.length - rows.length;
+  const medal = ["gold", "silver", "bronze"];
+  return (
+    <div className="lv-board">
+      <h1 className="lv-h1">
+        The <span>race</span> is on
+      </h1>
+      <ol className="lv-rows">
+        {rows.map((p, i) => (
+          <li key={p.id} className={`lv-row race ${i === 0 ? "first" : ""} ${p.finished ? "done" : ""}`} style={{ "--pos": Math.max(0.03, (p.done || 0) / total) } as CSSProperties}>
+            <span className={`rk num ${medal[i] || ""}`}>{i + 1}</span>
+            <span className="lv-lane">
+              <span className="lv-track" aria-hidden="true">
+                <i className="lv-trail" />
+                <span className="lv-racer">
+                  <Chibi look={p.look} size={54} mood={p.finished ? "cheer" : p.lastOk ? "happy" : "idle"} />
+                </span>
+              </span>
+              <span className="nm">
+                {p.nick}
+                {p.finished ? <span className="lv-flag">Finished · {fmtRaceTime(p.ms || 0)}</span> : <span className="lv-prog num">{p.done || 0} of {total}</span>}
+              </span>
+            </span>
+            <span className="sc num" title="right answers">
+              {p.correct || 0}/{total}
+            </span>
+          </li>
+        ))}
+      </ol>
+      {more > 0 && <p className="lv-hot">+ {more} more racing</p>}
+    </div>
+  );
+}
 function Board({ v }: { v: LiveHostView }) {
   const s = v.session;
   // where each player stood on the previous scoreboard, so rows can slide to their new place
@@ -583,6 +633,9 @@ function Podium({ v, pub, who }: { v: LiveHostView; pub: TenantPublic; who: stri
   const { api } = useApi();
   const [step, setStep] = useState(0); // 0 nothing, 1 third, 2 second, 3 first
   const ps = v.players;
+  const race = !!v.session.race;
+  const total = v.session.total;
+  const result = (p: LiveBoardRow) => (race ? `${p.correct || 0}/${total} · ${fmtRaceTime(p.ms || 0)}` : fmtPts(p.score));
   useEffect(() => {
     sound.loop(null);
     sound.drum();
@@ -604,8 +657,9 @@ function Podium({ v, pub, who }: { v: LiveHostView; pub: TenantPublic; who: stri
       [`${pub.name} · ${s.title} · live game PIN ${s.pin} · ${new Date(s.createdAt).toLocaleString()}`],
       [`Exported by ${who} — keep inside ${pub.name}`],
       [],
-      ["Rank", "Player", "Score", "Streak at end"],
-      ...ps.map((p, i) => [i + 1, p.nick, p.score, p.streak]),
+      ...(race
+        ? [["Rank", "Player", "Right answers", "Questions answered", "Time (s)", "Finished"], ...ps.map((p, i) => [i + 1, p.nick, p.correct || 0, p.done || 0, Math.round((p.ms || 0) / 1000), p.finished ? "yes" : "no"])]
+        : [["Rank", "Player", "Score", "Streak at end"], ...ps.map((p, i) => [i + 1, p.nick, p.score, p.streak])]),
     ];
     const file = `live-${s.title.replace(/[^\w-]+/g, "-").toLowerCase()}-${s.pin}.csv`;
     api.download(file, "﻿" + toCSV(rows), "text/csv");
@@ -636,7 +690,7 @@ function Podium({ v, pub, who }: { v: LiveHostView; pub: TenantPublic; who: stri
                     )}
                     <Chibi look={p.look} variant="full" size={idx === 0 ? 190 : 150} mood="cheer" />
                     <b className="nm">{p.nick}</b>
-                    <span className="sc num">{fmtPts(p.score)}</span>
+                    <span className="sc num">{result(p)}</span>
                   </>
                 )}
               </div>
@@ -663,8 +717,8 @@ function Podium({ v, pub, who }: { v: LiveHostView; pub: TenantPublic; who: stri
               <tr>
                 <th>#</th>
                 <th>Player</th>
-                <th className="r">Score</th>
-                <th className="r">Streak</th>
+                <th className="r">{race ? "Right" : "Score"}</th>
+                <th className="r">{race ? "Time" : "Streak"}</th>
               </tr>
             </thead>
             <tbody>
@@ -677,8 +731,8 @@ function Podium({ v, pub, who }: { v: LiveHostView; pub: TenantPublic; who: stri
                       {p.nick}
                     </span>
                   </td>
-                  <td className="r num">{fmtPts(p.score)}</td>
-                  <td className="r num">{p.streak ? `🔥 ${p.streak}` : "–"}</td>
+                  <td className="r num">{race ? `${p.correct || 0}/${total}` : fmtPts(p.score)}</td>
+                  <td className="r num">{race ? `${fmtRaceTime(p.ms || 0)}${p.finished ? "" : " · didn't finish"}` : p.streak ? `🔥 ${p.streak}` : "–"}</td>
                 </tr>
               ))}
               {!ps.length && (

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../app/ctx";
 import { useAdmin } from "../admin/Admin";
 import { absUrl, href, nav } from "../app/router";
-import { Modal } from "../components/ui";
+import { Modal, Seg } from "../components/ui";
 import { fmtDT } from "../lib/util";
 import type { Game, LiveSession } from "../types";
 import "../styles/live.css";
@@ -71,7 +71,7 @@ export function LiveTab() {
                 <div className="grow">
                   <b>{l.title}</b>
                   <span className="fine">
-                    {STATE_LABEL[l.state]}
+                    {l.race && l.state === "question" ? "Race on" : STATE_LABEL[l.state]}
                     {l.state !== "lobby" ? ` · question ${l.qIndex + 1} of ${l.total}` : ""} · {counts[l.id] ?? l.players ?? "…"} players
                   </span>
                 </div>
@@ -177,7 +177,7 @@ export function LiveTab() {
                     <td>{fmtDT(l.createdAt)}</td>
                     <td className="num">{l.pin}</td>
                     <td>
-                      <span className={`sev ${l.state === "ended" ? "none" : "good"}`}>{STATE_LABEL[l.state]}</span>
+                      <span className={`sev ${l.state === "ended" ? "none" : "good"}`}>{l.race && l.state === "question" ? "Race on" : STATE_LABEL[l.state]}</span>
                     </td>
                     <td className="r num">{counts[l.id] ?? l.players ?? "–"}</td>
                     <td className="r">
@@ -200,10 +200,10 @@ export function LiveTab() {
           canSettings={can("admin")}
           onSettings={() => setTab("settings")}
           onClose={() => setPick(null)}
-          onHost={async (guests, where) => {
+          onHost={async (guests, race, where) => {
             // open the second-screen window before the await so pop-up blockers allow it
             const win = where === "window" ? window.open("", "_blank") : null;
-            const s = await run(() => api.liveCreate(tid, pick.id, { guests }));
+            const s = await run(() => api.liveCreate(tid, pick.id, { guests, race }));
             if (!s) {
               win?.close();
               return;
@@ -220,18 +220,28 @@ export function LiveTab() {
 
 function HostModal({
   g, guestsAllowed, canSettings, onSettings, onClose, onHost,
-}: { g: Game; guestsAllowed: boolean; canSettings: boolean; onSettings: () => void; onClose: () => void; onHost: (guests: boolean, where: "here" | "window") => Promise<void> }) {
+}: { g: Game; guestsAllowed: boolean; canSettings: boolean; onSettings: () => void; onClose: () => void; onHost: (guests: boolean, race: boolean, where: "here" | "window") => Promise<void> }) {
   const [guests, setGuests] = useState(guestsAllowed);
+  const [mode, setMode] = useState<"host" | "race">("host");
   const [busy, setBusy] = useState(false);
   const go = async (where: "here" | "window") => {
     setBusy(true);
-    await onHost(guestsAllowed && guests, where);
+    await onHost(guestsAllowed && guests, mode === "race", where);
     setBusy(false);
   };
   return (
     <Modal label={`Host ${g.title}`} onClose={onClose}>
       <h3>Host "{g.title}"</h3>
       <p className="fine">You'll get a game PIN and QR code to show on the big screen. Players join on their phones.</p>
+      <div className="field">
+        <span className="flabel">How it plays</span>
+        <Seg value={mode} options={[["host", "Question by question"], ["race", "Race · no timer"]]} onChange={setMode} label="How it plays" />
+        <p className="fine">
+          {mode === "host"
+            ? "Everyone answers the same question together, against the clock. You move the game on from the big screen."
+            : "No timer, no rush: everyone plays all the questions at their own pace and sees right or wrong as they go. The big screen shows the race. Most right answers wins; a tie goes to the fastest."}
+        </p>
+      </div>
       {guestsAllowed ? (
         <label className="check">
           <input type="checkbox" checked={guests} onChange={(e) => setGuests(e.target.checked)} />
