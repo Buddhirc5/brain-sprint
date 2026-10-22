@@ -8,7 +8,7 @@ import { Icon, Modal } from "../components/ui";
 import { buildMap, starsFor, themeKey, type ArenaMap as MapData, type CastleState, type Deco, type Land, type MapStop, type Theme } from "../lib/arenaMap";
 import { buildWorld, hash, key, type Spot, type Tile, type World } from "../lib/arenaWorld";
 import { isOpen } from "../lib/games";
-import { limitMs, runCorrect } from "../lib/scoring";
+import { limitMs, untimed, runCorrect } from "../lib/scoring";
 import type { Arena3D } from "./map3d/Arena3D";
 import { mapSound } from "./map3d/mapSound";
 import { fmtDate, fmtMin, LS, todayKey } from "../lib/util";
@@ -178,7 +178,7 @@ function StopCard({ stop, land, me, onClose }: { stop: MapStop; land: Land; me: 
   const g = stop.g;
   const run = me.runs?.[g.id];
   const head = `Stop ${stop.n} · ${land.name}`;
-  const facts = `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${fmtMin(limitMs(g) / 60000)}`;
+  const facts = `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${untimed(g) ? "no timer" : fmtMin(limitMs(g) / 60000)}`;
   let note = "", action: JSX.Element | null = null;
   if (stop.state === "play")
     action = (

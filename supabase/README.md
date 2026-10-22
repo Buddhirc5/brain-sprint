@@ -22,6 +22,7 @@ the same `Api` contract as the in-browser demo (`src/api/demo/`), with the same 
 | `migrations/0017_new_types_second_chance.sql` | Swipe sort, buckets and case-study questions (`save_quiz` validation, partial scoring `private.partial_score`, `f` on answers); **second chance** (`retry_answer`, `rt`/`rc`/`rp` on answers, capped by `private.retry_pts`; `run_points` and player stats include it) |
 | `migrations/0018_story_mode.sql` | Quiz kind `story` (Story Mode) on quizzes and runs; `limit_ms` gives stories an hour; story answers earn no speed bonus; a Story Mode quiz holds case studies only. Story scenes may carry `look`, `mood` and `role` |
 | `migrations/0019_store_pets_rides.sql` | Store catalogue slots `pet` and `ride`, with 6 pets and 5 rides; backgrounds stay in the catalogue for existing owners but the app no longer sells them |
+| `migrations/0020_untimed_sprints.sql` | Sprints can switch the timer off (saved as `minutes = 0`): `private.untimed`, `limit_ms` gives them an hour, and their right answers earn no speed bonus |
 | `migrations/0010_mfa_reset_by_email.sql` | Lost authenticator: reset with an emailed link (10-minute window, audited) |
 | `migrations/0009_super_requires_authenticator.sql` | Super admins must verify with an authenticator app before the code unlocks the console |
 | `migrations/0008_special_characters.sql` | Two special characters (Wren the explorer, Puff the bunny) can be picked and wear store items |

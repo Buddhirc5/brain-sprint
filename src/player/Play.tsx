@@ -5,7 +5,7 @@ import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
 import { Icon, Modal } from "../components/ui";
 import { TYPE_LABEL } from "../lib/answers";
-import { limitMs, RULES } from "../lib/scoring";
+import { limitMs, RULES, untimed } from "../lib/scoring";
 import { fmtClock, shuffle } from "../lib/util";
 import { runKey, type Question, type Run } from "../types";
 import { finishCache } from "./common";
@@ -56,6 +56,7 @@ export function Play({ gid }: { gid: string }) {
   const g = d.games[gid];
   const cert = g?.kind === "cert";
   const story = g?.kind === "story"; // Story Mode: no timer, the comic is the whole screen
+  const noClock = !!g && untimed(g); // no timer bar (Story Mode, or a sprint set to "no time limit")
   const [run, setRun] = useState<Run | null>(null);
   const [phase, setPhase] = useState<"load" | "q" | "sending" | "reveal" | "saving">("load");
   const [qi, setQi] = useState(0); // question on screen
@@ -283,7 +284,7 @@ export function Play({ gid }: { gid: string }) {
           {qi + 1}/{n}
         </span>
       </div>
-      {!story && (
+      {!noClock && (
       <div className={`gtimer ${rv ? "paused" : ""}`} role="timer" aria-label={`Time left ${fmtClock(left)}`}>
         <Icon.clock />
         <div className="tbar">
@@ -375,6 +376,8 @@ export function Play({ gid }: { gid: string }) {
               ? "Your answers so far are saved, but the exam clock keeps running while you're away."
               : story
                 ? "You can come back later — the story starts again from its cover."
+                : noClock
+                ? "You only get one try at this quiz."
                 : "You only get one try, and the clock keeps running while you're away."}
           </p>
           <div className="row end">
