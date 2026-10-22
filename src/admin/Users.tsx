@@ -207,7 +207,7 @@ function EditPlayer({ p, onClose }: { p: Player; onClose: () => void }) {
     if (ok) onClose();
   };
   return (
-    <Modal label={`Edit ${p.name}`} onClose={onClose} wide>
+    <Modal label={`Edit ${p.name}`} onClose={onClose} wide className="edit-player">
       <form onSubmit={submit} autoComplete="off" className="stack">
         <h3>Edit player</h3>
         <div className="row2">
@@ -243,7 +243,7 @@ function EditPlayer({ p, onClose }: { p: Player; onClose: () => void }) {
         <div className="field">
           <span className="flabel">Plays ({runs.length})</span>
           {runs.length ? (
-            <div className="scroll-x">
+            <div className="plays-box">
               <table className="tbl">
                 <thead><tr><th>Quiz</th><th>Status</th><th className="r">Right</th><th>When</th><th /></tr></thead>
                 <tbody>

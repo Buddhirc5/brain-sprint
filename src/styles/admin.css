@@ -345,3 +345,8 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .story-preview { display: grid; gap: 10px; }
 .story-preview .qcard.comic { max-width: 420px; justify-self: center; width: 100%; box-sizing: border-box; }
 @media (max-width: 760px) { .qe-reply .qe-mood { grid-column: 1 / -1; } }
+/* Edit player: wider on a PC, and the plays list scrolls in its own box so the form and Save stay in view */
+.modal.edit-player { width: min(780px, 100%); }
+.edit-player .plays-box { max-height: min(36vh, 380px); overflow: auto; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); }
+.edit-player .plays-box thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
+.edit-player .plays-box td:not(:first-child), .edit-player .plays-box th { white-space: nowrap; }

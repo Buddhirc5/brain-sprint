@@ -55,7 +55,7 @@ export function ResultsAdmin() {
     return (
       <>
         <div className="toolbar"><h1>Results</h1></div>
-        <div className="empty">No sprint or certification quizzes yet. Live quiz results are shown in the Live quiz tab.</div>
+        <div className="empty">No sprint, story or certification quizzes yet. Live quiz results are shown in the Live quiz tab.</div>
       </>
     );
 
@@ -74,7 +74,7 @@ export function ResultsAdmin() {
       <div className="toolbar">
         <h1>Results</h1>
         <select className="sel" value={gid} onChange={(e) => setGid(e.target.value)} aria-label="Quiz">
-          {(["sprint", "cert"] as const).map((k) => {
+          {(["sprint", "story", "cert"] as const).map((k) => {
             const list = gs.filter((x) => (x.kind || "sprint") === k);
             return list.length ? (
               <optgroup key={k} label={KIND[k].label}>

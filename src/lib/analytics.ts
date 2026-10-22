@@ -38,8 +38,8 @@ export const SEV_LABEL: Record<string, string> = { bad: "Gap", warn: "Watch", go
 export const SEV_HEX: Record<string, string> = { bad: "#E5431A", warn: "#C98A00", good: "#2E9E4F" };
 
 /** Every play (and answer) in range. Live-quiz games are never part of the knowledge-gap data:
- *  they are scored in live sessions, not as plays. `kinds` picks sprint and/or certification. */
-export function scope(players: Player[], games: Record<string, Game>, dq: Disqualified, gid: string, period: Period, kinds: QuizKind[] = ["sprint", "cert"]) {
+ *  they are scored in live sessions, not as plays. `kinds` picks sprint, story and/or certification. */
+export function scope(players: Player[], games: Record<string, Game>, dq: Disqualified, gid: string, period: Period, kinds: QuizKind[] = ["sprint", "story", "cert"]) {
   const now = Date.now(),
     t = dayKey(now);
   const runs: RunRow[] = [];

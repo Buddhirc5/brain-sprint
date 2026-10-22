@@ -43,7 +43,7 @@ export function Seg<T extends string>({ value, options, onChange, label, classNa
   );
 }
 
-export function Modal({ children, onClose, label, wide }: { children: ReactNode; onClose?: () => void; label: string; wide?: boolean }) {
+export function Modal({ children, onClose, label, wide, className = "" }: { children: ReactNode; onClose?: () => void; label: string; wide?: boolean; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
@@ -60,7 +60,7 @@ export function Modal({ children, onClose, label, wide }: { children: ReactNode;
   }, [onClose]);
   return (
     <div className="modal-bg" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className={`modal ${wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label={label} ref={ref}>
+      <div className={`modal ${wide ? "wide" : ""} ${className}`} role="dialog" aria-modal="true" aria-label={label} ref={ref}>
         {children}
       </div>
     </div>
