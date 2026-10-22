@@ -33,7 +33,7 @@ async function draw(look: number, equipped: Equipped | undefined, mood: "idle" |
     const c = document.createElement("canvas");
     c.width = W * 2;
     c.height = H * 2;
-    await drawPainted(c.getContext("2d")!, look, equipped, W * 2);
+    await drawPainted(c.getContext("2d")!, look, equipped, W * 2, mood);
     const t = new CanvasTexture(c);
     t.colorSpace = SRGBColorSpace;
     t.anisotropy = 2;

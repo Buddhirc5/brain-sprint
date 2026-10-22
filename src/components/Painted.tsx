@@ -1,6 +1,8 @@
-/* The painted character set (3D vinyl-toy renders, src/assets/art). One layout function places the body or
-   mood portrait, the store items and the shadow in the same viewBox the vector Chibi used, so every avatar,
-   leaderboard, comic panel and live-game spot keeps its size; the 3D map draws the same parts onto a canvas. */
+/* The painted character set (3D vinyl-toy renders, src/assets/art). Each character has one full-body image per mood
+   (the mood face baked onto the same body, so the outfit never changes). One layout places it, the shadow and the
+   store items in the viewBox the vector Chibi used; avatar circles frame the head of that same layout, so a portrait
+   and a full body always match. Every avatar, leaderboard, comic panel and live-game spot keeps its size, and the
+   3D map draws the same parts onto a canvas. */
 import type { CSSProperties } from "react";
 import type { Equipped } from "../types";
 import { ART_SIZE } from "./artSizes";
@@ -24,8 +26,6 @@ export interface Part {
   h: number;
   rot?: number;
   cls?: string;
-  /** show only the top clipH units (a mood head laid over the body) */
-  clipH?: number;
 }
 
 /** Fit an image of the given art key inside a w×h box, anchored at the bottom centre. */
@@ -48,65 +48,80 @@ function item(id: string, cx: number, cy: number, w: number, rot = 0, cls = ""):
   return { src, x: cx - w / 2, y: cy - h / 2, w, h, rot, cls };
 }
 
-/** Hats, glasses and earrings around a head box (centre x, top, width, height). */
-function accessoryParts(eq: Equipped, hx: number, ht: number, hw: number, hh: number): Part[] {
+/** Where each character's head is, as fractions of its body image: skull top (where a hat sits), eye line, chin and
+    face width (of the height), and the face's centre (of the width). Measured on the renders; Puff's face sits low under his ears. */
+interface Geo {
+  top: number;
+  eye: number;
+  chin: number;
+  fw: number;
+  cx: number;
+}
+const HUMAN: Geo = { top: 0.02, eye: 0.245, chin: 0.36, fw: 0.33, cx: 0.5 };
+const GEO: Record<number, Geo> = { 11: { ...HUMAN, eye: 0.235 }, 16: { ...HUMAN, cx: 0.475 }, 17: { top: 0.3, eye: 0.415, chin: 0.52, fw: 0.44, cx: 0.5 } };
+const geoOf = (i: number) => GEO[i] || HUMAN;
+/** the part of the full body an avatar circle shows (fractions of the body height) */
+const bustWindow = (i: number): [number, number] => (i === 17 ? [0, 0.62] : [-0.02, 0.5]);
+
+/** Hats, glasses and earrings placed on a head: face centre x, skull top, eye line, chin, face width. */
+function accessoryParts(eq: Equipped, X: number, T: number, E: number, C: number, FW: number): Part[] {
   const out: (Part | null)[] = [];
-  const earY = ht + hh * 0.7;
+  const up = E - T,
+    down = C - E;
   if (eq.ears === "hearts" || eq.ears === "hoops" || eq.ears === "studs") {
-    const w = hw * (eq.ears === "hoops" ? 0.16 : eq.ears === "hearts" ? 0.1 : 0.12);
-    out.push(item(eq.ears, hx - hw * 0.46, earY + (eq.ears === "hearts" ? hh * 0.06 : 0), w, 0, "acc-ear"));
-    out.push(item(eq.ears, hx + hw * 0.46, earY + (eq.ears === "hearts" ? hh * 0.06 : 0), w, 0, "acc-ear"));
+    const w = FW * (eq.ears === "hoops" ? 0.17 : eq.ears === "hearts" ? 0.11 : 0.12);
+    const y = E + down * (eq.ears === "hearts" ? 0.58 : 0.45);
+    out.push(item(eq.ears, X - FW * 0.53, y, w, 0, "acc-ear"));
+    out.push(item(eq.ears, X + FW * 0.53, y, w, 0, "acc-ear"));
   }
-  if (eq.face === "specs" || eq.face === "shades") out.push(item(eq.face, hx, ht + hh * 0.56, hw * 0.68, 0, "acc-face"));
+  if (eq.face === "specs" || eq.face === "shades") out.push(item(eq.face, X, E, FW * 0.95, 0, "acc-face"));
+  const sitOn = (id: string, w: number, bottom: number) => {
+    const p = item(id, X, 0, w, 0, "acc-head");
+    return p ? { ...p, y: bottom - p.h } : null;
+  };
   switch (eq.head) {
     case "phones":
-      out.push(item("phones", hx, ht + hh * 0.42, hw * 1.36, 0, "acc-head"));
+      out.push(sitOn("phones", FW * 1.42, E + down * 0.8));
       break;
-    case "cap": {
-      const p = item("cap", hx, 0, hw * 0.98, 0, "acc-head");
-      if (p) out.push({ ...p, y: ht + hh * 0.28 - p.h });
+    case "cap":
+      out.push(sitOn("cap", FW * 1.3, T + up * 0.62));
       break;
-    }
-    case "beanie": {
-      const p = item("beanie", hx, 0, hw * 0.96, 0, "acc-head");
-      if (p) out.push({ ...p, y: ht + hh * 0.31 - p.h });
+    case "beanie":
+      out.push(sitOn("beanie", FW * 1.26, T + up * 0.68));
       break;
-    }
-    case "crown": {
-      const p = item("crown", hx, 0, hw * 0.56, 0, "acc-head");
-      if (p) out.push({ ...p, y: ht + hh * 0.1 - p.h });
+    case "crown":
+      out.push(sitOn("crown", FW * 0.62, T + up * 0.22));
       break;
-    }
     case "bow":
-      out.push(item("bow", hx + hw * 0.3, ht + hh * 0.08, hw * 0.44, 14, "acc-head"));
+      out.push(item("bow", X + FW * 0.4, T + up * 0.18, FW * 0.46, 14, "acc-head"));
       break;
   }
   return out.filter((p): p is Part => !!p);
 }
 
-/** Every image of a character, in viewBox units: full = 0 0 120 162 (feet on y 156), bust = 14 12 92 92 (circle r46 at 60,58). */
-export function paintedParts(look: number, variant: "full" | "bust", mood: PaintMood, eq: Equipped = {}): Part[] {
+/** Every image of a full-body character in the 0 0 120 162 viewBox (feet on y 156): the body for this mood (the
+    face is baked in, the outfit never changes) and the store items on its head. */
+export function paintedParts(look: number, mood: PaintMood, eq: Equipped = {}): Part[] {
   const i = look | 0;
-  if (variant === "full") {
-    const body = fit(`chars/c${i}`, 60, 156, 112, 150);
-    if (!body) return [];
-    const hh = body.h * 0.4,
-      hw = Math.min(body.w * 0.92, hh * 0.95);
-    const parts: Part[] = [{ ...body, cls: "pt-body" }];
-    // a mood other than calm: the matching portrait's head goes over the body's head (clipped at the chin)
-    const mk = `moods/c${i}-${mood}`;
-    if (mood !== "idle" && URL_OF[mk] && ART_SIZE[mk]) {
-      const [mw, mh] = ART_SIZE[mk];
-      const s = (hh * 1.04) / (mh * 0.78);
-      parts.push({ src: URL_OF[mk], x: 60 - (mw * s) / 2, y: body.y - hh * 0.02, w: mw * s, h: mh * s, cls: "pt-face", clipH: hh * 1.0 });
-    }
-    return [...parts, ...accessoryParts(eq, 60, body.y, hw, hh)];
-  }
-  const face = fit(`moods/c${i}-${mood}`, 60, 108, 82, 86) || fit(`moods/c${i}-idle`, 60, 108, 82, 86);
-  if (!face) return [];
-  const hh = face.h * 0.78,
-    hw = Math.min(face.w * 0.95, hh * 0.95);
-  return [{ ...face, cls: "pt-face" }, ...accessoryParts(eq, 60, face.y, hw, hh)];
+  const body = fit(`chars/c${i}-${mood}`, 60, 156, 112, 150) || fit(`chars/c${i}-idle`, 60, 156, 112, 150);
+  if (!body) return [];
+  const g = geoOf(i);
+  const Y = (f: number) => body.y + f * body.h;
+  return [{ ...body, cls: "pt-body" }, ...accessoryParts(eq, body.x + g.cx * body.w, Y(g.top), Y(g.eye), Y(g.chin), g.fw * body.h)];
+}
+
+/** The transform that frames the head and shoulders of the full-body layout in the avatar circle (viewBox 14 12 92 92).
+    A hat taller than the window widens it upward, so it is never cut off by the circle. */
+function bustTransform(look: number, eq: Equipped): string {
+  const i = look | 0;
+  const body = fit(`chars/c${i}-idle`, 60, 156, 112, 150);
+  if (!body) return "";
+  const g = geoOf(i);
+  const [w0, f1] = bustWindow(i);
+  const hatTop = Math.min(...paintedParts(i, "idle", eq).filter((p) => p.cls === "acc-head").map((p) => p.y));
+  const f0 = Math.min(w0, (hatTop - body.y) / body.h - 0.02);
+  const k = 92 / ((f1 - f0) * body.h);
+  return `translate(60 12) scale(${k.toFixed(4)}) translate(${(-(body.x + g.cx * body.w)).toFixed(3)} ${(-(body.y + f0 * body.h)).toFixed(3)})`;
 }
 
 export function PaintedChibi({
@@ -134,7 +149,7 @@ export function PaintedChibi({
   bg: string;
   uid: string;
 }) {
-  const parts = paintedParts(look, variant, mood, equipped);
+  const parts = paintedParts(look, mood, equipped);
   const vb = variant === "bust" ? "14 12 92 92" : "0 0 120 162";
   const w = size ?? (variant === "bust" ? 48 : 120);
   const h = variant === "bust" ? w : Math.round((w * 162) / 120);
@@ -158,25 +173,21 @@ export function PaintedChibi({
       {variant === "full" && <ellipse cx="60" cy="156" rx="30" ry="4.5" fill="#000" opacity=".14" className="shadow" />}
       <g clipPath={variant === "bust" ? `url(#${uid}c)` : undefined}>
         <g className="body">
-          {parts.map((p, k) => (
-            <g key={k} clipPath={p.clipH ? `url(#${uid}h${k})` : undefined}>
-              {p.clipH && (
-                <clipPath id={`${uid}h${k}`}>
-                  <ellipse cx={p.x + p.w / 2} cy={p.y + p.clipH / 2} rx={p.w * 0.47} ry={p.clipH / 2} />
-                </clipPath>
-              )}
-            <image
-              href={p.src}
-              x={p.x}
-              y={p.y}
-              width={p.w}
-              height={p.h}
-              className={p.cls}
-              preserveAspectRatio="xMidYMax meet"
-              transform={p.rot ? `rotate(${p.rot} ${p.x + p.w / 2} ${p.y + p.h / 2})` : undefined}
-            />
-            </g>
-          ))}
+          <g transform={variant === "bust" ? bustTransform(look, equipped) : undefined}>
+            {parts.map((p, k) => (
+              <image
+                key={k}
+                href={p.src}
+                x={p.x}
+                y={p.y}
+                width={p.w}
+                height={p.h}
+                className={p.cls}
+                preserveAspectRatio="xMidYMax meet"
+                transform={p.rot ? `rotate(${p.rot} ${p.x + p.w / 2} ${p.y + p.h / 2})` : undefined}
+              />
+            ))}
+          </g>
         </g>
       </g>
     </svg>
@@ -200,8 +211,8 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /** Draws a full-body character (with store items) onto a canvas of the given size — used by the 3D map. */
-export async function drawPainted(ctx: CanvasRenderingContext2D, look: number, eq: Equipped | undefined, W: number) {
-  const parts = paintedParts(look, "full", "idle", eq);
+export async function drawPainted(ctx: CanvasRenderingContext2D, look: number, eq: Equipped | undefined, W: number, mood: PaintMood = "idle") {
+  const parts = paintedParts(look, mood, eq);
   const s = W / 120;
   const imgs = await Promise.all(parts.map((p) => loadImage(p.src).catch(() => null)));
   ctx.save();

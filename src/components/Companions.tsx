@@ -162,7 +162,9 @@ const RIDES: Record<string, () => ReactElement> = {
 };
 
 /** Rides the character sits in (drawn behind them) rather than stands on. */
-export const RIDE_IN = new Set(["ride-tuktuk"]);
+export const RIDE_IN = new Set(["ride-tuktuk", "ride-bike"]);
+/** how high the rider's feet sit (× character width) so they stand on the deck of the painted ride */
+const RIDE_LIFT: Record<string, number> = { "ride-skate": 0.27, "ride-scooter": 0.1, "ride-hover": 0.17, "ride-bike": 0.03, "ride-tuktuk": 0.05 };
 
 export const hasPet = (id?: string) => !!id && !!PETS[id];
 export const hasRide = (id?: string) => !!id && !!RIDES[id];
@@ -198,7 +200,7 @@ export function Kit({ look, equipped, size, mood, still, className = "" }: { loo
   if (!pet && !ride) return <Chibi look={look} equipped={equipped} variant="full" size={size} mood={mood} still={still} className={className} />;
   const h = Math.round((size * 162) / 120);
   const rideW = size * 1.15;
-  const lift = ride ? (RIDE_IN.has(ride) ? size * 0.12 : size * 0.2) : 0;
+  const lift = ride ? size * (artUrl(`items/${ride}`) ? RIDE_LIFT[ride] ?? 0.12 : RIDE_IN.has(ride) ? 0.12 : 0.2) : 0;
   return (
     <span className={`kit ${className}`} style={{ width: size + (pet ? size * 0.42 : 0), height: h + lift }}>
       {ride && RIDE_IN.has(ride) && (
