@@ -14,6 +14,8 @@ import { hash, key, type World } from "../../lib/arenaWorld";
 import type { Player } from "../../types";
 import { CHIBI_ASPECT, chibiTexture, companionTexture, PET_ASPECT, RIDE_ASPECT } from "./chibiTexture";
 import { makeCritters, type Critter } from "./critters";
+/** a soft painted backdrop per land, far behind the islands (tiny webps, fetched only for the land in view) */
+const BACKDROP = import.meta.glob("../../assets/map/bg-*.webp", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
 import { Billboards, faceCamera, landKey, landmark, LIGHT, makeLanterns, makeParticles, mute, skyFor, softDot, timeOfDay, type Tod } from "./ambience";
 
 export interface Anchor { el: HTMLElement; x: number; y: number; z: number; clamp?: number }
@@ -86,6 +88,8 @@ export class Arena3D {
   private nz = -1;
   private curIdx = -1; // path index of your stop
   private puffs!: Billboards;
+  private bg: HTMLDivElement[] = [];
+  private bgKey = "";
 
   constructor(private I: Arena3DInput) {
     this.r = new WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -95,6 +99,13 @@ export class Arena3D {
     this.r.shadowMap.type = PCFShadowMap;
     this.r.domElement.className = "am3d-canvas";
     I.host.appendChild(this.r.domElement);
+    // two backdrop layers under the canvas, so one land's scenery cross-fades into the next
+    this.bg = [0, 1].map(() => {
+      const d = document.createElement("div");
+      d.className = "am3d-bg";
+      I.host.parentElement?.insertBefore(d, I.host);
+      return d;
+    });
 
     this.cam = new OrthographicCamera(-1, 1, 1, -1, -60, 200);
     const lt = LIGHT[this.tod];
@@ -177,6 +188,7 @@ export class Arena3D {
     });
     this.r.dispose();
     this.r.domElement.remove();
+    this.bg.forEach((d) => d.remove());
     this.I.layer.replaceChildren();
   }
 
@@ -240,12 +252,29 @@ export class Arena3D {
     this.target.z = Math.max(b.v0, Math.min(b.v1, this.target.z));
   }
 
+  /** Shows a land's painted scenery: the hidden layer takes the new picture and fades in once it has loaded. */
+  private backdrop(k: string) {
+    const src = BACKDROP[`../../assets/map/bg-${k}.webp`];
+    if (!src || k === this.bgKey || this.bg.length < 2) return;
+    this.bgKey = k;
+    const [show, hide] = this.bg[0].classList.contains("on") ? [this.bg[1], this.bg[0]] : [this.bg[0], this.bg[1]];
+    const im = new Image();
+    im.onload = () => {
+      if (this.bgKey !== k) return;
+      show.style.backgroundImage = `url("${src}")`;
+      show.classList.add("on");
+      hide.classList.remove("on");
+    };
+    im.src = src;
+  }
+
   /** The sky, haze and name tags follow the land in view and the zoom. */
   private ambience(dt: number) {
     const li = this.landOf.get(key(Math.round(this.target.x), Math.round(this.target.z)));
     if (li != null && li >= 0 && li !== this.land) {
       this.land = li;
       this.skyGoal = skyFor(this.I.lands[li]?.theme.name || "", this.tod);
+      this.backdrop(landKey(this.I.lands[li]?.theme.name || ""));
       this.fogGoal = this.skyGoal[0].clone().lerp(this.skyGoal[1], 0.6);
       if (!this.skyNow) {
         this.skyNow = [this.skyGoal[0].clone(), this.skyGoal[1].clone()];
