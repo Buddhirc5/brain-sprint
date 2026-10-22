@@ -6,7 +6,7 @@
 
 ### Learning your team actually plays.
 
-**Daily quiz sprints · Big-screen live games · Instant polls · Certification** — all under your own brand.
+**Daily quiz sprints · Comic-book Story Mode · 3D Arena Map · Big-screen live games · Instant polls · Certification** — all under your own brand.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-C6F432?style=for-the-badge&labelColor=161512)](LICENSE)
 ![React](https://img.shields.io/badge/React_18-161512?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -26,17 +26,18 @@
 
 ## ✨ What is Ant Arena?
 
-Ant Arena is a **white-label, multi-company platform** that turns employee training into two minutes of fun a day. Staff play short daily quizzes on their phones, compete in game-show live quizzes at town halls, vote in live polls, and earn branded certificates, while managers see exactly where the knowledge gaps are.
+Ant Arena is a **white-label, multi-company platform** that turns employee training into two minutes of fun a day. Staff play short daily quizzes on their phones and travel a 3D journey map, read case studies as comic books, compete in game-show live quizzes at town halls, vote in live polls, and earn branded certificates, while managers see exactly where the knowledge gaps are.
 
 You run one installation. As the **super admin**, you create a private space for each client company, with its own web address, name, logo, colours, admins, players and questions. No company can see another's data.
 
 > 📘 Writing a proposal, pitch deck or poster? Everything is in the **[Product guide (PRODUCT.md)](PRODUCT.md)**.
 
-## 🎮 Four products in one
+## 🎮 Five products in one
 
 | | |
 |---|---|
-| 🏃 **Daily Sprint** | 2-minute quizzes with coins, streaks, levels, leaderboards, team battles and 18 cartoon characters with a store of hats, glasses and backgrounds |
+| 🏃 **Daily Sprint** | 2-minute quizzes with 6 question types (incl. **swipe sort** and **buckets**), partial marks and a fair **second chance**, on a **3D Arena Map** of floating lands; coins, streaks, levels, leaderboards, team battles and 18 cartoon characters with a store of **pets**, **rides**, hats and glasses |
+| 📖 **Story Mode** | Case studies as animated **comic books**: the app's characters in 7 moods, speech bubbles, sound effects, choices, a rank stamp and a replay. Admins write a story like a play (or bulk-import many) and preview it |
 | 🏆 **Live Quiz** | Kahoot-style game show: game PIN + QR, answer tiles, race-track scoreboard and a confetti podium finale |
 | 📊 **Live Polls** | Mentimeter-style: word cloud, multiple choice, scale, ranking, open text, Q&A, guess the number, 100 points, 2×2 grid, pin on image, plus text and image slides |
 | 🎓 **Certification** | Timed exams with pass marks, attempts and expiry, and printable certificates with an editable signature and seal |
@@ -97,7 +98,7 @@ With no Supabase keys, the app runs a full **demo backend inside the browser** (
 | Landing page | `#/` | — |
 | Experience (guided demo tour) | `#/experience` | — |
 | Sign in (join a game, vote, company & admin sign-in) | `#/signin` | — |
-| Harbor Bank, player app (bank template, custom brand) | `#/t/harbor` | Employee ID `DEMO-101` … `DEMO-130` |
+| Harbor Bank, player app (bank template, custom brand) | `#/t/harbor` | Employee ID `DEMO-101` … `DEMO-130` — try the **Arena Map**, the **Story Mode** shelf and the "New: swipe & sort" quiz |
 | Harbor Bank, admin portal | `#/t/harbor/admin` | `admin@harbor.demo` / `demo1234` (Owner) · `host@harbor.demo` / `demo1234` (Host) |
 | Northwind Traders (generic template) | `#/t/northwind` · `/admin` | `admin@northwind.demo` / `demo1234` |
 | Live poll (audience) | `#/vote/482913` | anonymous |
@@ -107,7 +108,7 @@ In the demo, email codes and links appear in a blue "Demo inbox" box instead of 
 
 **Demo sandbox on a live site.** When Supabase is configured, visitors can still try everything from `#/experience`: the first click switches their browser to the in-browser demo (a "Demo sandbox · Exit demo" bar stays on screen). Nothing they do is sent to the database; it's kept in their browser's localStorage.
 
-**SEO & speed.** `npm run build` pre-renders the landing page into `index.html` (real HTML for search engines and a fast first paint; the app hydrates it), adds Open Graph/Twitter cards, JSON-LD (Organization, SoftwareApplication, FAQPage), `robots.txt`, and — when `VITE_APP_URL` is set — a canonical URL and `sitemap.xml`. Brand assets (favicon, app icons, social image) are generated from `src/components/Logo.tsx` with `npm run gen:brand`.
+**SEO & speed.** `npm run build` pre-renders the landing page into `index.html` and each section into its own page (`/features`, `/how-it-works`, `/use-cases`, `/security`, `/faq` — real HTML for search engines and a fast first paint; the app hydrates it), adds Open Graph/Twitter cards, JSON-LD (Organization, SoftwareApplication, FAQPage, breadcrumbs), `robots.txt` and `sitemap.xml`. Canonical and share URLs use `VITE_APP_URL` (else Vercel's production domain), so changing the domain needs no code change. The build stops if the inline script's hash in `vercel.json`'s CSP is out of date. Brand assets (favicon, app icons, social image) are generated from `src/components/Logo.tsx` with `npm run gen:brand`.
 
 `npm run build:demo` produces **one self-contained HTML file** (`dist-demo/index.html`) that you can email to a prospect or open from disk.
 
@@ -126,9 +127,16 @@ src/
   api/supabase/         production backend client
   api/engine.ts         shared rules: live points, poll results, default settings
   lib/scoring.ts        points, coins, levels, streaks, leaderboards (also shown in the in-app guide)
-  pages/                home, company player app, admin gate
-  player/               Daily Sprint + certification (player side)
-  admin/                company admin portal (dashboard, quizzes, players, results, rewards, security, admins, branding, settings)
+  lib/answers.ts        question types: drafts ↔ sealed questions, partial scoring (swipe, bucket, story)
+  lib/storyScript.ts    Story Mode script format (parse ↔ write), moods, roles, looks
+  lib/importQs.ts       bulk import for every question type, story blocks and scripts
+  lib/arenaMap.ts       Arena Map: lands, stops, castles, chests from quizzes + plays
+  pages/                home, section pages (SEO), company player app, admin gate
+  player/               Daily Sprint, Story Mode, Second chance, Arena Map, store, certification (player side)
+  player/qtypes.tsx     swipe sort, buckets and the comic-book Story Mode player
+  player/map3d/         the 3D Arena Map (three.js): islands, people, animals, sound, sky & ambience
+  components/           characters (Chibi), pets & rides (Companions), UI kit
+  admin/                company admin portal (dashboard, quizzes, story editor, players, results, rewards, security, admins, branding, settings)
   live/                 live quiz: admin tab, host screen, phone controller
   polls/                live polls: editor, presenter screen, voting page
   cert/                 printable certificate
@@ -138,10 +146,14 @@ supabase/               SQL migrations, seed, backend README
 
 **Question images:** every quiz question can carry a picture. The admin portal resizes and compresses it in the browser (about 50–250 KB) and it's stored with the question.
 
+**Writing content fast.** Every editor has a **Bulk import** panel: paste rows from Excel or upload a `.csv` / `.txt`. Rows start with a type word — `MCQ`, `TF`, `MATCH`, `ORDER`, `SWIPE`, `BUCKET` — and Story Mode accepts scripts (`Title:` … `Name (mood): words` … `- Best: reply -> (mood) what happens`) or spreadsheet blocks (`STORY` · `CAST` · `SCENE` · `CHOICE` · `END`). The panel shows an example for each and explains any row it skips.
+
+**Updating an existing Supabase project:** run only the migrations you haven't run yet, in number order. Each one is safe to run more than once.
+
 ## 3. Set up Supabase (free plan)
 
 1. Create a project at [supabase.com](https://supabase.com) (the free plan is fine to start).
-2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, `0005_live_player_count.sql`, `0006_super_self_approve.sql`, `0007_rename_ant_arena.sql`, `0008_special_characters.sql`, `0009_super_requires_authenticator.sql`, `0010_mfa_reset_by_email.sql`, `0011_private_invite_links.sql`, `0012_certificate_signature.sql`, `0013_poll_slide_types.sql`, `0014_super_admin_authenticator_only.sql`, `0015_passwords.sql`, `0016_units_and_live_join.sql`, then `supabase/seed.sql`.
+2. In **SQL Editor**, run these files in order: `supabase/migrations/0001_schema.sql`, `0002_security.sql`, `0003_functions.sql`, `0004_question_images.sql`, `0005_live_player_count.sql`, `0006_super_self_approve.sql`, `0007_rename_ant_arena.sql`, `0008_special_characters.sql`, `0009_super_requires_authenticator.sql`, `0010_mfa_reset_by_email.sql`, `0011_private_invite_links.sql`, `0012_certificate_signature.sql`, `0013_poll_slide_types.sql`, `0014_super_admin_authenticator_only.sql`, `0015_passwords.sql`, `0016_units_and_live_join.sql`, `0017_new_types_second_chance.sql`, `0018_story_mode.sql`, `0019_store_pets_rides.sql`, then `supabase/seed.sql`.
 3. Make yourself super admin: `select public.bootstrap_super_admin('you@yourmail.com');`
 4. In **Authentication**, turn **Anonymous sign-ins ON**, set the **email OTP length to 6**, enable **MFA (TOTP)**, add your redirect URLs, and raise the anonymous sign-in rate limit. The full checklist is in `supabase/README.md` §3.
 5. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (**Project Settings → API**).
