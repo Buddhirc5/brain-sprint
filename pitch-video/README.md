@@ -9,6 +9,7 @@ Two HyperFrames films built from the real app:
 |---|---|---|---|
 | A · "Module 4 of 19" | `pitch/` | 73 s | The full pitch. It opens on a dull e-learning module, then follows one chain through every feature, ending on the manager view, the claims and the end card. |
 | C · "From compulsory to competitive" | `teaser/` | 29.5 s | A short kinetic teaser with one word and one real screen per feature, cut on the voice. |
+| Promo · "Arena Motion" | `promo30/` | 30 s | A fast, music-led feature reel in the house motion style (`.agents/skills/arena-motion`): a lime spark, whips and zoom-throughs, 3D characters, and Race mode. It has no voiceover. |
 
 The two films were picked from the three storylines in `STORYLINES.md`.
 

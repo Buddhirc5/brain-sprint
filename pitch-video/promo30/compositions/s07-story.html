@@ -1,0 +1,37 @@
+<template>
+  <style>
+    @font-face { font-family: "Bangers"; src: url("assets/fonts/bangers-400.woff2") format("woff2"); font-weight: 400; }
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    #s7-bg { position: absolute; inset: -10%; background-color: var(--yellow); background-image: radial-gradient(rgba(22, 21, 18, 0.16) 3px, transparent 3.5px); background-size: 18px 18px; }
+    #s7-phone { left: 300px; top: 50px; transform: rotate(-3deg); }
+    #s7-word { position: absolute; left: 900px; top: 250px; font: 400 190px "Bangers", sans-serif; line-height: 0.95; color: var(--ink); letter-spacing: 0.01em; }
+    #s7-word .o { color: var(--orange); -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; }
+    #s7-word .w { display: inline-block; }
+    #s7-sub { position: absolute; left: 910px; top: 640px; font-size: 52px; color: var(--ink); }
+    #s7-sub .w { font-weight: 500; }
+    #s7-dark { position: absolute; inset: 0; background: var(--ink); opacity: 0; }
+  </style>
+  <div id="root" data-composition-id="s07" data-width="1920" data-height="1080">
+    <div id="s7-cam" class="cam">
+      <div id="s7-bg"></div>
+      <div id="s7-phone" class="phone"><div class="scr"><img src="assets/shots/story-react-0.png" alt="A comic case study" /></div></div>
+      <div id="s7-word"><span class="w">Read</span> <span class="w">the</span><br /><span class="w o">story!</span></div>
+      <div id="s7-sub" class="kin"><span class="w">Comic</span><span class="w">case</span><span class="w">studies.</span><span class="w">No</span><span class="w">timer.</span></div>
+    </div>
+    <div id="s7-dark"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // whip in from the right
+    tl.fromTo("#s7-cam", { x: 820, filter: "blur(24px)" }, { x: 0, filter: "blur(0px)", duration: 0.3, ease: "expo.out" }, 0);
+    // comic words stamp in, one per beat-ish
+    document.querySelectorAll("#s7-word .w").forEach((w, i) =>
+      tl.fromTo(w, { scale: 1.8, opacity: 0, rotation: -6 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.22, ease: "back.out(2.4)" }, 0.25 + i * 0.16));
+    document.querySelectorAll("#s7-sub .w").forEach((w, i) =>
+      tl.fromTo(w, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14 }, 0.85 + i * 0.07));
+    // zoom through the phone into the dark of the live room
+    tl.to("#s7-cam", { scale: 6, transformOrigin: "534px 540px", filter: "blur(8px)", duration: 0.4, ease: "power3.in" }, 2.1);
+    tl.to("#s7-dark", { opacity: 1, duration: 0.14, ease: "power1.in" }, 2.36);
+    window.__timelines["s07"] = tl;
+  </script>
+</template>

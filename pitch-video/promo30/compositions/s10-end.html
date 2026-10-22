@@ -1,0 +1,40 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    #s10-lock { position: absolute; left: 420px; top: 220px; width: 1080px; height: 260px; }
+    #s10-mark { position: absolute; left: 0; top: 0; width: 250px; height: 250px; }
+    #s10-word { position: absolute; left: 290px; top: 18px; font-size: 230px; color: #fff; clip-path: inset(0 100% 0 0); }
+    #s10-tag { position: absolute; left: 0; right: 0; top: 580px; text-align: center; font-size: 66px; color: var(--soft); }
+    #s10-tag .k { color: var(--lime); }
+    #s10-tag .u { background: var(--lime); }
+    #s10-cta { position: absolute; left: 0; right: 0; top: 760px; text-align: center; }
+    #s10-btn { display: inline-block; padding: 30px 64px; border-radius: 999px; background: var(--lime); color: var(--ink); font: 800 50px "Figtree", sans-serif; white-space: nowrap; box-shadow: 0 0 60px rgba(198, 244, 50, 0.45); opacity: 0; }
+    #s10-spark { left: 960px; top: 540px; }
+  </style>
+  <div id="root" data-composition-id="s10" data-width="1920" data-height="1080">
+    <div class="ink" style="position: absolute; inset: 0"></div>
+    <div id="s10-dome" class="dome"></div>
+    <div id="s10-lock">
+      <img id="s10-mark" src="assets/art/logo-mark.svg" alt="Ant Arena mark" />
+      <h1 id="s10-word" class="hero">Ant Arena</h1>
+    </div>
+    <div id="s10-tag" class="kin"><span class="w" data-var-text="tagline">Learning your team actually</span><span class="w k">plays.<i class="u"></i></span></div>
+    <div id="s10-cta"><span id="s10-btn" data-var-text="cta">Try it free — no sign-up</span></div>
+    <div id="s10-spark" class="spark" style="margin: 0"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // the spark (arriving from the grid at scale 4) bursts into the mark on the drop
+    tl.fromTo("#s10-spark", { x: -13, y: -13, scale: 4, opacity: 1 }, { x: -505, y: -235, scale: 0.2, opacity: 0, duration: 0.3, ease: "power3.in" }, 0);
+    tl.fromTo("#s10-mark", { scale: 0.2, rotation: -25, opacity: 0, filter: "blur(10px)" }, { scale: 1, rotation: 0, opacity: 1, filter: "blur(0px)", duration: 0.55, ease: "back.out(1.7)" }, 0.22);
+    tl.fromTo("#s10-dome", { opacity: 0.2 }, { opacity: 1, duration: 0.8, ease: "power2.out" }, 0);
+    tl.fromTo("#s10-word", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.38, ease: "power3.out" }, 0.55);
+    // tagline word by word, the payoff word in lime
+    document.querySelectorAll("#s10-tag .w").forEach((w, i) =>
+      tl.fromTo(w, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16 }, 1.05 + i * 0.3));
+    tl.fromTo("#s10-tag .u", { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "expo.out" }, 1.55);
+    // the call to action lands on the bar (28.0 s) and holds to the end
+    tl.fromTo("#s10-btn", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(2)" }, 1.92);
+    window.__timelines["s10"] = tl;
+  </script>
+</template>
