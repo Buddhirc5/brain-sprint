@@ -1,0 +1,68 @@
+<template>
+  <style>
+    @font-face { font-family: "Bangers"; src: url("assets/fonts/bangers-400.woff2") format("woff2"); font-weight: 400; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--paper); }
+    .sh { position: absolute; inset: 0; overflow: hidden; opacity: 0; }
+    .sh:first-child { opacity: 1; }
+    /* layout A: a word on the left, the phone on the right */
+    .wa { position: absolute; left: 130px; top: 50%; margin-top: -170px; font-size: 300px; }
+    .sh .phone { left: 1260px; top: 76px; }
+    /* layout B: a word on top, a desktop screen rising into frame below */
+    .wb { position: absolute; left: 150px; top: 46px; font-size: 230px; }
+    .scrn { position: absolute; left: 160px; top: 320px; width: 1600px; height: 900px; border-radius: 26px; border: 10px solid var(--ink); overflow: hidden; background: #fff; }
+    .scrn img { position: absolute; left: 0; top: 0; width: 1580px; height: auto; }
+    #v1 { background: var(--orange); } #v1 .wa { color: var(--ink); }
+    #v2 { background: var(--lime); }
+    #v3 { background: var(--ink); } #v3 .wa { color: var(--lime); }
+    #v4 { background: var(--yellow); }
+    #v5 { background: var(--paper); }
+    #v6 { background: var(--yellow); background-image: radial-gradient(rgba(22, 21, 18, 0.18) 3px, transparent 3.5px); background-size: 16px 16px; }
+    #v6 .wa { font-family: "Bangers", sans-serif; font-size: 320px; transform-origin: 0 50%; }
+    #v7 { background: var(--orange); } #v7 .wb { color: var(--ink); }
+    #v8 { background: var(--lime); }
+    #v8 .scrn img { top: -110px; }
+    #v9 { background: var(--paper); }
+    #v10 { background: var(--ink); } #v10 .wb { color: var(--lime); }
+    #v10 .scrn img { top: -830px; }
+    .kit { position: absolute; left: 1080px; top: 140px; width: 720px; height: 800px; }
+    .kit img { position: absolute; }
+    #t2-me { left: 40px; bottom: 100px; width: 500px; height: 675px; z-index: 1; }
+    #t2-ride { left: -20px; bottom: 0; width: 576px; height: 247px; z-index: 2; }
+    #t2-pet { right: -40px; bottom: 6px; width: 250px; height: 200px; z-index: 3; }
+  </style>
+  <div id="root" data-composition-id="t2" data-width="1920" data-height="1080">
+    <div id="v1" class="sh"><h2 class="wa ttl">Sprint</h2><div class="phone"><div class="scr"><img src="assets/shots/sprint-reveal-1.png" alt="Spot on, plus 146" /></div></div></div>
+    <div id="v2" class="sh"><h2 class="wa ttl">Sort</h2><div class="phone"><div class="scr"><img src="assets/shots/swipe-drag-1.png" alt="Swipe to sort" /></div></div></div>
+    <div id="v3" class="sh"><h2 class="wa ttl">Retry</h2><div class="phone"><div class="scr"><img src="assets/shots/retry-q.png" alt="Second chance" /></div></div></div>
+    <div id="v4" class="sh"><h2 class="wa ttl">Collect</h2>
+      <div class="kit"><img id="t2-me" src="assets/svg/me-0.svg" alt="Player character" /><img id="t2-ride" src="assets/svg/me-1.svg" alt="Kick scooter" /><img id="t2-pet" src="assets/svg/me-2.svg" alt="Corgi" /></div>
+    </div>
+    <div id="v5" class="sh"><h2 class="wa ttl">Race</h2><div class="phone"><div class="scr"><img src="assets/shots/map-0.png" alt="3D Arena Map" /></div></div></div>
+    <div id="v6" class="sh"><h2 class="wa">Read!</h2><div class="phone"><div class="scr"><img src="assets/shots/story-react-0.png" alt="Comic case study" /></div></div></div>
+    <div id="v7" class="sh"><h2 class="wb ttl">Host</h2><div class="scrn"><img src="assets/shots/live-podium.png" alt="Live quiz podium" /></div></div>
+    <div id="v8" class="sh"><h2 class="wb ttl">Vote</h2><div class="scrn"><img src="assets/shots/poll-0.png" alt="Live poll word cloud" /></div></div>
+    <div id="v9" class="sh"><h2 class="wb ttl">Certify</h2><div class="scrn"><img src="assets/shots/cert.png" alt="Certificate" /></div></div>
+    <div id="v10" class="sh"><h2 class="wb ttl">Measure</h2><div class="scrn"><img src="assets/shots/adm-dash-full.png" alt="Knowledge gap trend" /></div></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const D = 1.42;
+    const shots = gsap.utils.toArray(".sh");
+    shots.forEach((sh, k) => {
+      const t = k * D;
+      if (k) tl.fromTo(sh, { opacity: 0 }, { opacity: 1, duration: 0.01 }, t);
+      if (k) tl.to(shots[k - 1], { opacity: 0, duration: 0.01 }, t + 0.02);
+      const word = sh.querySelector("h2");
+      tl.fromTo(word, { opacity: 0, filter: "blur(10px)", scale: 1.12 }, { opacity: 1, filter: "blur(0px)", scale: 1, duration: 0.16, ease: "power3.out" }, t + 0.02);
+      const ph = sh.querySelector(".phone");
+      if (ph) tl.fromTo(ph, { y: 140 }, { y: 0, duration: 0.45, ease: "expo.out" }, t);
+      const sc = sh.querySelector(".scrn");
+      if (sc) tl.fromTo(sc, { y: 260 }, { y: 0, duration: 0.5, ease: "expo.out" }, t);
+    });
+    // collect: the kit assembles in the beat
+    tl.fromTo("#t2-me", { y: -700 }, { y: 0, duration: 0.4, ease: "back.out(1.4)" }, 3 * D);
+    tl.fromTo("#t2-ride", { x: -700 }, { x: 0, duration: 0.4, ease: "expo.out" }, 3 * D + 0.3);
+    tl.fromTo("#t2-pet", { x: 300, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "back.out(1.8)" }, 3 * D + 0.55);
+    window.__timelines["t2"] = tl;
+  </script>
+</template>

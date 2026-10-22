@@ -1,0 +1,73 @@
+<!doctype html>
+<html
+  lang="en"
+  data-composition-variables='[
+    {"id":"cta","type":"string","label":"Call to action","default":"Try it free — no sign-up"},
+    {"id":"tagline","type":"string","label":"Tagline","default":"Learning your team actually plays"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Anton"; src: url("assets/fonts/anton-400.woff2") format("woff2"); font-weight: 400; }
+      @font-face { font-family: "Figtree"; src: url("assets/fonts/figtree-var.woff2") format("woff2"); font-weight: 300 900; }
+      @font-face { font-family: "Bangers"; src: url("assets/fonts/bangers-400.woff2") format("woff2"); font-weight: 400; }
+      :root { --paper: #f4f3ee; --ink: #161512; --lime: #c6f432; --orange: #ff5a1f; --yellow: #ffd84d; --grey: #c9c9c4; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); }
+      #root { position: relative; width: 100%; height: 100%; font-family: "Figtree", sans-serif; color: var(--ink); }
+      .bg { position: absolute; inset: 0; background: var(--paper); }
+      .ttl { font-family: "Anton", sans-serif; font-weight: 400; text-transform: uppercase; line-height: 0.9; letter-spacing: -0.005em; }
+      .phone { position: absolute; width: 444px; height: 928px; border-radius: 64px; background: var(--ink); padding: 14px; box-shadow: 0 30px 60px rgba(22, 21, 18, 0.2); }
+      .phone .scr { position: relative; width: 416px; height: 900px; border-radius: 52px; overflow: hidden; background: var(--paper); }
+      .phone .scr img { position: absolute; left: 0; top: 0; width: 416px; height: auto; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="29.5" data-width="1920" data-height="1080">
+      <div class="bg"></div>
+      <div id="t1" data-composition-id="t1" data-composition-src="compositions/t1-open.html" data-start="0" data-duration="7.4" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="t2" data-composition-id="t2" data-composition-src="compositions/t2-verbs.html" data-start="7.4" data-duration="14.2" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="t3" data-composition-id="t3" data-composition-src="compositions/t3-mosaic.html" data-start="21.6" data-duration="2.2" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="t4" data-composition-id="t4" data-composition-src="compositions/t4-end.html" data-start="23.8" data-duration="5.7" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <audio id="vo-c01" class="clip" src="assets/vo/c01.wav" data-start="0.1" data-duration="1.47" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-c02" class="clip" src="assets/vo/c02.wav" data-start="1.8" data-duration="0.79" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-c03" class="clip" src="assets/vo/c03.wav" data-start="2.9" data-duration="1.45" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-c04" class="clip" src="assets/vo/c04.wav" data-start="4.95" data-duration="1.47" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v01" class="clip" src="assets/vo/v01.wav" data-start="7.45" data-duration="0.77" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v02" class="clip" src="assets/vo/v02.wav" data-start="8.87" data-duration="0.73" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v03" class="clip" src="assets/vo/v03.wav" data-start="10.29" data-duration="0.83" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v04" class="clip" src="assets/vo/v04.wav" data-start="11.71" data-duration="0.77" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v05" class="clip" src="assets/vo/v05.wav" data-start="13.13" data-duration="0.98" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v06" class="clip" src="assets/vo/v06.wav" data-start="14.55" data-duration="1.07" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v07" class="clip" src="assets/vo/v07.wav" data-start="15.97" data-duration="1.00" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v08" class="clip" src="assets/vo/v08.wav" data-start="17.39" data-duration="0.70" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v09" class="clip" src="assets/vo/v09.wav" data-start="18.81" data-duration="0.92" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-v10" class="clip" src="assets/vo/v10.wav" data-start="20.23" data-duration="0.75" data-track-index="10" data-volume="1"></audio>
+      <audio id="vo-c09" class="clip" src="assets/vo/c09.wav" data-start="24.05" data-duration="2.71" data-track-index="10" data-volume="1"></audio>
+      <audio id="fx-stamp" class="clip" src="assets/sfx/impact-bass-2.mp3" data-start="0.05" data-duration="2.59" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="fx-glitch" class="clip" src="assets/sfx/glitch-1.mp3" data-start="4.55" data-duration="2.64" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-flood" class="clip" src="assets/sfx/whoosh.mp3" data-start="4.7" data-duration="0.57" data-track-index="12" data-volume="0.35"></audio>
+      <audio id="fx-cut01" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="7.4" data-duration="0.57" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut02" class="clip" src="assets/sfx/pop.mp3" data-start="8.82" data-duration="0.72" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut03" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="10.24" data-duration="0.57" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut04" class="clip" src="assets/sfx/pop.mp3" data-start="11.66" data-duration="0.72" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut05" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="13.08" data-duration="0.57" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut06" class="clip" src="assets/sfx/pop.mp3" data-start="14.5" data-duration="0.72" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut07" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="15.92" data-duration="0.57" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut08" class="clip" src="assets/sfx/pop.mp3" data-start="17.34" data-duration="0.72" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut09" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="18.76" data-duration="0.57" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-cut10" class="clip" src="assets/sfx/pop.mp3" data-start="20.18" data-duration="0.72" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-tiles" class="clip" src="assets/sfx/whoosh.mp3" data-start="21.6" data-duration="0.57" data-track-index="11" data-volume="0.3"></audio>
+      <audio id="fx-impact" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="23.82" data-duration="2.12" data-track-index="11" data-volume="0.55"></audio>
+      <audio id="fx-pop" class="clip" src="assets/sfx/pop.mp3" data-start="26.12" data-duration="0.72" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="fx-riser" class="clip" src="assets/sfx/riser.mp3" data-start="22.12" data-media-start="8.3" data-duration="1.7" data-track-index="13" data-volume="0.3"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

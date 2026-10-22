@@ -56,3 +56,12 @@
 @keyframes sp-lid { 0%, 80%, 100% { transform: rotate(0); } 88% { transform: rotate(-8deg); } }
 .chibi.still.special * { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .chibi.special * { animation: none !important; } }
+
+/* Painted 3D set (components/Painted.tsx): the body still bobs and hops with the classes above; pets breathe, rides idle */
+.pet.painted, .ride.painted { display: block; object-fit: contain; object-position: 50% 100%; }
+.pet.painted { transform-origin: 50% 100%; animation: pt-breathe 2.4s ease-in-out infinite; }
+.ride.painted { animation: pt-idle 3s ease-in-out infinite; }
+.pet.painted.still, .ride.painted.still { animation: none; }
+@keyframes pt-breathe { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-2%) scale(1.02, .98); } }
+@keyframes pt-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5%); } }
+@media (prefers-reduced-motion: reduce) { .pet.painted, .ride.painted { animation: none; } }

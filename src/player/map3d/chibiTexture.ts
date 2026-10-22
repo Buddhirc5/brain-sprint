@@ -5,12 +5,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { CanvasTexture, SRGBColorSpace } from "three";
 import { Chibi } from "../../components/Chibi";
 import { companionSvg } from "../../components/Companions";
+import { artUrl, drawPainted, loadImage, paintedLook } from "../../components/Painted";
 import type { Equipped } from "../../types";
 // the arm, body and head pivots live in this stylesheet, so the drawn image needs it too
 import chibiCss from "../../styles/chibi.css?raw";
 
 export const PET_ASPECT = 100 / 80;
-export const RIDE_ASPECT = 140 / 60;
+export const RIDE_ASPECT = 1.3; // a parked ride stands in a box this shape (the painted art fits inside it)
 
 export const CHIBI_ASPECT = 120 / 162; // width / height of the full-body character
 
@@ -28,6 +29,16 @@ export function chibiTexture(look: number, equipped: Equipped | undefined, mood:
 
 async function draw(look: number, equipped: Equipped | undefined, mood: "idle" | "happy"): Promise<CanvasTexture> {
   const W = 180, H = Math.round(W / CHIBI_ASPECT);
+  if (paintedLook(look)) {
+    const c = document.createElement("canvas");
+    c.width = W * 2;
+    c.height = H * 2;
+    await drawPainted(c.getContext("2d")!, look, equipped, W * 2, mood);
+    const t = new CanvasTexture(c);
+    t.colorSpace = SRGBColorSpace;
+    t.anisotropy = 2;
+    return t;
+  }
   let svg = renderToStaticMarkup(createElement(Chibi, { look, equipped, mood, variant: "full", size: W, still: true }));
   if (!svg.includes("xmlns=")) svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
   svg = svg.replace(/(<svg[^>]*>)/, `$1<style>${chibiCss.replace(/</g, "")}</style>`);
@@ -54,6 +65,21 @@ export function companionTexture(kind: "pet" | "ride", id: string): Promise<Canv
   if (!p) {
     const W = kind === "pet" ? 200 : 280, H = Math.round(W / (kind === "pet" ? PET_ASPECT : RIDE_ASPECT));
     p = (async () => {
+      const src = artUrl(`items/${id}`);
+      if (src) {
+        // painted art: fit inside the same box as the vector drawing, standing on its bottom edge
+        const im = await loadImage(src);
+        const c = document.createElement("canvas");
+        c.width = W * 2;
+        c.height = H * 2;
+        const sc = Math.min((W * 2) / im.width, (H * 2) / im.height);
+        const w = im.width * sc,
+          h = im.height * sc;
+        c.getContext("2d")!.drawImage(im, (W * 2 - w) / 2, H * 2 - h, w, h);
+        const t = new CanvasTexture(c);
+        t.colorSpace = SRGBColorSpace;
+        return t;
+      }
       let svg = renderToStaticMarkup(el);
       if (!svg.includes("xmlns=")) svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
       const img = new Image();

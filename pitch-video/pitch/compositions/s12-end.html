@@ -1,0 +1,40 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--paper); }
+    #s12-lock { position: absolute; left: 265px; top: 250px; width: 1200px; height: 320px; }
+    #s12-mark { position: absolute; left: 0; top: 0; width: 300px; height: 300px; }
+    #s12-word { position: absolute; left: 340px; top: 20px; font-size: 270px; white-space: nowrap; clip-path: inset(0 100% 0 0); }
+    #s12-tag { position: absolute; left: 0; right: 0; top: 640px; text-align: center; font: 700 64px "Figtree", sans-serif; }
+    #s12-cta { position: absolute; left: 50%; top: 790px; transform: translateX(-50%); }
+    #s12-btn { display: inline-block; padding: 30px 60px; border-radius: 999px; background: var(--ink); color: var(--lime); font: 800 52px "Figtree", sans-serif; white-space: nowrap; }
+    #s12-kit { position: absolute; left: 1560px; top: 640px; width: 240px; height: 270px; }
+    #s12-kit img { position: absolute; }
+    #s12-me { left: 10px; bottom: 34px; width: 170px; height: 230px; z-index: 1; }
+    #s12-ride { left: -8px; bottom: 0; width: 195px; height: 84px; z-index: 2; }
+    #s12-pet { right: -40px; bottom: 2px; width: 85px; height: 68px; z-index: 3; }
+  </style>
+  <div id="root" data-composition-id="s12" data-width="1920" data-height="1080">
+    <div id="s12-lock">
+      <img id="s12-mark" src="assets/svg/logo-mark.svg" alt="Ant Arena mark" />
+      <h1 id="s12-word" class="ttl">Ant Arena</h1>
+    </div>
+    <div id="s12-tag"><span data-var-text="tagline">Learning your team actually plays</span></div>
+    <div id="s12-cta"><span id="s12-btn" data-var-text="cta">Try it free — no sign-up</span></div>
+    <div id="s12-kit">
+      <img id="s12-me" src="assets/svg/me-0.svg" alt="" />
+      <img id="s12-ride" src="assets/svg/me-1.svg" alt="" />
+      <img id="s12-pet" src="assets/svg/me-2.svg" alt="" />
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // the mark drops and lands with weight, the wordmark wipes in beside it
+    tl.fromTo("#s12-mark", { y: -420, scaleY: 1 }, { y: 0, duration: 0.42, ease: "power3.in" }, 0);
+    tl.fromTo("#s12-mark", { scaleY: 0.82, scaleX: 1.12, transformOrigin: "50% 100%" }, { scaleY: 1, scaleX: 1, duration: 0.45, ease: "back.out(2.2)", immediateRender: false }, 0.42);
+    tl.fromTo("#s12-word", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power3.out" }, 0.75);
+    tl.fromTo("#s12-tag", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2 }, 1.5);
+    tl.fromTo("#s12-kit", { x: 600 }, { x: 0, duration: 0.7, ease: "expo.out" }, 2.4);
+    tl.fromTo("#s12-btn", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(2)" }, 3.35);
+    window.__timelines["s12"] = tl;
+  </script>
+</template>

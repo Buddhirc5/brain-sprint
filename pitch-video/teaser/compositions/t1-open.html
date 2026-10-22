@@ -1,0 +1,39 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--grey); }
+    .t1-word { position: absolute; left: 0; right: 0; top: 50%; text-align: center; font-size: 300px; color: var(--ink); transform: translateY(-50%); }
+    .t1-word .l { display: inline-block; }
+    .t1-word h1 { font-size: 1em; }
+    #t1-w2, #t1-w3 { opacity: 0; }
+    #t1-flood { position: absolute; inset: 0; background: var(--lime); clip-path: circle(0px at 960px 540px); }
+    .t1-word #t1-w4 { font-size: 280px; }
+    #t1-q { display: inline-block; color: var(--orange); }
+  </style>
+  <div id="root" data-composition-id="t1" data-width="1920" data-height="1080">
+    <div class="t1-word"><h1 id="t1-w1" class="ttl">Compulsory.</h1></div>
+    <div class="t1-word"><h1 id="t1-w2" class="ttl"><span class="l">B</span><span class="l">o</span><span class="l">r</span><span class="l">i</span><span class="l">n</span><span class="l">g</span><span class="l">.</span></h1></div>
+    <div class="t1-word"><h1 id="t1-w3" class="ttl">Unmeasured.</h1></div>
+    <div id="t1-flood"><div class="t1-word"><h1 id="t1-w4" class="ttl">Competitive<span id="t1-q">?</span></h1></div></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // 1. stamped in
+    tl.fromTo("#t1-w1", { opacity: 0.5, scale: 1.5 }, { opacity: 1, scale: 1, duration: 0.18, ease: "power4.in" }, 0);
+    tl.to("#t1-w1", { opacity: 0, duration: 0.01 }, 1.75);
+    // 2. the letters sag
+    tl.fromTo("#t1-w2", { opacity: 0 }, { opacity: 1, duration: 0.01 }, 1.75);
+    gsap.utils.toArray("#t1-w2 .l").forEach((l, i) =>
+      tl.fromTo(l, { y: 0, rotation: 0 }, { y: 30 + i * 10, rotation: (i % 2 ? 6 : -6), duration: 0.8, ease: "power2.in" }, 2.0 + i * 0.03)
+    );
+    tl.to("#t1-w2", { opacity: 0, duration: 0.01 }, 2.85);
+    // 3. blurs out of focus, like a number nobody measured
+    tl.fromTo("#t1-w3", { opacity: 0, filter: "blur(0px)" }, { opacity: 1, duration: 0.01 }, 2.85);
+    tl.to("#t1-w3", { filter: "blur(18px)", opacity: 0.35, duration: 1.4, ease: "power2.in" }, 3.2);
+    tl.to("#t1-w3", { opacity: 0, duration: 0.01 }, 4.75);
+    // 4. the flip: lime floods from the centre
+    tl.fromTo("#t1-flood", { clipPath: "circle(0px at 960px 540px)" }, { clipPath: "circle(1200px at 960px 540px)", duration: 0.45, ease: "power3.out" }, 4.75);
+    tl.fromTo("#t1-w4", { scale: 0.7, filter: "blur(10px)" }, { scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out" }, 4.85);
+    tl.fromTo("#t1-q", { rotation: 0 }, { rotation: 12, duration: 0.3, ease: "back.out(3)" }, 5.9);
+    window.__timelines["t1"] = tl;
+  </script>
+</template>

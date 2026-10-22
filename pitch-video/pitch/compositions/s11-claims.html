@@ -1,0 +1,41 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--paper); }
+    .s11-shot { position: absolute; inset: 0; overflow: hidden; background: #fff; }
+    .s11-cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    .s11-cam img { width: 1920px; height: 1080px; display: block; }
+    .s11-label { position: absolute; left: 90px; top: 860px; padding: 18px 34px 10px; background: var(--ink); color: var(--lime); font-size: 104px; border-radius: 14px; }
+    #s11-c { background: var(--paper); }
+    #s11-b, #s11-c { opacity: 0; }
+    #s11-phone { left: 1180px; top: 76px; }
+    #s11-ct { position: absolute; left: 150px; top: 380px; font-size: 170px; }
+    #s11-cs { position: absolute; left: 156px; top: 510px; width: 900px; }
+  </style>
+  <div id="root" data-composition-id="s11" data-width="1920" data-height="1080">
+    <div id="s11-a" class="s11-shot">
+      <div id="s11-acam" class="s11-cam"><img src="assets/shots/adm-brand.png" alt="Branding page with a live preview" /></div>
+      <h2 class="s11-label ttl" data-layout-allow-overlap>100% white-label</h2>
+    </div>
+    <div id="s11-b" class="s11-shot">
+      <div id="s11-bcam" class="s11-cam"><img src="assets/shots/adm-security.png" alt="Security controls" /></div>
+      <h2 class="s11-label ttl" data-layout-allow-overlap>Bank-grade security</h2>
+    </div>
+    <div id="s11-c" class="s11-shot">
+      <h2 id="s11-ct" class="ttl"><span class="w">No</span> <span class="w hl">download</span></h2>
+      <div id="s11-phone" class="phone"><div class="scr"><img src="assets/shots/lobby.png" alt="Ant Arena lobby" /></div></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const at = (cx, cy, s) => ({ scale: s, x: 960 - cx * s, y: 540 - cy * s });
+    tl.fromTo("#s11-acam", { ...at(1100, 600, 1.15) }, { ...at(1194, 600, 1.5), duration: 0.5, ease: "expo.out" }, 0);
+    tl.fromTo("#s11-b", { opacity: 0 }, { opacity: 1, duration: 0.01 }, 1.65);
+    tl.fromTo("#s11-bcam", { ...at(700, 560, 1.15) }, { ...at(560, 560, 1.4), duration: 0.5, ease: "expo.out" }, 1.65);
+    tl.fromTo("#s11-c", { opacity: 0 }, { opacity: 1, duration: 0.01 }, 3.3);
+    tl.fromTo("#s11-phone", { y: 300, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, 3.3);
+    gsap.utils.toArray("#s11-ct .w").forEach((w, i) =>
+      tl.fromTo(w, { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13 }, 3.4 + i * 0.1)
+    );
+    window.__timelines["s11"] = tl;
+  </script>
+</template>

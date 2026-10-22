@@ -5,6 +5,7 @@
    ===================================================================== */
 import { useId, type CSSProperties } from "react";
 import { SPECIALS, SpecialChar, type SpecialKey } from "./Specials";
+import { PaintedChibi, paintedLook } from "./Painted";
 import type { Equipped } from "../types";
 import { BG_FILL } from "../lib/catalog";
 
@@ -169,6 +170,11 @@ export interface ChibiProps {
 export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", size, still, className = "", style, title }: ChibiProps) {
   const uid = useId().replace(/:/g, "");
   const sp = specialOf(look);
+  // the painted 3D set covers every look (Wren and Puff included); the vector drawing below is the fallback
+  if (paintedLook(look)) {
+    const pbg = equipped.bg && BG_FILL[equipped.bg] ? BG_FILL[equipped.bg][0] : sp ? SPECIALS.find((x) => x.key === sp)!.bg : lookOf(look).bg;
+    return <PaintedChibi look={look} equipped={equipped} mood={mood} variant={variant} size={size} still={still} className={className} style={style} title={title} bg={pbg} uid={uid} />;
+  }
   if (sp) return <SpecialChar kind={sp} uid={uid} mood={mood} variant={variant} still={still} size={size} className={className} style={style} title={title} equipped={equipped} />;
   const L = lookOf(look);
   const H = L.hair;
@@ -431,5 +437,7 @@ export function Chibi({ look, equipped = {}, mood = "idle", variant = "bust", si
 export function Mascot({ mood = "idle", size = 120, className = "", still, who }: { mood?: Mood; size?: number; className?: string; still?: boolean; who?: SpecialKey }) {
   const uid = useId().replace(/:/g, "");
   const kind: SpecialKey = who ?? (mood === "cheer" || mood === "happy" ? "explorer" : "puff");
+  const look = LOOKS.length + SPECIALS.findIndex((x) => x.key === kind);
+  if (paintedLook(look)) return <PaintedChibi look={look} mood={mood} variant="full" size={size} still={still} className={`mascot ${className}`} bg="transparent" uid={uid} />;
   return <SpecialChar kind={kind} uid={uid} mood={mood} variant="full" still={still} size={size} className={`mascot ${className}`} />;
 }

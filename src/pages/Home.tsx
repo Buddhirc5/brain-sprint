@@ -143,8 +143,8 @@ function Hero() {
         src="/hero-bg-1600.webp"
         srcSet="/hero-bg-900.webp 900w, /hero-bg-1600.webp 1600w"
         sizes="(min-width: 1440px) 1440px, 100vw"
-        width={1585}
-        height={992}
+        width={1600}
+        height={1073}
         alt=""
         {...{ fetchpriority: "high" }}
         decoding="async"

@@ -1,0 +1,25 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--ink); }
+    .s08-shot { position: absolute; left: 0; top: 0; width: 1920px; height: 948px; overflow: hidden; background: #fff; }
+    /* the presenter header is cropped off so the demo's dev join address stays out of frame */
+    .s08-shot img { position: absolute; left: 0; top: -132px; width: 1920px; height: 1080px; }
+    #s08-band { position: absolute; left: 0; right: 0; bottom: 0; height: 132px; display: flex; align-items: center; gap: 40px; padding: 0 90px; }
+    #s08-label { color: var(--lime); font-size: 96px; }
+    #s08-kinds { font: 700 40px "Figtree", sans-serif; color: var(--paper); }
+  </style>
+  <div id="root" data-composition-id="s08" data-width="1920" data-height="1080">
+    <div id="s08-a" class="s08-shot"><img src="assets/shots/poll-0.png" alt="Word cloud: one word for how this month felt" /></div>
+    <div id="s08-b" class="s08-shot"><img src="assets/shots/poll-1.png" alt="Bar chart: which training should we run next" /></div>
+    <div id="s08-band"><h2 id="s08-label" class="ttl">Live polls</h2><span id="s08-kinds">Word clouds · votes · scales · Q&amp;A</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s08-a", { x: 360, filter: "blur(16px)" }, { x: 0, filter: "blur(0px)", duration: 0.35, ease: "expo.out" }, 0);
+    tl.fromTo("#s08-band", { y: 132 }, { y: 0, duration: 0.4, ease: "expo.out" }, 0.1);
+    tl.fromTo("#s08-kinds", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.55);
+    tl.to("#s08-a", { x: -1920, filter: "blur(16px)", duration: 0.3, ease: "power3.in" }, 2.0);
+    tl.fromTo("#s08-b", { x: 1920, filter: "blur(16px)" }, { x: 0, filter: "blur(0px)", duration: 0.4, ease: "expo.out" }, 2.15);
+    window.__timelines["s08"] = tl;
+  </script>
+</template>

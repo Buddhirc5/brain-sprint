@@ -13,7 +13,6 @@ import type { Deco, Land } from "../../lib/arenaMap";
 import { hash, key, type World } from "../../lib/arenaWorld";
 import type { Player } from "../../types";
 import { CHIBI_ASPECT, chibiTexture, companionTexture, PET_ASPECT, RIDE_ASPECT } from "./chibiTexture";
-import { RIDE_IN } from "../../components/Companions";
 import { makeCritters, type Critter } from "./critters";
 import { Billboards, faceCamera, landKey, landmark, LIGHT, makeLanterns, makeParticles, mute, skyFor, softDot, timeOfDay, type Tod } from "./ambience";
 
@@ -44,7 +43,7 @@ type Runner = {
   p: Player; me: boolean; sprite: Sprite; shadow: Mesh; label?: HTMLElement;
   pos: Vector3; home: Vector3; route: Vector3[]; seg: number; segT: number; speed: number;
   idleUntil: number; phase: number; hop: number; face: 1 | -1;
-  pet?: Sprite; petPos?: Vector3; ride?: Sprite; lift?: number; rideIn?: boolean; // store pet and ride
+  pet?: Sprite; petPos?: Vector3; ride?: Sprite; ridePos?: Vector3; // store pet and ride
 };
 
 export class Arena3D {
@@ -949,7 +948,7 @@ export class Arena3D {
       this.I.layer.appendChild(label);
       const r: Runner = { p, me: isMe, sprite, shadow, label, pos: at.clone(), home: at.clone(), route: [], seg: 0, segT: 0, speed: isMe ? 4.2 : 1.6, idleUntil: performance.now() / 1000 + 1 + Math.random() * 4, phase: Math.random() * 6, hop: 0, face: 1 };
       this.runners.push(r);
-      // the pet trots beside them and the ride carries them (store items)
+      // the pet trots beside them and the ride is parked next to them (store items)
       const petId = p.equipped?.pet, rideId = p.equipped?.ride;
       const add = async (kind: "pet" | "ride", id: string) => {
         const tex = await companionTexture(kind, id);
@@ -957,7 +956,7 @@ export class Arena3D {
         tex.userData.shared = true;
         const sp = new Sprite(new SpriteMaterial({ map: tex, alphaTest: 0.3, transparent: true }));
         sp.center.set(0.5, 0.02);
-        const hh = h * (kind === "pet" ? 0.42 : 0.34);
+        const hh = h * (kind === "pet" ? 0.42 : 0.55);
         sp.scale.set(hh * (kind === "pet" ? PET_ASPECT : RIDE_ASPECT), hh, 1);
         this.scene.add(sp);
         if (kind === "pet") {
@@ -965,8 +964,7 @@ export class Arena3D {
           r.petPos = at.clone().add(new Vector3(0.45, 0, 0.45));
         } else {
           r.ride = sp;
-          r.rideIn = RIDE_IN.has(id);
-          r.lift = h * (r.rideIn ? 0.08 : 0.16);
+          r.ridePos = at.clone().add(new Vector3(0.55, 0, -0.55));
         }
         this.kick();
       };
@@ -1089,12 +1087,12 @@ export class Arena3D {
         r.hop = Math.max(0, r.hop - dt * 1.6);
         y += Math.sin((1 - r.hop) * Math.PI * 2) ** 2 * 0.35;
       }
-      r.sprite.position.set(r.pos.x, y + (r.lift || 0), r.pos.z);
+      r.sprite.position.set(r.pos.x, y, r.pos.z);
       r.sprite.scale.set(h * CHIBI_ASPECT * r.face * (2 - sq), h * sq, 1);
-      if (r.ride) {
-        // stand on it (or sit in it): a touch toward the camera, or away for rides you sit inside
-        const k = r.rideIn ? -0.06 : 0.06;
-        r.ride.position.set(r.pos.x + k, y * 0.5, r.pos.z + k);
+      if (r.ride && r.ridePos) {
+        // the ride rolls along a step behind and parks beside them when they stop
+        r.ridePos.lerp(new Vector3(r.pos.x + r.face * 0.55, 0, r.pos.z - 0.55), Math.min(1, dt * (running ? 3 : 2)));
+        r.ride.position.set(r.ridePos.x, 0, r.ridePos.z);
         r.ride.scale.x = Math.abs(r.ride.scale.x) * r.face;
       }
       if (r.pet && r.petPos) {

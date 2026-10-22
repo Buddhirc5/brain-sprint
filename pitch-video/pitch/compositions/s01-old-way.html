@@ -1,0 +1,54 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    #s01-ground { position: absolute; inset: 0; background: var(--grey); }
+    #s01-paper { position: absolute; inset: 0; background: var(--paper); clip-path: circle(0px at 1402px 1100px); }
+    #s01-win { position: absolute; left: 150px; top: 90px; width: 1620px; height: 900px; background: #ecece8; border-radius: 18px; border: 3px solid #b9b9b4; overflow: hidden; }
+    #s01-bar { height: 76px; background: #c4c4bf; display: flex; align-items: center; padding: 0 34px; gap: 18px; font: 700 30px "Figtree", sans-serif; color: #55554f; }
+    #s01-bar i { width: 18px; height: 18px; border-radius: 50%; background: #a9a9a3; display: inline-block; }
+    #s01-body { padding: 56px 80px; color: #6d6d66; }
+    #s01-h { font: 800 54px "Figtree", sans-serif; color: #55554f; margin-bottom: 30px; }
+    .s01-p { font: 500 30px/1.5 "Figtree", sans-serif; margin-bottom: 18px; max-width: 1400px; }
+    #s01-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 130px; background: #dcdcd7; display: flex; align-items: center; padding: 0 60px; gap: 36px; font: 700 32px "Figtree", sans-serif; color: #55554f; }
+    #s01-prog { flex: 1; height: 18px; border-radius: 9px; background: #c4c4bf; overflow: hidden; }
+    #s01-fill { width: 21%; height: 100%; background: #8f8f88; }
+    #s01-next { padding: 18px 44px; border-radius: 12px; background: #c9c9c4; color: #8f8f88; }
+    #s01-cursor { position: absolute; left: 900px; top: 640px; width: 64px; height: 84px; }
+    #s01-phone { left: 1180px; top: 1100px; }
+  </style>
+  <div id="root" data-composition-id="s01" data-width="1920" data-height="1080">
+    <div id="s01-ground"></div>
+    <div id="s01-win">
+      <div id="s01-bar"><i></i><i></i><i></i><span>Compliance training · Module 4 of 19</span></div>
+      <div id="s01-body" data-layout-ignore>
+        <div id="s01-h">4.3 Policy framework overview (continued)</div>
+        <p class="s01-p">Employees must review and acknowledge the applicable procedures as set out in sections 4.1 through 4.7, including all sub-clauses, appendices and cross-referenced guidance notes issued during the review period.</p>
+        <p class="s01-p">Where a procedure is superseded, the earlier version remains applicable to transactions initiated prior to the effective date unless otherwise stated in the relevant appendix.</p>
+        <p class="s01-p">Please read every page carefully. You will be asked about this material in the assessment at the end of Module 19.</p>
+      </div>
+      <div id="s01-foot">
+        <span id="s01-pct">21%</span>
+        <div id="s01-prog"><div id="s01-fill"></div></div>
+        <span>47:12 remaining</span>
+        <span id="s01-next">Next ›</span>
+      </div>
+    </div>
+    <svg id="s01-cursor" viewBox="0 0 32 42" aria-hidden="true"><path d="M2 2 L2 34 L10 26 L16 40 L22 37 L16 24 L28 24 Z" fill="#fff" stroke="#161512" stroke-width="2.5" stroke-linejoin="round" /></svg>
+    <div id="s01-paper"></div>
+    <div id="s01-phone" class="phone"><div class="scr"><img src="assets/shots/lobby.png" alt="Ant Arena lobby" /></div></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // the progress bar crawls one percent
+    tl.fromTo("#s01-fill", { width: "21%" }, { width: "22%", duration: 2.4, ease: "none" }, 0.2);
+    tl.set("#s01-pct", { textContent: "22%" }, 2.6);
+    // the cursor reaches for Next, clicks, nothing happens
+    tl.fromTo("#s01-cursor", { x: 0, y: 0 }, { x: 680, y: 196, duration: 1.1, ease: "power2.inOut" }, 2.3);
+    tl.fromTo("#s01-cursor", { scale: 1 }, { scale: 0.86, duration: 0.08, yoyo: true, repeat: 1, ease: "power1.out" }, 3.5);
+    tl.fromTo("#s01-next", { x: 0 }, { x: 10, duration: 0.05, yoyo: true, repeat: 5, ease: "none" }, 3.62);
+    // the phone rises in, and its world floods over the grey one
+    tl.fromTo("#s01-phone", { y: 0 }, { y: -1024, duration: 0.8, ease: "expo.out" }, 5.6);
+    tl.fromTo("#s01-paper", { clipPath: "circle(0px at 1402px 1100px)" }, { clipPath: "circle(2300px at 1402px 1100px)", duration: 0.7, ease: "power2.inOut" }, 6.25);
+    window.__timelines["s01"] = tl;
+  </script>
+</template>
