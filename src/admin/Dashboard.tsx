@@ -24,7 +24,7 @@ export function Dashboard() {
   const { exportCSV, setTab } = useAdmin();
   const hasCert = Object.values(d.games).some((g) => g.kind === "cert");
   const [withCert, setWithCert] = useState(false);
-  const kinds: QuizKind[] = withCert ? ["sprint", "cert"] : ["sprint"];
+  const kinds: QuizKind[] = withCert ? ["sprint", "story", "cert"] : ["sprint", "story"];
   const quizzes = useMemo(() => sortGames(Object.values(d.games).filter((g) => g.kind !== "live" && (withCert || g.kind !== "cert"))), [d.games, withCert]);
   const [period, setPeriod] = useState<Period>("all");
   const [gid, setGid] = useState("all");

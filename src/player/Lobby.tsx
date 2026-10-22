@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
 import { Kit } from "../components/Companions";
@@ -15,6 +15,13 @@ export function Lobby() {
   const { me, stats, d, go, players, features, labels } = useApp();
   const s = me ? stats[me.uid] : undefined;
   const t = todayKey();
+  // fetch the 3D map's code while the lobby sits idle, so the Arena Map opens without a wait
+  useEffect(() => {
+    const load = () => void import("./map3d/Arena3D").catch(() => {});
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(load, { timeout: 4000 });
+    else setTimeout(load, 2500);
+  }, []);
   const all = useMemo(() => sortGames(Object.values(d.games)), [d.games]);
   const sprints = features.sprint ? all.filter((g) => g.kind === "sprint") : [];
   const stories = features.sprint ? all.filter((g) => g.kind === "story" && isOpen(g, todayKey())) : [];
