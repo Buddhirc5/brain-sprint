@@ -97,7 +97,7 @@ function accessoryParts(eq: Equipped, X: number, T: number, E: number, C: number
       break;
     }
     case "cap":
-      out.push(sitOn("cap", FW * 1.3, T + up * 0.62));
+      out.push(sitOn("cap", FW * 0.96, T + up * 0.68));
       break;
     case "beanie":
       out.push(sitOn("beanie", FW * 1.26, T + up * 0.68));
