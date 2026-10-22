@@ -29,6 +29,9 @@ Built for companies with strict security needs. The production controls are enfo
 ## Fair play
 - **Server-side scoring:** questions reach players without answers. The server checks each answer, times it from its own clock (with a 1.5 s grace), and returns the right answer and explanation only after the player has answered.
 - **One try per sprint:** resets are admin-only and audited.
+- **Partial marks** (swipe sort, buckets, Story Mode) are worked out on the server from the hidden answer key. Which reply in a story is "best" never reaches the player before they finish it.
+- **Second chance:** the server allows one retry per missed question of a finished daily sprint or story (never for certification exams), checks it against the key, and caps the points so a fixed answer stays below a first-try right answer. Retries are stored on the play and shown to admins in Results and CSV exports.
+- **Story Mode:** case studies are untimed and earn no speed bonus, so nobody gains by rushing; a Story Mode quiz can only hold case studies (enforced on save).
 - **Certification exams:** right/wrong stays hidden until the exam can't be retaken (passed or out of attempts). Attempt limits are enforced by the server.
 - **Live quiz:** answers are checked on the server. Correctness, rank and streak are hidden from phones until the host reveals. The answer key is stored where only hosts can read it.
 - **Maker-checker (optional):** a second admin must approve quizzes, and the approver can't be the last editor.
@@ -49,7 +52,8 @@ Built for companies with strict security needs. The production controls are enfo
 - **Super admin audit log:** unlocks, wrong codes, companies created, updated, suspended or deleted, invites and library changes.
 
 ## Platform
-- **No third parties:** fonts, characters and QR codes are bundled; there are no CDNs or analytics.
+- **No third parties:** fonts (incl. the comic fonts), characters, pets, rides, the 3D map (three.js) and QR codes are bundled; there are no CDNs or analytics.
+- **Store:** prices, level locks and slots live in the database catalogue; the server checks coins and ownership before a purchase, and you can only equip items you own, each in its own slot.
 - **Escaping:** React escapes all text (no `dangerouslySetInnerHTML`). Inputs are validated server-side and control characters are stripped.
 - **HTTP headers:** `vercel.json` sets a strict CSP (only self plus `*.supabase.co`, `upgrade-insecure-requests`, no plugins, locked `base-uri`/`form-action`), HSTS with preload, nosniff, no-referrer, a Permissions-Policy, Cross-Origin-Opener/Resource-Policy, and frame-ancestors limited to self and Microsoft Teams.
 - **SQL injection:** the browser never sends SQL. Every call is a fixed, parameterised Postgres function (`SECURITY DEFINER`, `search_path = ''`); the only dynamic SQL is one `format('%I')` over a fixed table list in setup. Tables are unreachable without RLS.
