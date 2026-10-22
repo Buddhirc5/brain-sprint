@@ -4,7 +4,7 @@ import { Chibi } from "../components/Chibi";
 import { Kit } from "../components/Companions";
 import { Icon } from "../components/ui";
 import { DARK_CARDS, isOpen, isScheduled, sortGames } from "../lib/games";
-import { board, limitMs, runCorrect, runPoints, windowStart } from "../lib/scoring";
+import { board, limitMs, runCorrect, runPoints, untimed, windowStart } from "../lib/scoring";
 import { fmtDate, fmtMin, todayKey } from "../lib/util";
 import type { Game } from "../types";
 import { buildMap } from "../lib/arenaMap";
@@ -386,7 +386,7 @@ function GameCard({ g, today }: { g: Game; today?: boolean }) {
         <span className="chip">
           {n} question{n > 1 ? "s" : ""}
         </span>
-        <span className="chip">{fmtMin(limitMs(g) / 60000)}</span>
+        <span className="chip">{untimed(g) ? "No timer" : fmtMin(limitMs(g) / 60000)}</span>
         {topics.map((t) => (
           <span className="chip" key={t}>
             {t}

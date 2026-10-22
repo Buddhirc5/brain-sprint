@@ -3,7 +3,7 @@
    (supabase/migrations/*_functions.sql). Change both together.
    ===================================================================== */
 import type { Branding, Features, Game, Labels, OrgConfig, Poll, PollResponse, Question, SignIn, Slide, SlideResults, Tenant, UnitType } from "../types";
-import { answerPoints, partialPoints, RULES, shareMs } from "../lib/scoring";
+import { answerPoints, partialPoints, RULES, shareMs, untimed } from "../lib/scoring";
 import { partialScore } from "../lib/answers";
 import { MAX_POLL_IMG_CHARS, MAX_SLIDE_IMG_CHARS, validImg } from "../lib/image";
 
@@ -93,7 +93,7 @@ export function markRetry(q: Question, canon: string | undefined, choice: string
 /** Sprint: 100 + up to 50 speed bonus. Certification: 1 point per right answer (no speed element). */
 export function scoreAnswer(g: Game, ok: boolean, ms: number) {
   if (g.kind === "cert") return ok ? 1 : 0;
-  if (g.kind === "story") return ok ? RULES.base : 0; // read at your own pace: no speed bonus
+  if (untimed(g)) return ok ? RULES.base : 0; // Story Mode or a sprint without a timer: own pace, no speed bonus
   return answerPoints(ok, ms, shareMs(g));
 }
 /** A small grace for network latency before an answer counts as late. */

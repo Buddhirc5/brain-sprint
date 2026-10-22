@@ -6,7 +6,7 @@ import { blankDraft, draftProblem, sealQuestion, TYPE_NAME, unseal, type DraftQ 
 import { COLOR_HEX, COLORS, MINUTE_OPTS, sortGames, statusOf } from "../lib/games";
 
 const CERT_MINUTES = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180]; // exams: 1–180 min (server clamps the same)
-import { limitMs, runCorrect } from "../lib/scoring";
+import { limitMs, runCorrect, untimed } from "../lib/scoring";
 import { cleanText } from "../lib/security";
 import { compressImage } from "../lib/image";
 import { parseImport } from "../lib/importQs";
@@ -121,7 +121,7 @@ export function Quizzes() {
                       <span className={`st ${st.key}`}>{k === "live" ? (g.status === "draft" ? "Draft" : "Ready") : st.label}</span>
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 700 }}>
-                      {k === "live" ? `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${liveSecs < 60 ? `${liveSecs}s` : `${Math.floor(liveSecs / 60)}:${String(liveSecs % 60).padStart(2, "0")} min`}` : <>{g.date ? (g.date === t ? "Today" : fmtDate(g.date)) : "No date"} · {k === "story" ? "no timer" : fmtMin(limitMs(g) / 60000)}</>}
+                      {k === "live" ? `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${liveSecs < 60 ? `${liveSecs}s` : `${Math.floor(liveSecs / 60)}:${String(liveSecs % 60).padStart(2, "0")} min`}` : <>{g.date ? (g.date === t ? "Today" : fmtDate(g.date)) : "No date"} · {untimed(g) ? "no timer" : fmtMin(limitMs(g) / 60000)}</>}
                     </span>
                   </div>
                   <h3>{g.title}</h3>
@@ -267,6 +267,7 @@ export function Editor({ gid }: { gid?: string }) {
   const maxQ = f.kind === "sprint" ? d.cfg.maxQ : MAX_Q_HARD;
   const n = f.qs.length;
   const per = Math.round((f.minutes * 60) / Math.max(1, n));
+  const timed = f.kind !== "sprint" || f.minutes > 0; // a sprint with minutes 0 has no timer
   const liveTotal = f.qs.reduce((s, q) => s + (q.seconds || LIVE.defaultSeconds), 0);
   const dirty = JSON.stringify(f) !== start;
   const mcHere = d.cfg.makerChecker && !live;
@@ -402,7 +403,13 @@ export function Editor({ gid }: { gid?: string }) {
           {!live && (
             <>
               <div className="row2">
-                {!storyKind && (
+                {!storyKind && !cert && (
+                <div className="field">
+                  <span className="flabel">Time limit</span>
+                  <Seg value={timed ? "on" : "off"} options={[["on", "On"], ["off", "Off"]]} onChange={(v) => set({ minutes: v === "on" ? 1.5 : 0 })} className="narrow" label="Time limit" />
+                </div>
+                )}
+                {!storyKind && (cert || timed) && (
                 <div className="field">
                   <label htmlFor="gMin">{cert ? "Time for the whole exam" : "Time for the whole quiz"}</label>
                   <select className="inp" id="gMin" value={f.minutes} onChange={(e) => set({ minutes: Number(e.target.value) })}>
@@ -422,6 +429,10 @@ export function Editor({ gid }: { gid?: string }) {
               {storyKind ? (
                 <p className="fine">
                   Story Mode has no timer — players read at their own pace and get a rank (S, A or B) for each story. Write each story as a script below, pick the cast&apos;s looks, and preview it before you publish.
+                </p>
+              ) : !timed && !cert ? (
+                <p className="fine">
+                  No time limit — players answer at their own pace. Right answers earn the full 100 points, without the speed bonus, and the quiz closes itself after an hour if left open.
                 </p>
               ) : (
               <p className="fine">

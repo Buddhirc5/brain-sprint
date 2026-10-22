@@ -22,11 +22,12 @@ export const RULES = {
   tooFastMs: 700, // answers quicker than this are flagged for review
 };
 
-/** Whole-quiz time. Sprints: 0.5–10 min. Certification exams: 1–180 min. Story Mode: no timer (an hour).
- *  (Mirrored in SQL private.limit_ms.) */
+/** Whole-quiz time. Sprints: 0.5–10 min, or 0 = no timer. Certification exams: 1–180 min. Story Mode: no timer.
+ *  An untimed quiz still closes after an hour, and its right answers earn no speed bonus. (Mirrored in SQL private.limit_ms.) */
 export const STORY_MS = 60 * 60_000;
+export const untimed = (g: Pick<Game, "minutes"> & { kind?: Game["kind"] }) => g.kind === "story" || ((g.kind || "sprint") === "sprint" && Number(g.minutes) === 0);
 export const limitMs = (g: Pick<Game, "minutes"> & { kind?: Game["kind"] }) =>
-  g.kind === "story" ? STORY_MS : g.kind === "cert" ? clamp(Number(g.minutes) || 10, 1, 180) * 60_000 : clamp(Number(g.minutes) || 2, 0.5, 10) * 60_000;
+  untimed(g) ? STORY_MS : g.kind === "cert" ? clamp(Number(g.minutes) || 10, 1, 180) * 60_000 : clamp(Number(g.minutes) || 2, 0.5, 10) * 60_000;
 export const shareMs = (g: Game) => limitMs(g) / Math.max(1, g.questions.length);
 
 /** Points for one answer. */
