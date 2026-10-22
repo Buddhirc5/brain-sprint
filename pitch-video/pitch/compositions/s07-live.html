@@ -1,0 +1,38 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--paper); }
+    #s07-screen { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); }
+    #s07-screen img { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #s07-pin { transform-origin: 0 0; }
+    #s07-q, #s07-board, #s07-pod { opacity: 0; }
+    #s07-phone { left: 1420px; top: 76px; }
+    #s07-label { position: absolute; left: 90px; top: 830px; padding: 18px 34px 10px; background: var(--ink); color: var(--lime); font-size: 120px; border-radius: 14px; }
+  </style>
+  <div id="root" data-composition-id="s07" data-width="1920" data-height="1080">
+    <div id="s07-screen">
+      <img id="s07-pin" src="assets/shots/live-lobby.png" alt="Live quiz lobby with a giant game PIN" />
+      <img id="s07-q" src="assets/shots/live-q.png" alt="Live question on the big screen" />
+      <img id="s07-board" src="assets/shots/live-board.png" alt="The race is on scoreboard" />
+      <img id="s07-pod" src="assets/shots/live-podium.png" alt="Champions podium" />
+    </div>
+    <div id="s07-phone" class="phone"><div class="scr"><img src="assets/shots/live-p-q.png" alt="A player's phone with answer tiles" /></div></div>
+    <h2 id="s07-label" class="ttl">Live quiz</h2>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // the PIN, big: 2.1x with the PIN centred on the frame (URL stays out of frame)
+    tl.fromTo("#s07-pin", { scale: 2.4, x: 960 - 1099 * 2.4, y: 540 - 279 * 2.4, filter: "blur(12px)" }, { scale: 2.1, x: 960 - 1099 * 2.1, y: 540 - 279 * 2.1, filter: "blur(0px)", duration: 0.4, ease: "expo.out" }, 0);
+    tl.fromTo("#s07-label", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18 }, 0.4);
+    // whip to the question: the big screen shrinks to the left, a phone answers on the right
+    tl.to("#s07-label", { opacity: 0, filter: "blur(8px)", duration: 0.15 }, 2.05);
+    tl.fromTo("#s07-q", { opacity: 0 }, { opacity: 1, duration: 0.01 }, 2.2);
+    tl.fromTo("#s07-screen", { scale: 1, x: 0, y: 0, borderRadius: 0 }, { scale: 0.7, x: -230, y: 0, borderRadius: 26, boxShadow: "0 0 0 12px #161512, 0 30px 60px rgba(22,21,18,.18)", duration: 0.45, ease: "expo.out" }, 2.2);
+    tl.fromTo("#s07-phone", { x: 600 }, { x: 0, duration: 0.5, ease: "expo.out" }, 2.3);
+    // the screen becomes the world again: the race
+    tl.to("#s07-phone", { x: 600, duration: 0.3, ease: "power3.in" }, 3.45);
+    tl.fromTo("#s07-board", { opacity: 0 }, { opacity: 1, duration: 0.01 }, 3.65);
+    tl.to("#s07-screen", { scale: 1, x: 0, borderRadius: 0, boxShadow: "0 0 0 0px #161512, 0 0 0 rgba(0,0,0,0)", duration: 0.45, ease: "power3.inOut" }, 3.55);
+    tl.fromTo("#s07-pod", { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: 0.3, ease: "expo.out" }, 4.4);
+    window.__timelines["s07"] = tl;
+  </script>
+</template>

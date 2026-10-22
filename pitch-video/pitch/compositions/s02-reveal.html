@@ -1,0 +1,28 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--paper); }
+    #s02-phone { left: 1180px; top: 76px; }
+    #s02-title { position: absolute; left: 150px; top: 270px; font-size: 180px; }
+    #s02-sub { position: absolute; left: 156px; top: 480px; font-size: 64px; font-weight: 700; }
+    #s02-sub2 { position: absolute; left: 158px; top: 580px; font-size: 40px; font-weight: 600; color: #55554f; }
+  </style>
+  <div id="root" data-composition-id="s02" data-width="1920" data-height="1080">
+    <div id="s02-phone" class="phone"><div class="scr"><img id="s02-feed" src="assets/shots/lobby-full.png" alt="Ant Arena lobby" /></div></div>
+    <h1 id="s02-title" class="ttl"><span class="w">Ant</span> <span class="w">Arena</span></h1>
+    <div id="s02-sub" class="sub"><span class="w hl">2 minutes</span> <span class="w">a</span> <span class="w">day</span></div>
+    <div id="s02-sub2" class="sub"><span class="w">On</span> <span class="w">any</span> <span class="w">phone.</span> <span class="w">Under</span> <span class="w">your</span> <span class="w">brand.</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const words = (sel, at, gap = 0.07) =>
+      gsap.utils.toArray(sel).forEach((w, i) =>
+        tl.fromTo(w, { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out" }, at + i * gap)
+      );
+    words("#s02-title .w", 0.35, 0.12);
+    words("#s02-sub .w", 3.2);
+    words("#s02-sub2 .w", 3.9, 0.08);
+    // the lobby scrolls down to today's sprint
+    tl.fromTo("#s02-feed", { y: 0 }, { y: -885, duration: 0.9, ease: "power3.inOut" }, 4.8);
+    window.__timelines["s02"] = tl;
+  </script>
+</template>

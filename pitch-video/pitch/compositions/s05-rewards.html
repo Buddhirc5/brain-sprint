@@ -1,0 +1,95 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: var(--paper); }
+    #s05-flood { position: absolute; inset: 0; background: var(--lime); clip-path: circle(420px at 1402px 1080px); }
+    #s05-a { position: absolute; inset: 0; }
+    #s05-kit { position: absolute; left: 170px; top: 210px; width: 640px; height: 720px; }
+    #s05-me { position: absolute; left: 30px; bottom: 90px; width: 450px; height: 608px; z-index: 1; }
+    #s05-ride { position: absolute; left: -20px; bottom: 0; width: 518px; height: 222px; z-index: 2; }
+    #s05-pet { position: absolute; right: -30px; bottom: 6px; width: 225px; height: 180px; z-index: 3; }
+    #s05-shadow { position: absolute; left: 0; bottom: -18px; width: 640px; height: 40px; border-radius: 50%; background: rgba(22, 21, 18, 0.14); }
+    #s05-title { position: absolute; left: 940px; top: 150px; font-size: 150px; }
+    #s05-stats { position: absolute; left: 946px; top: 330px; display: flex; gap: 18px; }
+    #s05-stats .chip { font-size: 40px; border: 0; }
+    #s05-coins b { font-variant-numeric: tabular-nums; }
+    .s05-row { position: absolute; left: 946px; display: flex; gap: 6px; align-items: flex-end; }
+    #s05-pets { top: 470px; }
+    #s05-pets img { width: 138px; height: 110px; }
+    #s05-rides { top: 640px; }
+    #s05-rides img { width: 166px; height: 71px; }
+    .s05-lab { position: absolute; left: 950px; font: 800 30px "Figtree", sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+    #s05-l1 { top: 590px; } #s05-l2 { top: 730px; }
+    #s05-b { position: absolute; inset: 0; }
+    #s05-map { left: 1180px; top: 76px; }
+    #s05-map .scr img { transition: none; }
+    #s05-mt { position: absolute; left: 150px; top: 250px; font-size: 170px; }
+    #s05-ms { position: absolute; left: 156px; top: 450px; width: 860px; }
+  </style>
+  <div id="root" data-composition-id="s05" data-width="1920" data-height="1080">
+    <div id="s05-flood"></div>
+    <div id="s05-a">
+      <div id="s05-kit">
+        <div id="s05-shadow"></div>
+        <img id="s05-me" src="assets/svg/me-0.svg" alt="Nadeesha, the player's character" />
+        <img id="s05-ride" src="assets/svg/me-1.svg" alt="Kick scooter" />
+        <img id="s05-pet" src="assets/svg/me-2.svg" alt="Biscuit the corgi" />
+      </div>
+      <h2 id="s05-title" class="ttl"><span class="w">Built</span> <span class="w">for</span> <span class="w">habit</span></h2>
+      <div id="s05-stats">
+        <span id="s05-streak" class="chip">8-day streak</span>
+        <span id="s05-coins" class="chip"><b id="s05-n">0</b> coins</span>
+      </div>
+      <div id="s05-pets" class="s05-row">
+        <img src="assets/svg/pet-0.svg" alt="Cat" /><img src="assets/svg/pet-1.svg" alt="Bunny" /><img src="assets/svg/pet-2.svg" alt="Corgi" /><img src="assets/svg/pet-3.svg" alt="Panda" /><img src="assets/svg/pet-4.svg" alt="Owl" /><img src="assets/svg/pet-5.svg" alt="Dragon" />
+      </div>
+      <span id="s05-l1" class="s05-lab">6 pets</span>
+      <div id="s05-rides" class="s05-row">
+        <img src="assets/svg/ride-0.svg" alt="Skateboard" /><img src="assets/svg/ride-1.svg" alt="Kick scooter" /><img src="assets/svg/ride-2.svg" alt="City bicycle" /><img src="assets/svg/ride-3.svg" alt="Tuk-tuk" /><img src="assets/svg/ride-4.svg" alt="Hover board" />
+      </div>
+      <span id="s05-l2" class="s05-lab">5 rides · 18 characters</span>
+    </div>
+    <div id="s05-b">
+      <h2 id="s05-mt" class="ttl"><span class="w">Arena</span> <span class="w">Map</span></h2>
+      <div id="s05-ms" class="sub">Every sprint, a new stop</div>
+      <div id="s05-map" class="phone">
+        <div class="scr">
+          <img id="s05-m0" src="assets/shots/map-0.png" alt="3D Arena Map" />
+          <img id="s05-m1" src="assets/shots/map-1.png" alt="3D Arena Map, further along" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s05-flood", { clipPath: "circle(420px at 1402px 1080px)" }, { clipPath: "circle(2300px at 1402px 1080px)", duration: 0.45, ease: "power2.out" }, 0);
+    // the kit assembles: character drops, the scooter rolls under, the corgi hops in
+    tl.fromTo("#s05-shadow", { opacity: 0, scaleX: 0.4 }, { opacity: 1, scaleX: 1, duration: 0.4, ease: "expo.out" }, 0.8);
+    tl.fromTo("#s05-me", { y: -900 }, { y: 0, duration: 0.55, ease: "back.out(1.4)" }, 0.45);
+    tl.fromTo("#s05-ride", { x: -900 }, { x: 0, duration: 0.6, ease: "expo.out" }, 1.25);
+    tl.fromTo("#s05-pet", { x: 300, y: -260, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 0.55, ease: "back.out(1.8)" }, 1.75);
+    gsap.utils.toArray("#s05-title .w").forEach((w, i) =>
+      tl.fromTo(w, { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13 }, 0.5 + i * 0.08)
+    );
+    tl.fromTo("#s05-streak", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)" }, 2.25);
+    tl.fromTo("#s05-coins", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)" }, 2.45);
+    const n = { v: 0 };
+    tl.fromTo(n, { v: 0 }, { v: 335, duration: 0.8, ease: "power2.out", onUpdate: () => { document.getElementById("s05-n").textContent = Math.round(n.v); } }, 2.55);
+    gsap.utils.toArray("#s05-pets img").forEach((el, i) =>
+      tl.fromTo(el, { opacity: 0, y: 40, scale: 0.5 }, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "back.out(2)" }, 3.0 + i * 0.07)
+    );
+    tl.fromTo("#s05-l1", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 3.4);
+    gsap.utils.toArray("#s05-rides img").forEach((el, i) =>
+      tl.fromTo(el, { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.4, ease: "expo.out" }, 3.5 + i * 0.07)
+    );
+    tl.fromTo("#s05-l2", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 3.9);
+    // whip to the map
+    tl.to("#s05-a", { x: -1920, filter: "blur(14px)", duration: 0.35, ease: "power3.in" }, 5.15);
+    tl.fromTo("#s05-b", { x: 1920, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.45, ease: "expo.out" }, 5.4);
+    gsap.utils.toArray("#s05-mt .w").forEach((w, i) =>
+      tl.fromTo(w, { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13 }, 5.75 + i * 0.1)
+    );
+    tl.fromTo("#s05-ms", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 5.95);
+    tl.fromTo("#s05-m1", { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power2.inOut" }, 6.7);
+    window.__timelines["s05"] = tl;
+  </script>
+</template>
