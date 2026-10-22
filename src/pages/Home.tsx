@@ -263,13 +263,13 @@ function BeforeAfter() {
 
 /* ---------------- features ---------------- */
 const FEATURES: { k: string; t: string; d: string; c: string; art: ReactNode }[] = [
-  { k: "sprint", t: "Daily Sprint", d: "Bite-size quizzes with coins, streaks, levels and a cartoon character everyone wants to dress up. Add images to any question.", c: "lime", art: <ArtSprint /> },
-  { k: "live", t: "Live Quiz", d: "Host a game-show on the big screen; everyone joins with a PIN on their phone. Fastest right answer wins.", c: "ink", art: <ArtLive /> },
-  { k: "polls", t: "Live Polls", d: "Word clouds, ratings, rankings and Q&A for town halls and trainings — results appear as people vote.", c: "orange", art: <ArtPoll /> },
-  { k: "cert", t: "Certification", d: "Timed exams with a pass mark, limited attempts and a printable certificate with expiry.", c: "blue", art: <ArtCert /> },
-  { k: "gap", t: "Analytics & gap trend", d: "See weak topics by team, office and department, and whether each gap is closing week by week.", c: "paper", art: <ArtTrend /> },
-  { k: "sec", t: "Enterprise-grade security", d: "Answers are scored on the server, never sent to phones. Roles, two-step sign-in, maker-checker and full audit logs.", c: "pink", art: <ArtShield /> },
-  { k: "wl", t: "White-label", d: "Your product name, logo and colours on every screen — players, admins, big screens and certificates.", c: "yellow", art: <ArtBrand /> },
+  { k: "sprint", t: "Daily Sprint", d: "Bite-size quizzes with coins, streaks, levels and a cartoon character everyone wants to dress up. Add images to any question.", c: "lime", art: <FeatArt k="sprint" /> },
+  { k: "live", t: "Live Quiz", d: "Host a game-show on the big screen; everyone joins with a PIN on their phone. Fastest right answer wins.", c: "ink", art: <FeatArt k="live" /> },
+  { k: "polls", t: "Live Polls", d: "Word clouds, ratings, rankings and Q&A for town halls and trainings — results appear as people vote.", c: "orange", art: <FeatArt k="polls" /> },
+  { k: "cert", t: "Certification", d: "Timed exams with a pass mark, limited attempts and a printable certificate with expiry.", c: "blue", art: <FeatArt k="cert" /> },
+  { k: "gap", t: "Analytics & gap trend", d: "See weak topics by team, office and department, and whether each gap is closing week by week.", c: "paper", art: <FeatArt k="trend" /> },
+  { k: "sec", t: "Enterprise-grade security", d: "Answers are scored on the server, never sent to phones. Roles, two-step sign-in, maker-checker and full audit logs.", c: "pink", art: <FeatArt k="shield" /> },
+  { k: "wl", t: "White-label", d: "Your product name, logo and colours on every screen — players, admins, big screens and certificates.", c: "yellow", art: <FeatArt k="brand" /> },
 ];
 
 function Features() {
@@ -437,97 +437,8 @@ function FinalCta() {
   );
 }
 
-/* ---------------- tiny feature illustrations ---------------- */
-function ArtSprint() {
-  return (
-    <svg viewBox="0 0 120 80">
-      <rect x="10" y="10" width="70" height="60" rx="12" fill="#161512" />
-      <rect x="18" y="20" width="44" height="6" rx="3" fill="#C6F432" />
-      <rect x="18" y="32" width="54" height="8" rx="4" fill="#FFFEFA" />
-      <rect x="18" y="44" width="54" height="8" rx="4" fill="#C6F432" />
-      <rect x="18" y="56" width="54" height="8" rx="4" fill="#FFFEFA" opacity=".6" />
-      <circle cx="92" cy="30" r="14" fill="#FFD84D" stroke="#C99A12" strokeWidth="3" />
-      <path d="M92 23v14M88 27h6a2.5 2.5 0 0 1 0 5h-4a2.5 2.5 0 0 0 0 5h6" stroke="#8A5E00" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <path d="M100 62c0-8 6-9 6-16 3 4 6 7 6 13a6 6 0 0 1-12 3z" fill="#FF5A1F" />
-    </svg>
-  );
-}
-function ArtLive() {
-  return (
-    <svg viewBox="0 0 120 80">
-      <rect x="8" y="8" width="78" height="50" rx="8" fill="#C6F432" />
-      <text x="47" y="40" textAnchor="middle" fontFamily="Anton, Impact, sans-serif" fontSize="20" fill="#161512">482 913</text>
-      <rect x="40" y="58" width="14" height="10" fill="#C6F432" />
-      <rect x="30" y="68" width="34" height="4" rx="2" fill="#C6F432" />
-      <rect x="92" y="30" width="22" height="40" rx="5" fill="#FFFEFA" />
-      <rect x="96" y="38" width="14" height="6" rx="2" fill="#FF5A1F" />
-      <rect x="96" y="47" width="14" height="6" rx="2" fill="#3D7BFF" />
-      <rect x="96" y="56" width="14" height="6" rx="2" fill="#C6F432" />
-    </svg>
-  );
-}
-function ArtPoll() {
-  return (
-    <svg viewBox="0 0 120 80">
-      <text x="10" y="30" fontFamily="Anton, Impact, sans-serif" fontSize="22" fill="#FFFEFA">trust</text>
-      <text x="62" y="24" fontFamily="Figtree, sans-serif" fontWeight="800" fontSize="12" fill="#161512">speed</text>
-      <text x="64" y="44" fontFamily="Anton, Impact, sans-serif" fontSize="17" fill="#161512">team</text>
-      <text x="12" y="48" fontFamily="Figtree, sans-serif" fontWeight="800" fontSize="11" fill="#FFE2D4">clarity</text>
-      {[40, 58, 28, 50].map((h, i) => (
-        <rect key={i} x={14 + i * 22} y={76 - h * 0.4} width="14" height={h * 0.4} rx="3" fill={i === 1 ? "#161512" : "#FFFEFA"} />
-      ))}
-    </svg>
-  );
-}
-function ArtCert() {
-  return (
-    <svg viewBox="0 0 120 80">
-      <rect x="12" y="10" width="76" height="56" rx="6" fill="#FFFEFA" />
-      <rect x="22" y="20" width="44" height="6" rx="3" fill="#161512" />
-      <rect x="22" y="32" width="56" height="4" rx="2" fill="#D3E2FF" />
-      <rect x="22" y="40" width="40" height="4" rx="2" fill="#D3E2FF" />
-      <circle cx="92" cy="52" r="15" fill="#FFD84D" stroke="#161512" strokeWidth="2.5" />
-      <path d="M85 52l5 5 9-10" stroke="#161512" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M84 64l-4 12 7-4 4 6 3-11M100 64l4 12-7-4-4 6" fill="#FF5A1F" />
-    </svg>
-  );
-}
-function ArtTrend() {
-  return (
-    <svg viewBox="0 0 120 80">
-      <path d="M10 70H112" stroke="#D8D6CE" strokeWidth="2" />
-      <path d="M10 50H112M10 30H112" stroke="#D8D6CE" strokeWidth="1" strokeDasharray="3 4" />
-      <path d="M12 60 L34 54 L56 46 L78 34 L100 20" stroke="#161512" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      {[[12, 60], [34, 54], [56, 46], [78, 34], [100, 20]].map(([x, y]) => (
-        <circle key={x} cx={x} cy={y} r="4.5" fill="#C6F432" stroke="#161512" strokeWidth="2" />
-      ))}
-      <rect x="66" y="52" width="42" height="14" rx="7" fill="#DDF3E3" />
-      <text x="87" y="62.5" textAnchor="middle" fontFamily="Figtree, sans-serif" fontWeight="900" fontSize="9" fill="#1E6E36">+18 pts</text>
-    </svg>
-  );
-}
-function ArtShield() {
-  return (
-    <svg viewBox="0 0 120 80">
-      <path d="M60 6l30 11v20c0 19-13 31-30 37C43 68 30 56 30 37V17z" fill="#161512" />
-      <path d="M60 14l22 8v15c0 14-9 23-22 28-13-5-22-14-22-28V22z" fill="#FF7EB6" />
-      <rect x="49" y="34" width="22" height="18" rx="4" fill="#161512" />
-      <path d="M53 34v-5a7 7 0 0 1 14 0v5" stroke="#161512" strokeWidth="3.5" fill="none" />
-      <circle cx="60" cy="43" r="2.6" fill="#FFD6E8" />
-    </svg>
-  );
-}
-function ArtBrand() {
-  return (
-    <svg viewBox="0 0 120 80">
-      <rect x="10" y="12" width="44" height="58" rx="9" fill="#161512" />
-      <rect x="15" y="20" width="34" height="14" rx="5" fill="#C6F432" />
-      <rect x="15" y="38" width="34" height="8" rx="4" fill="#FF5A1F" />
-      <rect x="64" y="12" width="44" height="58" rx="9" fill="#0B1B2B" />
-      <rect x="69" y="20" width="34" height="14" rx="5" fill="#5EEAD4" />
-      <rect x="69" y="38" width="34" height="8" rx="4" fill="#EA580C" />
-      <path d="M52 58 q6 -10 14 0" stroke="#161512" strokeWidth="2.5" fill="none" strokeLinecap="round" markerEnd="" />
-      <path d="M62 54l4 4-5 2" stroke="#161512" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+/* ---------------- feature icons (3D toy style, src/assets/feat) ---------------- */
+const FEAT = import.meta.glob("../assets/feat/*.webp", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
+function FeatArt({ k }: { k: string }) {
+  return <img src={FEAT[`../assets/feat/${k}.webp`]} alt="" width={80} height={80} loading="lazy" decoding="async" />;
 }
