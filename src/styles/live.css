@@ -414,3 +414,18 @@ kbd { font: 700 11px/1 var(--body); border: 1.5px solid currentColor; border-rad
 .lv-pmode { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; background: rgba(255,255,255,.16); color: inherit; }
 .lv-pmode svg { width: 19px; height: 19px; }
 .lv-player.light .lv-pmode, .tone-brand .lv-pmode { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
+/* race mode (no timer): lanes move as answers come in, instead of replaying the scoreboard animation */
+.lv-row.race, .lv-row.race .lv-trail, .lv-row.race .lv-racer { animation: none; }
+.lv-row.race .lv-trail { transition: width .7s cubic-bezier(.2,.8,.2,1); }
+.lv-row.race .lv-racer { transition: left .7s cubic-bezier(.2,.8,.2,1); }
+.lv-row.race.done .lv-trail { background: var(--good, #2E9E4F); }
+.lv-row .lv-prog { font-size: .8em; opacity: .65; font-weight: 700; }
+.lv-row .lv-flag { font-size: .7em; font-weight: 800; padding: 2px 10px; border-radius: 999px; background: var(--ink); color: #fff; }
+.lv-row.first .lv-flag { background: var(--card); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .lv-row.race .lv-trail, .lv-row.race .lv-racer { transition: none; } }
+/* race mode on the phone */
+.lv-prace { margin: 0 0 6px; font-size: 13px; font-weight: 800; opacity: .7; text-align: center; }
+.lv-minirace { list-style: none; margin: 10px 0 4px; padding: 0; width: min(340px, 100%); display: grid; gap: 6px; text-align: left; }
+.lv-minirace li { display: grid; grid-template-columns: 1.6em 1fr auto; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 14px; background: rgba(255,255,255,.14); font-size: 14px; }
+.lv-minirace li.me { background: var(--lime); color: var(--ink); }
+.lv-minirace b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

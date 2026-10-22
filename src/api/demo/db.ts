@@ -37,7 +37,7 @@ export interface DB {
   polls: Record<string, Poll>;
   resp: Record<string, (PollResponse & { voters?: string[] })[]>;
   live: Record<string, LiveSession & { canon?: string[]; lastRevealQ?: number }>;
-  lp: Record<string, Record<string, LivePlayer & { auth: string; answeredQ?: number; prevStreak?: number }>>;
+  lp: Record<string, Record<string, LivePlayer & { auth: string; answeredQ?: number; prevStreak?: number; raceQ?: number; correct?: number; totalMs?: number; qShownAt?: number; finishedAt?: number; lastC?: string }>>;
   la: Record<string, LiveAnswer[]>;
   sup: {
     emails: string[];

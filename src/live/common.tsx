@@ -78,3 +78,9 @@ export function ordinal(n: number) {
 }
 
 export const fmtPts = (n: number) => n.toLocaleString();
+
+/** Race mode answering time: 83 400 ms → "1:23" */
+export const fmtRaceTime = (ms: number) => {
+  const s = Math.round(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
