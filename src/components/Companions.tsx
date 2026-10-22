@@ -1,5 +1,5 @@
 /* Pets and rides from the store, drawn in the same chunky outline style as the characters (Chibi.tsx).
-   <Pet> sits beside a character, <Ride> under it; <Kit> puts the three together. The 3D map draws the same
+   <Pet> sits beside a character, <Ride> parked behind it; <Kit> puts the three together. The 3D map draws the same
    SVGs onto canvases (map3d/chibiTexture.ts). */
 import type { ReactElement } from "react";
 import { Chibi, type Mood } from "./Chibi";
@@ -161,10 +161,8 @@ const RIDES: Record<string, () => ReactElement> = {
   ),
 };
 
-/** Rides the character sits in (drawn behind them) rather than stands on. */
-export const RIDE_IN = new Set(["ride-tuktuk", "ride-bike"]);
-/** how high the rider's feet sit (× character width) so they stand on the deck of the painted ride */
-const RIDE_LIFT: Record<string, number> = { "ride-skate": 0.27, "ride-scooter": 0.1, "ride-hover": 0.17, "ride-bike": 0.03, "ride-tuktuk": 0.05 };
+/** a parked tuk-tuk is a big vehicle, so it is drawn larger than the scooters and boards */
+const PARKED_SCALE: Record<string, number> = { "ride-tuktuk": 1.15 };
 
 export const hasPet = (id?: string) => !!id && !!PETS[id];
 export const hasRide = (id?: string) => !!id && !!RIDES[id];
@@ -181,41 +179,37 @@ export function Pet({ id, size = 60, className = "", still }: { id: string; size
   );
 }
 
-export function Ride({ id, size = 120, className = "", still }: { id: string; size?: number; className?: string; still?: boolean }) {
+export function Ride({ id, size = 120, height, className = "", still }: { id: string; size?: number; height?: number; className?: string; still?: boolean }) {
   const draw = RIDES[id];
   if (!draw) return null;
   const src = artUrl(`items/${id}`);
-  if (src) return <img src={src} alt="" width={size} height={(size * 60) / 140} className={`ride painted ${still ? "still" : ""} ${className}`} aria-hidden="true" draggable={false} />;
+  const h = height ?? (size * 60) / 140;
+  if (src) return <img src={src} alt="" width={size} height={h} className={`ride painted ${still ? "still" : ""} ${className}`} aria-hidden="true" draggable={false} />;
   return (
-    <svg viewBox="0 0 140 60" width={size} height={(size * 60) / 140} className={`ride ${still ? "still" : ""} ${className}`} aria-hidden="true">
+    <svg viewBox="0 0 140 60" width={size} height={h} className={`ride ${still ? "still" : ""} ${className}`} aria-hidden="true">
       {draw()}
     </svg>
   );
 }
 
-/** A character with their pet beside them and their ride under them (as equipped in the store). */
+/** A character with their pet beside them and their ride parked just behind (as equipped in the store). */
 export function Kit({ look, equipped, size, mood, still, className = "" }: { look: number; equipped?: Equipped; size: number; mood?: Mood; still?: boolean; className?: string }) {
   const pet = hasPet(equipped?.pet) ? equipped!.pet! : null;
   const ride = hasRide(equipped?.ride) ? equipped!.ride! : null;
   if (!pet && !ride) return <Chibi look={look} equipped={equipped} variant="full" size={size} mood={mood} still={still} className={className} />;
   const h = Math.round((size * 162) / 120);
-  const rideW = size * 1.15;
-  const lift = ride ? size * (artUrl(`items/${ride}`) ? RIDE_LIFT[ride] ?? 0.12 : RIDE_IN.has(ride) ? 0.12 : 0.2) : 0;
+  const rideW = size * 0.86 * (ride ? PARKED_SCALE[ride] ?? 1 : 1);
   return (
-    <span className={`kit ${className}`} style={{ width: size + (pet ? size * 0.42 : 0), height: h + lift }}>
-      {ride && RIDE_IN.has(ride) && (
-        <span className="kit-ride" style={{ width: rideW, left: (size - rideW) / 2 }}>
-          <Ride id={ride} size={rideW} still={still} />
+    <span className={`kit ${className}`} style={{ width: size * (pet || ride ? 1.42 : 1), height: h }}>
+      {ride && (
+        // lined up with the kit's right edge, so a bigger ride tucks further behind the character instead of widening the kit
+        <span className="kit-ride" style={{ width: rideW, left: size * 1.42 - rideW, bottom: size * 0.05 }}>
+          <Ride id={ride} size={rideW} height={(rideW * 0.7) / 0.86} still />
         </span>
       )}
-      <span className="kit-me" style={{ bottom: lift }}>
+      <span className="kit-me" style={{ bottom: 0 }}>
         <Chibi look={look} equipped={equipped} variant="full" size={size} mood={mood} still={still} />
       </span>
-      {ride && !RIDE_IN.has(ride) && (
-        <span className="kit-ride" style={{ width: rideW, left: (size - rideW) / 2 }}>
-          <Ride id={ride} size={rideW} still={still} />
-        </span>
-      )}
       {pet && (
         <span className="kit-pet" style={{ left: size * 0.86 }}>
           <Pet id={pet} size={size * 0.5} still={still} />

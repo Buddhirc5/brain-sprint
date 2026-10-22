@@ -11,7 +11,7 @@ import type { Equipped } from "../../types";
 import chibiCss from "../../styles/chibi.css?raw";
 
 export const PET_ASPECT = 100 / 80;
-export const RIDE_ASPECT = 140 / 60;
+export const RIDE_ASPECT = 1.3; // a parked ride stands in a box this shape (the painted art fits inside it)
 
 export const CHIBI_ASPECT = 120 / 162; // width / height of the full-body character
 

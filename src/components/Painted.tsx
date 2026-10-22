@@ -80,9 +80,22 @@ function accessoryParts(eq: Equipped, X: number, T: number, E: number, C: number
     return p ? { ...p, y: bottom - p.h } : null;
   };
   switch (eq.head) {
-    case "phones":
-      out.push(sitOn("phones", FW * 1.42, E + down * 0.8));
+    case "phones": {
+      // the band arcs over the skull and each cup sits on an ear, beside the face rather than over the cheeks
+      const cw = FW * 0.4,
+        dx = FW * 0.66,
+        cy = E + down * 0.4;
+      const l = item("phones-l", X - dx, cy, cw, 0, "acc-head");
+      const band = URL_OF["items/phones-band"];
+      if (band && l) {
+        // its legs come down onto the outer top of each cup
+        const top = T - up * 0.12,
+          bw = FW * 1.62;
+        out.push({ src: band, x: X - bw / 2, y: top, w: bw, h: l.y + l.h * 0.08 - top, cls: "acc-head" });
+      }
+      out.push(l, item("phones-r", X + dx, cy, cw, 0, "acc-head"));
       break;
+    }
     case "cap":
       out.push(sitOn("cap", FW * 1.3, T + up * 0.62));
       break;
@@ -183,7 +196,7 @@ export function PaintedChibi({
                 width={p.w}
                 height={p.h}
                 className={p.cls}
-                preserveAspectRatio="xMidYMax meet"
+                preserveAspectRatio="none"
                 transform={p.rot ? `rotate(${p.rot} ${p.x + p.w / 2} ${p.y + p.h / 2})` : undefined}
               />
             ))}
