@@ -30,4 +30,4 @@ npx hyperframes render --quality delivery --output renders/out.mp4
 
 ## Things to know
 - The demo's join address (a dev URL) is cropped out of the live quiz and poll screens. Recapture those screens once the real domain is live if you want the address on screen.
-- The finished MP4s are in `renders/` (not committed, they are large). Their loudness has been normalised to about −15 LUFS.
+- The finished MP4s are in `out/` (not committed, they are large). Their loudness has been normalised to about −15 LUFS.
