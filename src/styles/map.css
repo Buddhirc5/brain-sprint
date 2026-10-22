@@ -197,3 +197,9 @@
 .stop-card h3 { font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1; text-transform: uppercase; }
 .stop-card .stack { width: 100%; margin-top: 4px; }
 .stop-card-n { font-weight: 700; }
+/* each land's painted scenery, far behind the islands (Arena3D cross-fades it as you move between lands) */
+.am3d-bg { position: absolute; inset: 0; pointer-events: none; background: 50% 100% / cover no-repeat; opacity: 0; transition: opacity .9s ease; }
+.am3d-bg.on { opacity: .9; }
+.am3d[data-tod="night"] .am3d-bg.on { opacity: .28; }
+.am3d[data-tod="dusk"] .am3d-bg.on { opacity: .7; }
+@media (prefers-reduced-motion: reduce) { .am3d-bg { transition: none; } }
