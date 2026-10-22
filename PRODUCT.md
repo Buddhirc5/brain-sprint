@@ -413,7 +413,7 @@ Typical time to first game: **one day**.
 
 **Visual assets available in the app**
 - The illustrated forest-arena hero scene with Wren the explorer and Puff the bunny *(the current hero art resembles another game's style — replace it with original artwork before commercial use)*.
-- 18 animated cartoon characters (7 moods), 6 pets and 5 rides, the Ant Arena logo mark, colourful answer-tile shapes, podium and race-track scoreboards, the 3D Arena Map, comic-book Story Mode pages.
+- 18 painted 3D vinyl-toy characters (7 moods each, including Wren the explorer and Puff the bunny), 6 pets, 5 rides and 10 hats, glasses and earrings in the same style, the Ant Arena logo mark, colourful answer-tile shapes, podium and race-track scoreboards, the 3D Arena Map, comic-book Story Mode pages.
 - Screenshots: live quiz lobby with giant PIN, answer tiles, race scoreboard, podium; poll word cloud, bar charts, pin-on-image; certificate; PDF report; admin dashboard.
 
 **Brand palette (default)**

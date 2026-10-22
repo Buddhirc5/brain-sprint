@@ -36,7 +36,7 @@ You run one installation. As the **super admin**, you create a private space for
 
 | | |
 |---|---|
-| 🏃 **Daily Sprint** | 2-minute quizzes with 6 question types (incl. **swipe sort** and **buckets**), partial marks and a fair **second chance**, on a **3D Arena Map** of floating lands; coins, streaks, levels, leaderboards, team battles and 18 cartoon characters with a store of **pets**, **rides**, hats and glasses |
+| 🏃 **Daily Sprint** | 2-minute quizzes with 6 question types (incl. **swipe sort** and **buckets**), partial marks and a fair **second chance**, on a **3D Arena Map** of floating lands; coins, streaks, levels, leaderboards, team battles and 18 painted 3D characters with a store of **pets**, **rides**, hats and glasses in the same style |
 | 📖 **Story Mode** | Case studies as animated **comic books**: the app's characters in 7 moods, speech bubbles, sound effects, choices, a rank stamp and a replay. Admins write a story like a play (or bulk-import many) and preview it |
 | 🏆 **Live Quiz** | Kahoot-style game show: game PIN + QR, answer tiles, race-track scoreboard and a confetti podium finale |
 | 📊 **Live Polls** | Mentimeter-style: word cloud, multiple choice, scale, ranking, open text, Q&A, guess the number, 100 points, 2×2 grid, pin on image, plus text and image slides |
@@ -135,7 +135,7 @@ src/
   player/               Daily Sprint, Story Mode, Second chance, Arena Map, store, certification (player side)
   player/qtypes.tsx     swipe sort, buckets and the comic-book Story Mode player
   player/map3d/         the 3D Arena Map (three.js): islands, people, animals, sound, sky & ambience
-  components/           characters (Chibi), pets & rides (Companions), UI kit
+  components/           characters (Chibi → Painted art in assets/art), pets & rides (Companions), UI kit
   admin/                company admin portal (dashboard, quizzes, story editor, players, results, rewards, security, admins, branding, settings)
   live/                 live quiz: admin tab, host screen, phone controller
   polls/                live polls: editor, presenter screen, voting page

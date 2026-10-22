@@ -4,6 +4,7 @@
 import type { ReactElement } from "react";
 import { Chibi, type Mood } from "./Chibi";
 import type { Equipped } from "../types";
+import { artUrl } from "./Painted";
 
 const INK = "#1B1A17";
 const S = { stroke: INK, strokeWidth: 3, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
@@ -169,6 +170,8 @@ export const hasRide = (id?: string) => !!id && !!RIDES[id];
 export function Pet({ id, size = 60, className = "", still }: { id: string; size?: number; className?: string; still?: boolean }) {
   const draw = PETS[id];
   if (!draw) return null;
+  const src = artUrl(`items/${id}`);
+  if (src) return <img src={src} alt="" width={size} height={size * 0.8} className={`pet painted ${still ? "still" : ""} ${className}`} aria-hidden="true" draggable={false} />;
   return (
     <svg viewBox="0 0 100 80" width={size} height={size * 0.8} className={`pet ${still ? "still" : ""} ${className}`} aria-hidden="true">
       {draw()}
@@ -179,6 +182,8 @@ export function Pet({ id, size = 60, className = "", still }: { id: string; size
 export function Ride({ id, size = 120, className = "", still }: { id: string; size?: number; className?: string; still?: boolean }) {
   const draw = RIDES[id];
   if (!draw) return null;
+  const src = artUrl(`items/${id}`);
+  if (src) return <img src={src} alt="" width={size} height={(size * 60) / 140} className={`ride painted ${still ? "still" : ""} ${className}`} aria-hidden="true" draggable={false} />;
   return (
     <svg viewBox="0 0 140 60" width={size} height={(size * 60) / 140} className={`ride ${still ? "still" : ""} ${className}`} aria-hidden="true">
       {draw()}
