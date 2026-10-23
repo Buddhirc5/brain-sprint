@@ -17,6 +17,7 @@ import { Loading } from "../App";
 import type { LiveBoardRow, LiveHostView, Role, TenantPublic } from "../types";
 import { Shape, TILES, choiceIndex, fmtPts, fmtRaceTime, optionsOf, ordinal, remainingMs, tileOf, tileVars, useNow } from "./common";
 import { sound } from "./sound";
+import { RaceBroadcast } from "./RaceBroadcast";
 import { StageModeToggle, useStageMode } from "../app/stageTheme";
 import "../styles/live.css";
 
@@ -239,7 +240,7 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
   );
 
   return (
-    <div className={`lv-host st-${state} ${mode}`}>
+    <div className={`lv-host st-${state} ${mode} ${race && state === "question" ? "race-on" : ""}`}>
       <Backdrop />
       <header className="lv-top">
         {brand}
@@ -266,7 +267,7 @@ function Stage({ pub, sessionId }: { pub: TenantPublic; sessionId: string }) {
 
       <main className="lv-main">
         {state === "lobby" && <Lobby v={v} pub={pub} onKick={(id) => void act("kick", id)} />}
-        {state === "question" && race && <RaceView v={v} />}
+        {state === "question" && race && <RaceBroadcast v={v} title={s.title} brand={pub.branding.productName} />}
         {(state === "question" || state === "reveal") && !race && <QuestionView v={v} left={left} />}
         {state === "board" && <Board v={v} />}
         {state === "ended" && <Podium v={v} pub={pub} who={user?.email || "host"} />}
@@ -529,43 +530,6 @@ function QuestionView({ v, left }: { v: LiveHostView; left: number }) {
 }
 
 /* ---------------- scoreboard: a race to the finish line ---------------- */
-/** Race mode: every player's lane, live. Position = how far through the questions; ranked by right answers, then time. */
-function RaceView({ v }: { v: LiveHostView }) {
-  const total = Math.max(1, v.session.total);
-  const rows = v.players.slice(0, 8);
-  const more = v.players.length - rows.length;
-  const medal = ["gold", "silver", "bronze"];
-  return (
-    <div className="lv-board">
-      <h1 className="lv-h1">
-        The <span>race</span> is on
-      </h1>
-      <ol className="lv-rows">
-        {rows.map((p, i) => (
-          <li key={p.id} className={`lv-row race ${i === 0 ? "first" : ""} ${p.finished ? "done" : ""}`} style={{ "--pos": Math.max(0.03, (p.done || 0) / total) } as CSSProperties}>
-            <span className={`rk num ${medal[i] || ""}`}>{i + 1}</span>
-            <span className="lv-lane">
-              <span className="lv-track" aria-hidden="true">
-                <i className="lv-trail" />
-                <span className="lv-racer">
-                  <Chibi look={p.look} size={54} mood={p.finished ? "cheer" : p.lastOk ? "happy" : "idle"} />
-                </span>
-              </span>
-              <span className="nm">
-                {p.nick}
-                {p.finished ? <span className="lv-flag">Finished · {fmtRaceTime(p.ms || 0)}</span> : <span className="lv-prog num">{p.done || 0} of {total}</span>}
-              </span>
-            </span>
-            <span className="sc num" title="right answers">
-              {p.correct || 0}/{total}
-            </span>
-          </li>
-        ))}
-      </ol>
-      {more > 0 && <p className="lv-hot">+ {more} more racing</p>}
-    </div>
-  );
-}
 function Board({ v }: { v: LiveHostView }) {
   const s = v.session;
   // where each player stood on the previous scoreboard, so rows can slide to their new place
