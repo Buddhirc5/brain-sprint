@@ -1197,6 +1197,18 @@ class DemoApi implements Api {
       }
     });
   }
+  async liveDelete(sid: string) {
+    store.tx((db) => {
+      const s = db.live[sid];
+      if (!s) return;
+      this.req(db, s.tenantId, "admin");
+      if (s.state !== "ended") throw err("conflict", "End the game before deleting it.");
+      delete db.live[sid];
+      delete db.lp[sid];
+      delete db.la[sid];
+      this.logT(db, s.tenantId, { action: "Live game deleted", target: s.title, detail: "PIN " + s.pin });
+    });
+  }
   private liveBoard(db: DB, sid: string): LiveBoardRow[] {
     if (db.live[sid]?.race) {
       // race: most right answers first, then the fastest total time, then the furthest along
