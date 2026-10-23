@@ -7,8 +7,8 @@
    Nothing here changes data — admins decide (disqualify / restore).
    ===================================================================== */
 import type { AnswerKey, Game, Player, Roster, Run } from "../types";
-import { GRACE_MS, isRight, scoreAnswer } from "../api/engine";
-import { limitMs, RULES, runMs, runPoints, statsOf } from "./scoring";
+import { GRACE_MS, markAnswer } from "../api/engine";
+import { limitMs, partialPoints, RULES, runMs, runPoints, statsOf } from "./scoring";
 import { sha256 } from "./security";
 
 export type Sev = "alert" | "warn" | "info";
@@ -42,10 +42,10 @@ export function checkRun(r: Run, g: Game, key: Record<string, string> | undefine
     ans.forEach((a, i) => {
       const q = g.questions[i];
       if (!q) return;
-      const ok = a.c == null ? false : isRight(key[q.id], a.c);
-      if (Number(ok) !== Number(!!a.ok)) wrongMark++;
-      const expect = scoreAnswer(g, ok, Math.max(0, a.ms || 0));
-      if (Math.abs((a.pts || 0) - expect) > 1) wrongPts++;
+      // the same marking the server uses: swipe, buckets and case studies are right when fully right, and earn a share when partly right
+      const m = markAnswer(g, q, key[q.id], a.c ?? null, Math.max(0, a.ms || 0));
+      if (Number(m.ok) !== Number(!!a.ok)) wrongMark++;
+      if (Math.abs((a.pts || 0) - m.pts) > 1) wrongPts++;
     });
     if (wrongMark) mk("alert", "Answer doesn't match key", `${plural(wrongMark, "answer was", "answers were")} marked right or wrong differently from the answer key.`);
     // right/wrong is what matters; a speed bonus that differs (but stays in range) is only worth a note —
@@ -54,7 +54,9 @@ export function checkRun(r: Run, g: Game, key: Record<string, string> | undefine
   } else if (!key) mk("info", "No answer key", "This quiz has no answer key, so its plays can't be re-checked.");
 
   const maxPts = cert ? 1 : RULES.base + RULES.speedMax;
-  if (ans.some((a) => (a.pts || 0) > maxPts || (!a.ok && (a.pts || 0) > 0))) mk("alert", "Points out of range", "An answer carries more points than the rules allow.");
+  // a wrong answer earns nothing, except a partly right swipe, bucket or case-study answer: its share of the base points
+  const wrongMax = (a: (typeof ans)[number]) => (cert ? 0 : a.f ? partialPoints(a.f) : 0);
+  if (ans.some((a) => (a.pts || 0) > maxPts || (!a.ok && (a.pts || 0) > wrongMax(a) + 1))) mk("alert", "Points out of range", "An answer carries more points than the rules allow.");
 
   if (r.status === "done") {
     const correct = ans.filter((a) => a.ok).length;

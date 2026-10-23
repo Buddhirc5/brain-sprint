@@ -15,7 +15,8 @@ import { Shape, TILES, fmtPts, fmtRaceTime, optionsOf, ordinal, remainingMs, til
 import "../styles/live.css";
 import { setReturnTo } from "../app/returnTo";
 import { LIVE_PASS, getJoinKey, setJoinKey } from "../app/joinKey";
-import { StageModeToggle, useStageMode } from "../app/stageTheme";
+import { useStageMode } from "../app/stageTheme";
+import { sound } from "./sound";
 
 type Found = { sessionId: string; tenantId: string; slug: string; title: string; guests: boolean; pin: string };
 const MINE = "bs.live.me"; // this tab's live player per session (survives reloads)
@@ -315,9 +316,10 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
   const [picked, setPicked] = useState<{ q: number; c: string } | null>(null);
   const [late, setLate] = useState(-1); // qIndex we were too late for
   const [sending, setSending] = useState(false);
+  const [soundOn, setSoundOn] = useState(sound.on);
   const [fbFor, setFbFor] = useState(-1); // race: the question whose right/wrong card is showing
   const everMe = useRef(false);
-  const [mode, toggleMode] = useStageMode();
+  const [mode] = useStageMode();
 
   useEffect(() => {
     document.body.classList.add("lv-body");
@@ -355,6 +357,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
     } catch {
       /* ignore */
     }
+    sound.tap();
     try {
       navigator.vibrate?.(30);
     } catch {
@@ -378,6 +381,7 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
   const raceAnswer = async (qi: number, c: string) => {
     if (sending) return;
     setSending(true);
+    sound.tap();
     try {
       navigator.vibrate?.(30);
     } catch {
@@ -394,6 +398,9 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
   };
   const lastOkKey = v?.race?.last && fbFor === v.race.last.qIndex ? `${v.race.last.qIndex}:${v.race.last.ok}` : "";
   useEffect(() => {
+    if (!lastOkKey) return;
+    if (lastOkKey.endsWith(":true")) sound.right();
+    else sound.wrong();
     if (lastOkKey.endsWith(":true"))
       try {
         navigator.vibrate?.([40, 40, 80]);
@@ -407,9 +414,14 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
   useEffect(() => {
     if (!v || !revealKey) return;
     if (revealKey === "end") {
-      if (v.rank > 0 && v.rank <= 3) confetti(v.rank === 1 ? 220 : 140);
+      if (v.rank > 0 && v.rank <= 3) {
+        confetti(v.rank === 1 ? 220 : 140);
+        sound.fanfare();
+      }
       return;
     }
+    if (v.lastOk) sound.right();
+    else if (v.answered) sound.wrong();
     if (v.lastOk) {
       try {
         navigator.vibrate?.([40, 40, 80]);
@@ -443,7 +455,23 @@ function Controller({ found, pub, lpid, onGone, onLeave }: { found: Found; pub: 
             : `${s.qIndex + 1} of ${s.total}`}
       </span>
       <span className="lv-pright">
-        <StageModeToggle mode={mode} onToggle={toggleMode} className="lv-pmode" />
+        <button
+          type="button"
+          className="lv-pmode"
+          aria-pressed={soundOn}
+          aria-label={soundOn ? "Sound off" : "Sound on"}
+          title={soundOn ? "Sound off" : "Sound on"}
+          onClick={() => {
+            sound.set(!sound.on);
+            setSoundOn(sound.on);
+            if (sound.on) sound.pop();
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+            {soundOn ? <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /> : <path d="M16 9.5l5 5M21 9.5l-5 5" />}
+          </svg>
+        </button>
         <span className="lv-pscore num">{v.race ? `${v.race.correct} right` : me ? fmtPts(me.score) : ""}</span>
       </span>
     </header>

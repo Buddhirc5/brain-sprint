@@ -94,26 +94,12 @@ function sink(c: string, bg: string, ink: string, min: number) {
 }
 /** CSS variables for results on the stage. Only colours that pass contrast checks are
  *  used, whatever palette a company picked. Light: paper background, bars outlined in ink
- *  (the brand's bright colours stay bright); dark: the brand ink as background. */
-export function stageVars(b0?: Partial<Branding>, mode: StageMode = "light"): CSSProperties {
+ *  (the brand's bright colours stay bright). */
+export function stageVars(b0?: Partial<Branding>, _mode: StageMode = "light"): CSSProperties {
   const x = { ...DEFAULT_BRANDING, ...(b0 || {}) };
   const b = brandProblems(x) ? DEFAULT_BRANDING : x;
   const acc = lift(b.accent, b.ink, 5);
   const fills = [b.primary, acc, mix(b.primary, "#FFFFFF", 0.55), mix(acc, "#FFFFFF", 0.55), "#F4F3EE"];
-  if (mode === "dark")
-    return {
-      "--st-bg": b.ink,
-      "--st-fg": "#FFFFFF",
-      ...Object.fromEntries(fills.map((c, i) => [`--st-${i + 1}`, c])),
-      ...Object.fromEntries(fills.map((c, i) => [`--st-t${i + 1}`, c])),
-      "--st-ink": b.ink,
-      "--st-dim": mix(b.ink, "#FFFFFF", 0.62),
-      "--st-line": mix(b.ink, "#FFFFFF", 0.16),
-      "--st-panel": mix(b.ink, "#FFFFFF", 0.07),
-      "--st-soft": "rgba(255,255,255,.08)",
-      "--st-soft2": "rgba(255,255,255,.16)",
-      "--st-edge": "transparent",
-    } as CSSProperties;
   const bg = mix(b.paper, "#FFFFFF", 0.55);
   const text = [b.primary, b.accent, mix(b.primary, b.ink, 0.35), mix(b.accent, b.ink, 0.3), mix(b.ink, bg, 0.3)].map((c) => sink(c, bg, b.ink, 4.5));
   return {
