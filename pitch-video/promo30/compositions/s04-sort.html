@@ -1,0 +1,43 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    #s4-phone { left: 330px; top: 50px; }
+    #s4-b { opacity: 0; }
+    #s4-line { position: absolute; left: 930px; top: 290px; font-size: 210px; color: var(--ink); display: flex; gap: 0.22em; }
+    #s4-slot { position: relative; height: 0.92em; overflow: hidden; }
+    #s4-slot span { display: block; height: 0.92em; }
+    #s4-sub { position: absolute; left: 940px; top: 560px; font-size: 52px; color: #3b3a35; }
+    #s4-lime { position: absolute; inset: 0; background: var(--lime); opacity: 0; }
+  </style>
+  <div id="root" data-composition-id="s04" data-width="1920" data-height="1080">
+    <div id="s4-cam" class="cam">
+      <div class="paper" style="position: absolute; inset: -10%"></div>
+      <div id="s4-phone" class="phone">
+        <div class="scr">
+          <img id="s4-a" src="assets/shots/swipe-drag-1.png" alt="Swipe each card: risky or safe" />
+          <img id="s4-b" src="assets/shots/bucket-picked.png" alt="Sort each item into buckets" />
+        </div>
+      </div>
+      <div id="s4-line" class="hero">
+        <div id="s4-slot"><div id="s4-roll"><span>Swipe it.</span><span><b style="color: #6a8f00; font-weight: 400">Sort</b> it.</span></div></div>
+      </div>
+      <div id="s4-sub" class="kin"><span class="w">Real</span><span class="w">calls,</span><span class="w">not</span><span class="w">trivia.</span></div>
+    </div>
+    <div id="s4-lime"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // whip in from the right
+    tl.fromTo("#s4-cam", { x: 820, filter: "blur(24px)" }, { x: 0, filter: "blur(0px)", duration: 0.3, ease: "expo.out" }, 0);
+    document.querySelectorAll("#s4-sub .w").forEach((w, i) =>
+      tl.fromTo(w, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14 }, 0.4 + i * 0.08));
+    // blur swap on one stage: swipe → buckets, and the word rolls on 9.0 s
+    tl.to("#s4-a", { opacity: 0, filter: "blur(8px)", duration: 0.15, ease: "power2.in" }, 0.92);
+    tl.fromTo("#s4-b", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out" }, 1.0);
+    tl.fromTo("#s4-roll", { y: 0 }, { y: "-0.92em", duration: 0.28, ease: "power3.inOut" }, 0.9);
+    // zoom through the lime bucket
+    tl.to("#s4-cam", { scale: 7, transformOrigin: "471px 707px", filter: "blur(8px)", duration: 0.4, ease: "power3.in" }, 2.1);
+    tl.to("#s4-lime", { opacity: 1, duration: 0.14, ease: "power1.in" }, 2.36);
+    window.__timelines["s04"] = tl;
+  </script>
+</template>

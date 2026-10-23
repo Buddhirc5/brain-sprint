@@ -1,0 +1,97 @@
+<!doctype html>
+<html
+  lang="en"
+  data-composition-variables='[
+    {"id":"cta","type":"string","label":"Call to action","default":"Try it free — no sign-up"},
+    {"id":"tagline","type":"string","label":"Tagline","default":"Learning your team actually"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Anton"; src: url("assets/fonts/anton-400.woff2") format("woff2"); font-weight: 400; }
+      @font-face { font-family: "Figtree"; src: url("assets/fonts/figtree-var.woff2") format("woff2"); font-weight: 300 900; }
+      @font-face { font-family: "Bangers"; src: url("assets/fonts/bangers-400.woff2") format("woff2"); font-weight: 400; }
+      :root {
+        --paper: #f4f3ee;
+        --ink: #161512;
+        --lime: #c6f432;
+        --orange: #ff5a1f;
+        --yellow: #ffd84d;
+        --soft: #edebe4;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); }
+      #root { position: relative; width: 100%; height: 100%; font-family: "Figtree", sans-serif; color: var(--ink); }
+      .bg { position: absolute; inset: 0; background: var(--ink); }
+
+      /* shared pieces (arena-motion) */
+      .ink { background: radial-gradient(ellipse 80% 70% at 50% 45%, #22211d 0%, #161512 60%, #0c0b09 100%); }
+      .paper { background: radial-gradient(ellipse 80% 75% at 50% 45%, #fbfaf6 0%, #f4f3ee 55%, #dedcd3 100%); }
+      .dome { position: absolute; left: -20%; right: -20%; bottom: -46%; height: 80%; border-radius: 50%; background: radial-gradient(ellipse at 50% 40%, rgba(198, 244, 50, 0.75) 0%, rgba(198, 244, 50, 0.28) 32%, rgba(198, 244, 50, 0) 66%); }
+      .spark { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: #efffc0; box-shadow: 0 0 10px 4px #c6f432, 0 0 40px 14px rgba(198, 244, 50, 0.75), 0 0 110px 40px rgba(198, 244, 50, 0.3); }
+      .cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+      .kin { font-family: "Figtree", sans-serif; font-weight: 300; letter-spacing: -0.01em; white-space: nowrap; }
+      .kin .w { display: inline-block; margin-right: 0.24em; opacity: 0; }
+      .kin .k { font-weight: 800; position: relative; }
+      .kin .u { position: absolute; left: 0; right: 0.24em; bottom: -0.08em; height: 0.07em; border-radius: 99px; transform: scaleX(0); transform-origin: 0 50%; }
+      .hero { font-family: "Anton", sans-serif; font-weight: 400; text-transform: uppercase; line-height: 0.92; letter-spacing: -0.005em; white-space: nowrap; }
+      .phone { position: absolute; width: 468px; height: 980px; border-radius: 66px; background: #0d0c0a; padding: 14px; box-shadow: 0 40px 90px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(255, 255, 255, 0.08); }
+      .phone .scr { position: relative; width: 440px; height: 952px; border-radius: 54px; overflow: hidden; background: var(--paper); }
+      .phone .scr img { position: absolute; left: 0; top: 0; width: 440px; height: auto; }
+      .chip { display: inline-block; font: 800 46px "Figtree", sans-serif; padding: 14px 30px; border-radius: 999px; background: var(--lime); color: var(--ink); box-shadow: 0 0 40px rgba(198, 244, 50, 0.6); white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="30" data-width="1920" data-height="1080">
+      <div class="bg"></div>
+
+      <div id="s01" data-composition-id="s01" data-composition-src="compositions/s01-hook.html" data-start="0" data-duration="3" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s02" data-composition-id="s02" data-composition-src="compositions/s02-mark.html" data-start="3" data-duration="2" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s03" data-composition-id="s03" data-composition-src="compositions/s03-sprint.html" data-start="5" data-duration="3" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s04" data-composition-id="s04" data-composition-src="compositions/s04-sort.html" data-start="8" data-duration="2.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s05" data-composition-id="s05" data-composition-src="compositions/s05-collect.html" data-start="10.5" data-duration="3" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s06" data-composition-id="s06" data-composition-src="compositions/s06-race.html" data-start="13.5" data-duration="2.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s07" data-composition-id="s07" data-composition-src="compositions/s07-story.html" data-start="16" data-duration="2.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s08" data-composition-id="s08" data-composition-src="compositions/s08-live.html" data-start="18.5" data-duration="3.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s09" data-composition-id="s09" data-composition-src="compositions/s09-bento.html" data-start="22" data-duration="4" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="s10" data-composition-id="s10" data-composition-src="compositions/s10-end.html" data-start="26" data-duration="4" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+
+      <!-- music: Lyria, 120 BPM, bars on 0, 2, 4 … s; shaped in ffmpeg (see SPEC.md) -->
+      <audio id="music" class="clip" src="assets/music/bed.mp3" data-start="0" data-duration="30" data-track-index="10" data-volume="0.85"></audio>
+
+      <!-- effects: each one has a cause on screen; peaks land one frame after the picture -->
+      <audio id="fx-burst-w" class="clip" src="assets/sfx/whoosh-cinematic.mp3" data-start="0.48" data-duration="2.9" data-track-index="11" data-volume="0.55"></audio>
+      <audio id="fx-burst-i" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="2.96" data-duration="1.4" data-track-index="12" data-volume="0.4"></audio>
+      <audio id="fx-spin" class="clip" src="assets/sfx/whoosh-lo.mp3" data-start="3.1" data-duration="0.6" data-track-index="13" data-volume="0.5"></audio>
+      <audio id="fx-land" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="3.96" data-duration="1.0" data-track-index="16" data-volume="0.22"></audio>
+      <audio id="fx-zoom1" class="clip" src="assets/sfx/whoosh-hi.mp3" data-start="4.62" data-duration="0.5" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="fx-tap" class="clip" src="assets/sfx/click-soft.mp3" data-start="6.46" data-duration="0.37" data-track-index="13" data-volume="0.9"></audio>
+      <audio id="fx-pts" class="clip" src="assets/sfx/pop.mp3" data-start="6.53" data-duration="0.7" data-track-index="14" data-volume="0.7"></audio>
+      <audio id="fx-whip1" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="7.65" data-duration="0.57" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="fx-swap" class="clip" src="assets/sfx/pop.mp3" data-start="8.9" data-duration="0.7" data-track-index="14" data-volume="0.55"></audio>
+      <audio id="fx-zoom2" class="clip" src="assets/sfx/whoosh-hi.mp3" data-start="10.12" data-duration="0.5" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="fx-pop1" class="clip" src="assets/sfx/pop.mp3" data-start="10.89" data-duration="0.7" data-track-index="14" data-volume="0.6"></audio>
+      <audio id="fx-pop2" class="clip" src="assets/sfx/pop.mp3" data-start="11.39" data-duration="0.7" data-track-index="13" data-volume="0.6"></audio>
+      <audio id="fx-pop3" class="clip" src="assets/sfx/pop.mp3" data-start="11.89" data-duration="0.7" data-track-index="14" data-volume="0.6"></audio>
+      <audio id="fx-coins" class="clip" src="assets/sfx/sparkle.mp3" data-start="12.48" data-duration="1.0" data-track-index="12" data-volume="0.3"></audio>
+      <audio id="fx-whip2" class="clip" src="assets/sfx/whoosh-lo.mp3" data-start="13.12" data-duration="0.6" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="fx-whip3" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="15.65" data-duration="0.57" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="fx-zoom3" class="clip" src="assets/sfx/whoosh-hi.mp3" data-start="18.12" data-duration="0.5" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="fx-num" class="clip" src="assets/sfx/pop.mp3" data-start="20.39" data-duration="0.7" data-track-index="14" data-volume="0.55"></audio>
+      <audio id="fx-whip4" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="21.65" data-duration="0.57" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="fx-whip5" class="clip" src="assets/sfx/whoosh-lo.mp3" data-start="22.35" data-duration="0.6" data-track-index="13" data-volume="0.45"></audio>
+      <audio id="fx-whip6" class="clip" src="assets/sfx/whoosh-hi.mp3" data-start="23.05" data-duration="0.5" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="fx-riser" class="clip" src="assets/sfx/riser.mp3" data-start="22.55" data-duration="3.45" data-track-index="15" data-volume="0.35"></audio>
+      <audio id="fx-drop" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="25.96" data-duration="2.0" data-track-index="12" data-volume="0.45"></audio>
+      <audio id="fx-cta" class="clip" src="assets/sfx/pop.mp3" data-start="27.91" data-duration="0.7" data-track-index="14" data-volume="0.6"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
