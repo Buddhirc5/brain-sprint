@@ -32,7 +32,7 @@ export interface Arena3DInput {
   mates: MateInfo[]; // teammates, each at their furthest stop
   overflow: { u: number; v: number; n: number }[]; // "+N" where a stop has more teammates than shown
   reduced: boolean;
-  /** "pop" (a character), "arrive" (you reached your stop) or an animal's name */
+  /** "pop" (a character), "arrive" (you reached your stop), "land:<key>" (the land in view changed) or an animal's name */
   onSound?: (what: string) => void;
 }
 
@@ -283,6 +283,7 @@ export class Arena3D {
       this.land = li;
       this.skyGoal = skyFor(this.I.lands[li]?.theme.name || "", this.tod);
       this.backdrop(landKey(this.I.lands[li]?.theme.name || ""));
+      this.I.onSound?.("land:" + landKey(this.I.lands[li]?.theme.name || ""));
       this.fogGoal = this.skyGoal[0].clone().lerp(this.skyGoal[1], 0.6);
       if (!this.skyNow) {
         this.skyNow = [this.skyGoal[0].clone(), this.skyGoal[1].clone()];
