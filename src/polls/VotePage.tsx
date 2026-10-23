@@ -11,7 +11,7 @@ import { Icon } from "../components/ui";
 import { Mascot } from "../components/Chibi";
 import { LS, clamp } from "../lib/util";
 import type { Poll, PollValue, Slide, TenantPublic } from "../types";
-import { StageModeToggle, useStageMode } from "../app/stageTheme";
+import { useStageMode } from "../app/stageTheme";
 import { ContentSlide, Ico, Results, SlideImage, TYPE_META, TypeIcon, fmtCode, stageVars, useResults } from "./shared";
 
 /** "?fresh=1&t=harbor" after the hash path. */
@@ -92,7 +92,6 @@ function CodeEntry({ initial, qs, pub, error }: { initial?: string; qs: string; 
 }
 
 function VoteHead({ pub, title }: { pub: TenantPublic | null; title?: string }) {
-  const [mode, toggleMode] = useStageMode();
   const name = pub?.branding.productName || "Ant Arena";
   const mark = pub?.branding.logo ? <img src={pub.branding.logo} alt="" className="pv-logo" /> : pub ? <span className="pv-mark" aria-hidden="true">{name.slice(0, 1)}</span> : <LogoMark size={40} />;
   return (
@@ -102,7 +101,6 @@ function VoteHead({ pub, title }: { pub: TenantPublic | null; title?: string }) 
         <b>{name}</b>
         {title && <span>{title}</span>}
       </div>
-      {title && <StageModeToggle mode={mode} onToggle={toggleMode} className="pv-mode" />}
     </header>
   );
 }

@@ -12,7 +12,7 @@ import { useTenantPub } from "../pages/useTenantPub";
 import type { Poll, PollResponse, Role, TenantPublic } from "../types";
 import { Ico, Results, SlideImage, TYPE_META, TypeIcon, fmtCode, stageVars, useResults } from "./shared";
 import { isContentSlide } from "../api/engine";
-import { StageModeToggle, useStageMode } from "../app/stageTheme";
+import { useStageMode } from "../app/stageTheme";
 
 const RANK: Record<Role, number> = { viewer: 0, host: 1, editor: 2, admin: 3, owner: 4 };
 
@@ -91,7 +91,7 @@ function Stage({ pub, pollId }: { pub: TenantPublic; pollId: string }) {
 
   const slide = poll?.slides[poll.current];
   const r = useResults(api, poll?.id, slide && !isContentSlide(slide.type) ? slide.id : undefined);
-  const [mode, toggleMode] = useStageMode();
+  const [mode] = useStageMode();
   const vars = useMemo(() => stageVars(pub.branding, mode), [pub.branding, mode]);
 
   const ctl = useCallback((patch: Parameters<typeof api.pollControl>[1]) => void run(() => api.pollControl(pollId, patch)), [api, pollId, run]);
@@ -126,12 +126,11 @@ function Stage({ pub, pollId }: { pub: TenantPublic; pollId: string }) {
       else if (k === "h" || k === "H") setHideRes((v) => !v);
       else if (k === "f" || k === "F") toggleFs();
       else if (k === "q" || k === "Q") setBigQr((v) => !v);
-      else if (k === "t" || k === "T") toggleMode();
       else if (k === "Escape") setBigQr(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [poll, go, ctl, toggleFs, toggleMode]);
+  }, [poll, go, ctl, toggleFs]);
 
   if (poll === undefined) return <Loading text="Loading poll…" />;
   if (!poll)
@@ -243,7 +242,6 @@ function Stage({ pub, pollId }: { pub: TenantPublic; pollId: string }) {
               <Ico.play /> <span>Open poll</span>
             </button>
           )}
-          <StageModeToggle mode={mode} onToggle={toggleMode} className="pl-btn" />
           <button type="button" className="pl-btn" onClick={toggleFs} aria-label={fs ? "Exit full screen (F)" : "Full screen (F)"} title={fs ? "Exit full screen (F)" : "Full screen (F)"}>
             <Icon.full />
           </button>

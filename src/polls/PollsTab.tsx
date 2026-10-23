@@ -7,7 +7,7 @@ import { href } from "../app/router";
 import { blankPoll, cleanSlide, isContentSlide } from "../api/engine";
 import { MAX_POLL_IMG_CHARS, MAX_SLIDE_IMG_CHARS, compressImage } from "../lib/image";
 import { Seg } from "../components/ui";
-import { StageModeToggle, useStageMode } from "../app/stageTheme";
+import { useStageMode } from "../app/stageTheme";
 import { Mascot } from "../components/Chibi";
 import { clamp, fmtDT, newId, randHex } from "../lib/util";
 import type { Poll, Slide, SlideResults, SlideType } from "../types";
@@ -261,7 +261,7 @@ function PollEditor({ initial, onClose }: { initial: Poll; onClose: () => void }
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
   const [view, setView] = useState<"phone" | "screen">("phone");
-  const [mode, toggleMode] = useStageMode();
+  const [mode] = useStageMode();
   const [showErr, setShowErr] = useState(false);
   const live = d.polls[poll.id];
   const slide = poll.slides[clamp(sel, 0, poll.slides.length - 1)];
@@ -551,7 +551,6 @@ function PollEditor({ initial, onClose }: { initial: Poll; onClose: () => void }
           <div className="panel-h">
             <h2>Preview</h2>
             <div className="row" style={{ gap: 6 }}>
-              {view === "screen" && <StageModeToggle mode={mode} onToggle={toggleMode} className="icon-btn" />}
               <Seg value={view} options={[["phone", "Phone"], ["screen", "Big screen"]]} onChange={setView} label="Preview" />
             </div>
           </div>
