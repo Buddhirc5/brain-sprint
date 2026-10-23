@@ -462,6 +462,9 @@ class SupabaseApi implements Api {
     if (opts.race) s = await this.rpc<LiveSession>("live_set_race", { p_sid: s.id, p_race: true });
     return this.localLive(s);
   }
+  async liveDelete(sessionId: string) {
+    await this.rpc<void>("live_delete", { p_sid: sessionId });
+  }
   async liveControl(sessionId: string, action: "start" | "reveal" | "board" | "next" | "end" | "kick", arg?: string) {
     await this.rpc<void>("live_control", { p_sid: sessionId, p_action: action, p_arg: arg ?? null });
   }

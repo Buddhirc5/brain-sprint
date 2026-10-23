@@ -205,6 +205,8 @@ export interface Api {
   liveCreate(tenantId: string, gid: string, opts: { guests: boolean; race?: boolean }): Promise<LiveSession>;
   /** host actions: start → question → reveal → board → next question … → ended */
   liveControl(sessionId: string, action: "start" | "reveal" | "board" | "next" | "end" | "kick", arg?: string): Promise<void>;
+  /** Delete a finished live game with its players and answers (admins). */
+  liveDelete(sessionId: string): Promise<void>;
   watchLiveHost(sessionId: string, cb: (v: LiveHostView) => void): Unsub;
   liveFind(pin: string): Promise<{ sessionId: string; tenantId: string; slug: string; title: string; guests: boolean } | null>;
   liveJoin(sessionId: string, nick?: string): Promise<{ livePlayerId: string }>; // uses the player card when signed in

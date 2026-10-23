@@ -27,6 +27,7 @@ export function LiveTab() {
   );
   const active = useMemo(() => d.live.filter((l) => l.state !== "ended"), [d.live]);
   const recent = d.live.slice(0, 12);
+  const ended = d.live.filter((l) => l.state === "ended");
 
   // player counts for games still running (one watcher each, at most a handful)
   const activeIds = active.slice(0, 6).map((l) => l.id).join(",");
@@ -152,6 +153,24 @@ export function LiveTab() {
       <section className="panel">
         <div className="panel-h">
           <h2>Recent games</h2>
+          {can("admin") && ended.length > 0 && (
+            <button
+              type="button"
+              className="btn ghost small"
+              onClick={() =>
+                approve({
+                  label: `Delete all ${ended.length} finished games and their results? Games still running are kept. This can't be undone.`,
+                  yes: "Delete results",
+                  danger: true,
+                  run: async () => {
+                    for (const l of ended) await api.liveDelete(l.id);
+                  },
+                })
+              }
+            >
+              Clear finished games
+            </button>
+          )}
         </div>
         {recent.length === 0 ? (
           <div className="empty">No games hosted yet.</div>
@@ -184,6 +203,23 @@ export function LiveTab() {
                       <a className="link" href={href({ r: "host", slug, id: l.id })}>
                         {l.state === "ended" ? "Results" : "Host screen"}
                       </a>
+                      {can("admin") && l.state === "ended" && (
+                        <button
+                          type="button"
+                          className="link danger"
+                          style={{ marginLeft: 16 }}
+                          onClick={() =>
+                            approve({
+                              label: `Delete the results of "${l.title}" (PIN ${l.pin}, ${fmtDT(l.createdAt)})? This can't be undone.`,
+                              yes: "Delete results",
+                              danger: true,
+                              run: () => api.liveDelete(l.id),
+                            })
+                          }
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
