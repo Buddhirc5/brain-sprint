@@ -282,7 +282,7 @@ function Map3D({ map, world, me, curLand, sceneRef, go, toast, pick }: { map: Ma
           host: host.current, layer: layer.current, world, lands: map.lands, me,
           meAt: cur ? { u: cur.u, v: cur.v } : null, meFrom: fromI, meLine: curStop ? `${curLand.name} · Stop ${curStop.n}` : curLand.name,
           mates, overflow, reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
-          onSound: (w) => (w === "pop" ? mapSound.pop() : w === "arrive" ? mapSound.arrive() : mapSound.animal(w)),
+          onSound: (w) => (w.startsWith("land:") ? mapSound.setLand(w.slice(5)) : w === "pop" ? mapSound.pop() : w === "arrive" ? mapSound.arrive() : mapSound.animal(w)),
         });
         sceneRef.current = sc;
         const pins = [...(labels.current?.querySelectorAll<HTMLElement>("[data-at]") || [])].map((el) => {
