@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Anton"; src: url("assets/fonts/anton-400.woff2") format("woff2"); font-weight: 400; }
+      @font-face { font-family: "Figtree"; src: url("assets/fonts/figtree-var.woff2") format("woff2"); font-weight: 300 900; }
+      :root { --ink: #161512; --lime: #c6f432; --orange: #ff5a1f; --yellow: #ffd84d; --white: #ffffff; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #fff; }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; font-family: "Figtree", sans-serif; color: var(--ink); }
+      .scene { position: absolute; inset: 0; overflow: hidden; visibility: hidden; background: #fff; }
+      .abs { position: absolute; }
+      svg.full { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: visible; }
+      .eng { mix-blend-mode: multiply; }
+      .paint { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* the hero dot: lime, ink rim — a game token */
+      #dot { position: absolute; left: 0; top: 0; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; background: var(--lime); border: 7px solid var(--ink); z-index: 50; visibility: hidden; }
+
+      /* morphing words: every letter has its true Anton advance, so reflow is exact */
+      .word { position: absolute; left: 540px; display: flex; isolation: isolate; font-family: "Anton", sans-serif; line-height: 1.35em; height: 1.35em; white-space: nowrap; color: var(--ink); }
+      .word .lt { position: relative; display: block; height: 1.35em; flex: none; }
+      .word .lt i { display: block; font-style: normal; height: 1.35em; }
+      .word .lt.roll { overflow: hidden; }
+      .word .lt.roll .col { display: block; }
+      .word .hl { position: absolute; left: 0.04em; right: -0.04em; top: 0.72em; height: 0.34em; background: var(--lime); z-index: -1; transform-origin: 0 50%; }
+
+      /* mosaic cards */
+      .card { position: absolute; overflow: hidden; }
+      .card img { position: absolute; display: block; }
+
+      /* phone */
+      #phone { position: absolute; left: 270px; top: 400px; width: 540px; height: 1122px; border-radius: 78px; background: var(--ink); padding: 20px; }
+      #phone .scr { position: relative; width: 500px; height: 1082px; border-radius: 60px; overflow: hidden; background: #f4f3ee; }
+      #phone .scr img { position: absolute; left: 0; top: 0; width: 500px; height: 1082px; }
+
+      /* 3D logo tile */
+      #logoStage { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; perspective: 1700px; perspective-origin: 540px 860px; }
+      #logo3d { position: absolute; left: 320px; top: 640px; width: 440px; height: 440px; transform-style: preserve-3d; }
+      #logo3d .layer { position: absolute; inset: 0; border-radius: 103px; background: #2b2a26; }
+      #logo3d .front { position: absolute; inset: 0; border-radius: 103px; border: 7px solid var(--ink); overflow: hidden; background: #fffefa; backface-visibility: hidden; }
+      #logo3d .front img { position: absolute; left: -7px; top: -7px; width: 440px; height: 440px; }
+      #logo3d .back { position: absolute; inset: 0; border-radius: 103px; background: var(--lime); backface-visibility: hidden; }
+      #wordmark { position: absolute; left: 0; right: 0; top: 1150px; text-align: center; font-family: "Anton", sans-serif; font-size: 172px; line-height: 1.2; letter-spacing: 0.015em; }
+      #wordmark span { display: inline-block; }
+      #endline { position: absolute; left: 0; right: 0; top: 1395px; text-align: center; font: 700 52px "Figtree", sans-serif; letter-spacing: -0.01em; }
+      #endline b { display: inline-block; width: 26px; height: 26px; border-radius: 50%; background: var(--lime); border: 4px solid var(--ink); margin-left: 6px; vertical-align: -1px; }
+      .chip { position: absolute; font-family: "Anton", sans-serif; font-size: 104px; line-height: 1; padding: 18px 34px 22px; border-radius: 26px; background: var(--lime); color: var(--ink); white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="15" data-width="1080" data-height="1920">
+
+      <!-- S0 · the token drops -->
+      <div id="s0" class="scene">
+        <svg class="full"><circle id="ripple" cx="540" cy="975" r="40" fill="none" stroke="#161512" stroke-width="6" opacity="0" /></svg>
+      </div>
+
+      <!-- S1 · the token opens into the arena -->
+      <div id="s1" class="scene">
+        <div id="s1cam" class="abs" style="inset: 0">
+          <div id="iris" class="abs" style="left: 90px; top: 510px; width: 900px; height: 900px; border-radius: 50%; overflow: hidden">
+            <img id="irisImg" src="assets/img/colosseum.jpg" alt="Engraving of the Colosseum" class="abs" style="left: -96px; top: 0; width: 1092px; height: 900px" />
+            <div id="irisLime" class="abs" style="inset: 0; background: #c6f432"></div>
+          </div>
+          <svg class="full">
+            <circle id="irisRing" cx="540" cy="960" r="35" fill="none" stroke="#161512" stroke-width="7" />
+            <path id="lap" class="paint" stroke="#c6f432" stroke-width="30" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" />
+            <path id="lapTick" class="paint" stroke="#ff5a1f" stroke-width="14" d="M 905 560 l 50 -50 M 935 610 l 70 -22 M 870 530 l 18 -66" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- S2 · learn → earn -->
+      <div id="s2" class="scene"><div id="w1" class="word" style="top: 690px; font-size: 340px"></div></div>
+
+      <!-- S3 · everything at once -->
+      <div id="s3" class="scene">
+        <div id="k1" class="card" style="left: 40px; top: 150px; width: 470px; height: 388px"><img src="assets/img/colosseum.jpg" alt="Colosseum" style="left: 0; top: 0; width: 470px; height: 388px" /></div>
+        <div id="k2" class="card" style="left: 650px; top: 110px; width: 330px; height: 435px"><img class="eng" src="assets/img/trophy.jpg" alt="Silver trophy" style="left: 0; top: 0; width: 330px; height: 435px" /></div>
+        <div id="k3" class="card" style="left: 30px; top: 1400px; width: 400px; height: 420px"><img class="eng" src="assets/img/hourglass.jpg" alt="Hourglass engraving" style="left: -260px; top: -210px; width: 920px; height: 920px" /></div>
+        <div id="k4" class="card" style="left: 640px; top: 1380px; width: 400px; height: 465px"><img class="eng" src="assets/img/brain.jpg" alt="Engraving of the brain" style="left: 0; top: 0; width: 400px; height: 465px" /></div>
+        <div id="k5" class="card" style="left: 36px; top: 640px; width: 230px; height: 300px; border-radius: 40px; background: #c6f432"><img src="assets/art/c12-cheer.webp" alt="Ant Arena character cheering" style="left: 46px; top: 22px; width: 138px; height: 356px" /></div>
+        <div id="k6" class="card" style="left: 812px; top: 1100px; width: 232px; height: 232px; background: #000"><img src="assets/img/disco.jpg" alt="Discobolus statue" style="left: -20px; top: 0; width: 272px; height: 272px" /></div>
+        <div id="k7" class="card" style="left: 846px; top: 600px; width: 196px; height: 424px; border-radius: 30px; border: 8px solid #161512"><img src="assets/img/fx-store.png" alt="Ant Arena store screen" style="left: 0; top: 0; width: 180px; height: 390px" /></div>
+        <div id="k0" class="card" style="left: 0; top: 548px; width: 1080px; height: 823px"><img id="k0img" src="assets/img/muybridge.jpg" alt="Muybridge, Running, 1887" style="left: 0; top: 0; width: 1080px; height: 823px" /></div>
+      </div>
+
+      <!-- S4 · the runner (drawn from Muybridge's plate) -->
+      <div id="s4" class="scene">
+        <div id="streaks" class="abs" style="inset: 0">
+          <div class="abs st" style="left: 1100px; top: 760px; width: 380px; height: 26px; border-radius: 13px; background: #c6f432"></div>
+          <div class="abs st" style="left: 1100px; top: 900px; width: 520px; height: 26px; border-radius: 13px; background: #c6f432"></div>
+          <div class="abs st" style="left: 1100px; top: 1040px; width: 300px; height: 26px; border-radius: 13px; background: #c6f432"></div>
+          <div class="abs st" style="left: 1100px; top: 1180px; width: 440px; height: 26px; border-radius: 13px; background: #c6f432"></div>
+        </div>
+        <div id="track" class="abs" style="left: 0; top: 1336px; width: 4000px; height: 120px">
+          <div class="abs" style="left: -100px; top: 0; width: 4100px; height: 8px; background: #161512"></div>
+        </div>
+        <svg id="runner" viewBox="0 0 600 800" class="abs" style="left: 240px; top: 560px; width: 600px; height: 800px; overflow: visible">
+          <g id="fig" transform="translate(300 420)" stroke="#161512" stroke-width="46" stroke-linecap="round" fill="none">
+            <g id="armB" stroke="#4a4842"><line x1="0" y1="0" x2="0" y2="0" /></g>
+            <g id="thighB" stroke="#4a4842"><line x1="0" y1="0" x2="0" y2="170" /><g id="shinB" transform="translate(0 170)"><line x1="0" y1="0" x2="0" y2="168" /><line x1="0" y1="168" x2="34" y2="172" /></g></g>
+            <g id="torso"><line x1="0" y1="0" x2="0" y2="-200" />
+              <g id="uArmB" transform="translate(0 -178)" stroke="#4a4842"><line x1="0" y1="0" x2="0" y2="118" /><g id="fArmB" transform="translate(0 118)"><line x1="0" y1="0" x2="0" y2="104" /></g></g>
+              <g id="uArmA" transform="translate(0 -178)"><line x1="0" y1="0" x2="0" y2="118" /><g id="fArmA" transform="translate(0 118)"><line x1="0" y1="0" x2="0" y2="104" /></g></g>
+              <circle cx="6" cy="-282" r="54" fill="#c6f432" stroke="#161512" stroke-width="13" />
+            </g>
+            <g id="thighA"><line x1="0" y1="0" x2="0" y2="170" /><g id="shinA" transform="translate(0 170)"><line x1="0" y1="0" x2="0" y2="168" /><line x1="0" y1="168" x2="34" y2="172" /></g></g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- S5 · run → fun -->
+      <div id="s5" class="scene">
+        <svg class="full"><g id="star" transform="translate(540 930)"><path id="starPath" fill="#c6f432" stroke="#161512" stroke-width="9" stroke-linejoin="round" /></g>
+          <path id="funLines" class="paint" stroke="#ff5a1f" stroke-width="16" d="M 880 600 l 60 -70 M 920 690 l 100 -20 M 830 560 l 10 -90" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" /></svg>
+        <div id="w2" class="word" style="top: 640px; font-size: 420px"></div>
+      </div>
+
+      <!-- S6 · the throw -->
+      <div id="s6" class="scene" style="background: #111">
+        <div id="disco" class="abs" style="inset: 0">
+          <img src="assets/img/disco.jpg" alt="Discobolus, Roman copy" class="abs" style="left: -110px; top: 330px; width: 1300px; height: 1300px" />
+          <svg class="full">
+            <circle id="discRing" cx="187" cy="427" r="96" class="paint" stroke="#c6f432" stroke-width="12" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" transform="rotate(-90 187 427)" />
+            <circle id="discFill" cx="187" cy="427" r="62" fill="#c6f432" stroke="#161512" stroke-width="7" />
+          </svg>
+        </div>
+        <svg class="full">
+          <defs><mask id="arcMask"><path id="arcReveal" d="M 187 427 C 440 120 840 170 1180 640" stroke="#fff" stroke-width="40" fill="none" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" /></mask></defs>
+          <path d="M 187 427 C 440 120 840 170 1180 640" stroke="#c6f432" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="0 34" mask="url(#arcMask)" />
+        </svg>
+        <div id="xp" class="chip" style="left: 560px; top: 1440px">+50 XP</div>
+      </div>
+
+      <!-- S7 · no clock to beat -->
+      <div id="s7" class="scene">
+        <div id="hg" class="abs" style="inset: 0">
+          <svg class="full">
+            <polygon id="sandTop" points="430,742 650,742 540,930" fill="#c6f432" />
+            <polygon id="sandBot" points="428,1196 652,1196 540,1100" fill="#c6f432" />
+            <line id="sandFlow" x1="540" y1="936" x2="540" y2="1190" stroke="#c6f432" stroke-width="10" stroke-linecap="round" />
+          </svg>
+          <img src="assets/img/hourglass.jpg" alt="Hourglass engraving" class="abs eng" style="left: -60px; top: 360px; width: 1200px; height: 1200px" />
+          <svg class="full">
+            <path id="hgRing" class="paint" stroke="#c6f432" stroke-width="26" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" />
+            <g id="arrows" class="paint" stroke="#161512" stroke-width="12">
+              <path id="arA" d="M 820 700 A 380 380 0 0 1 900 1000" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" />
+              <path id="arAh" d="M 870 970 L 900 1010 L 935 972" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" />
+              <path id="arB" d="M 260 1220 A 380 380 0 0 1 180 920" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" />
+              <path id="arBh" d="M 210 950 L 180 910 L 145 948" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" />
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- S8 · the app -->
+      <div id="s8" class="scene">
+        <div id="s8cam" class="abs" style="inset: 0">
+          <svg class="full">
+            <circle id="haloA" cx="150" cy="1390" r="230" fill="#c6f432" />
+            <circle id="haloB" cx="930" cy="1420" r="200" fill="#ffd84d" />
+          </svg>
+          <div id="phone"><div class="scr">
+            <img src="assets/img/sprint-q-1.png" alt="Sprint question: true or false" />
+            <img id="reveal" src="assets/img/sprint-reveal-1.png" alt="Spot on, plus 146 points" style="opacity: 0" />
+          </div></div>
+          <svg class="full"><g id="burst" stroke="#161512" stroke-width="10" stroke-linecap="round"></g></svg>
+          <img id="hand" src="assets/img/hand.jpg" alt="Engraved pointing hand" class="abs eng" style="left: 586px; top: 731px; width: 600px; height: 600px" />
+          <img id="chA" src="assets/art/c12-cheer.webp" alt="Character cheering" class="abs" style="left: 20px; top: 1100px; width: 252px; height: 650px" />
+          <img id="chB" src="assets/art/c17-cheer.webp" alt="Character cheering" class="abs" style="left: 808px; top: 1150px; width: 245px; height: 552px" />
+        </div>
+      </div>
+
+      <!-- S9 · the podium -->
+      <div id="s9" class="scene">
+        <img id="trophy" src="assets/img/trophy.jpg" alt="Silver trophy cup" class="abs eng" style="left: 169px; top: 560px; width: 743px; height: 980px" />
+        <svg class="full">
+          <path id="crown" class="paint" stroke="#c6f432" stroke-width="26" d="M 430 545 L 446 425 L 494 490 L 540 398 L 586 490 L 634 425 L 650 545 Z" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" />
+          <g id="sparks" fill="#ffd84d" stroke="#161512" stroke-width="6" stroke-linejoin="round"></g>
+        </svg>
+      </div>
+
+      <!-- S10 · train → brain -->
+      <div id="s10" class="scene">
+        <div id="brainCam" class="abs" style="inset: 0">
+          <svg class="full"><path id="scrib" class="paint" stroke="#c6f432" stroke-width="34" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" /></svg>
+          <img src="assets/img/brain.jpg" alt="Engraving of the brain, side view" class="abs eng" style="left: 40px; top: 160px; width: 1000px; height: 1162px" />
+          <svg class="full"><path id="zap" class="paint" stroke="#ff5a1f" stroke-width="16" d="M 930 300 l 60 -70 M 970 390 l 90 -24 M 880 250 l 8 -86" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" /></svg>
+        </div>
+        <div id="w3" class="word" style="top: 1290px; font-size: 330px"></div>
+      </div>
+
+      <!-- S11 · the line -->
+      <div id="s11" class="scene">
+        <div id="w5" class="word" style="top: 470px; font-size: 280px"></div>
+        <div id="w4" class="word" style="top: 760px; font-size: 280px"></div>
+        <svg class="full"><polygon id="play" points="-34,-40 46,0 -34,40" fill="#c6f432" stroke="#161512" stroke-width="7" stroke-linejoin="round" /></svg>
+      </div>
+
+      <!-- S12 · the mark -->
+      <div id="s12" class="scene">
+        <div id="shadow" class="abs" style="left: 330px; top: 1105px; width: 420px; height: 40px; border-radius: 50%; background: radial-gradient(closest-side, rgba(22, 21, 18, 0.22), rgba(22, 21, 18, 0))"></div>
+        <div id="logoStage"><div id="logo3d"></div></div>
+        <div id="wordmark"></div>
+        <div id="endline">Learning, now playing<b id="endDot"></b></div>
+      </div>
+
+      <div id="dot"></div>
+
+      <!-- music: Lyria, 120 BPM, trimmed so beats land on every 0.5 s -->
+      <audio id="music" class="clip" src="assets/music/bed.mp3" data-start="0" data-duration="14.83" data-track-index="10" data-volume="0.8"></audio>
+      <!-- effects: each has a cause on screen -->
+      <audio id="a01" class="clip" src="assets/sfx/pop.mp3" data-start="0.29" data-duration="0.7" data-track-index="11" data-volume="0.7"></audio>
+      <audio id="a02" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="0.48" data-duration="0.57" data-track-index="12" data-volume="0.45"></audio>
+      <audio id="a03" class="clip" src="assets/sfx/whoosh-hi.mp3" data-start="1.0" data-duration="0.5" data-track-index="13" data-volume="0.45"></audio>
+      <audio id="a04" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="1.25" data-duration="1.0" data-track-index="14" data-volume="0.3"></audio>
+      <audio id="a05" class="clip" src="assets/sfx/click-soft.mp3" data-start="1.79" data-duration="0.37" data-track-index="11" data-volume="0.9"></audio>
+      <audio id="a06" class="clip" src="assets/sfx/pop.mp3" data-start="2.05" data-duration="0.7" data-track-index="12" data-volume="0.6"></audio>
+      <audio id="a07" class="clip" src="assets/sfx/pop.mp3" data-start="2.39" data-duration="0.6" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="a08" class="clip" src="assets/sfx/pop.mp3" data-start="2.5" data-duration="0.6" data-track-index="13" data-volume="0.45"></audio>
+      <audio id="a09" class="clip" src="assets/sfx/whoosh-lo.mp3" data-start="2.93" data-duration="0.6" data-track-index="14" data-volume="0.5"></audio>
+      <audio id="a10" class="clip" src="assets/sfx/whoosh-hi.mp3" data-start="3.2" data-duration="0.5" data-track-index="12" data-volume="0.45"></audio>
+      <audio id="a11" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="4.0" data-duration="0.57" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="a12" class="clip" src="assets/sfx/click-soft.mp3" data-start="4.58" data-duration="0.37" data-track-index="13" data-volume="0.9"></audio>
+      <audio id="a13" class="clip" src="assets/sfx/pop.mp3" data-start="4.62" data-duration="0.7" data-track-index="14" data-volume="0.6"></audio>
+      <audio id="a14" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="5.0" data-duration="1.0" data-track-index="12" data-volume="0.38"></audio>
+      <audio id="a15" class="clip" src="assets/sfx/whoosh-hi.mp3" data-start="5.44" data-duration="0.5" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="a16" class="clip" src="assets/sfx/pop.mp3" data-start="6.08" data-duration="0.6" data-track-index="13" data-volume="0.5"></audio>
+      <audio id="a17" class="clip" src="assets/sfx/whoosh-lo.mp3" data-start="6.37" data-duration="0.6" data-track-index="14" data-volume="0.5"></audio>
+      <audio id="a18" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="6.64" data-duration="0.57" data-track-index="11" data-volume="0.45"></audio>
+      <audio id="a19" class="clip" src="assets/sfx/click-soft.mp3" data-start="7.29" data-duration="0.37" data-track-index="12" data-volume="1"></audio>
+      <audio id="a20" class="clip" src="assets/sfx/sparkle.mp3" data-start="7.32" data-duration="1.0" data-track-index="13" data-volume="0.35"></audio>
+      <audio id="a21" class="clip" src="assets/sfx/pop.mp3" data-start="7.45" data-duration="0.6" data-track-index="14" data-volume="0.5"></audio>
+      <audio id="a22" class="clip" src="assets/sfx/pop.mp3" data-start="7.55" data-duration="0.6" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="a23" class="clip" src="assets/sfx/whoosh-hi.mp3" data-start="7.95" data-duration="0.5" data-track-index="12" data-volume="0.45"></audio>
+      <audio id="a24" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="8.25" data-duration="0.75" data-track-index="14" data-volume="0.3"></audio>
+      <audio id="a25" class="clip" src="assets/sfx/sparkle.mp3" data-start="8.55" data-duration="0.45" data-track-index="13" data-volume="0.3"></audio>
+      <audio id="a26" class="clip" src="assets/sfx/pop.mp3" data-start="8.78" data-duration="0.6" data-track-index="11" data-volume="0.55"></audio>
+      <audio id="a27" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="9.0" data-duration="0.57" data-track-index="12" data-volume="0.4"></audio>
+      <audio id="a28" class="clip" src="assets/sfx/click-soft.mp3" data-start="9.5" data-duration="0.37" data-track-index="13" data-volume="0.9"></audio>
+      <audio id="a29" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="10.0" data-duration="1.0" data-track-index="14" data-volume="0.3"></audio>
+      <audio id="a30" class="clip" src="assets/sfx/click-soft.mp3" data-start="10.5" data-duration="0.37" data-track-index="11" data-volume="0.8"></audio>
+      <audio id="a31" class="clip" src="assets/sfx/pop.mp3" data-start="10.95" data-duration="0.6" data-track-index="12" data-volume="0.5"></audio>
+      <audio id="a32" class="clip" src="assets/sfx/pop.mp3" data-start="11.3" data-duration="0.6" data-track-index="13" data-volume="0.6"></audio>
+      <audio id="a33" class="clip" src="assets/sfx/whoosh-cinematic.mp3" data-start="11.55" data-duration="1.3" data-track-index="14" data-volume="0.5"></audio>
+      <audio id="a34" class="clip" src="assets/sfx/whoosh-lo.mp3" data-start="12.3" data-duration="0.6" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="a35" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="12.98" data-duration="1.8" data-track-index="12" data-volume="0.45"></audio>
+      <audio id="a36" class="clip" src="assets/sfx/pop.mp3" data-start="13.24" data-duration="0.7" data-track-index="13" data-volume="0.55"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+      const $ = (s) => document.querySelector(s);
+
+      /* ---------- builders ---------- */
+      // Anton advance widths (em), read from the font file
+      const ADV = { a: 0.4834, b: 0.5015, e: 0.4883, f: 0.2803, g: 0.5039, i: 0.2432, l: 0.248, n: 0.4985, o: 0.4966, p: 0.5015, r: 0.3467, t: 0.3052, u: 0.499, w: 0.6963, y: 0.4609 };
+      // spec: "abc" letters, or [from, to] for a rolling slot, or "+x" for a letter that arrives
+      function word(el, spec, hl) {
+        const out = [];
+        for (const s of spec) {
+          const sp = document.createElement("span");
+          sp.className = "lt";
+          if (Array.isArray(s)) {
+            sp.classList.add("roll");
+            sp.style.width = ADV[s[0]] + "em";
+            sp.innerHTML = `<span class="col"><i>${s[0]}</i><i>${s[1]}</i></span>`;
+            sp.dataset.to = ADV[s[1]];
+          } else if (s[0] === "+") {
+            sp.style.width = "0em";
+            sp.innerHTML = `<i>${s[1]}</i>`;
+            sp.dataset.to = ADV[s[1]];
+          } else {
+            sp.style.width = ADV[s] + "em";
+            sp.innerHTML = `<i>${s}</i>`;
+          }
+          el.appendChild(sp);
+          out.push(sp);
+        }
+        if (hl) { const h = document.createElement("div"); h.className = "hl"; el.appendChild(h); }
+        gsap.set(el, { xPercent: -50 });
+        return out;
+      }
+      // smooth closed-ish loop through wobbly radii (Catmull-Rom → cubic)
+      function loopPath(cx, cy, rx, ry, turns, start, wob, seed) {
+        const n = Math.round(28 * turns), pts = [];
+        for (let k = 0; k <= n; k++) {
+          const a = start + (k / n) * turns * Math.PI * 2;
+          const w = 1 + wob * Math.sin(k * 1.7 + seed) * Math.cos(k * 0.6 + seed * 2);
+          pts.push([cx + Math.cos(a) * rx * w, cy + Math.sin(a) * ry * w]);
+        }
+        let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+        for (let k = 0; k < pts.length - 1; k++) {
+          const p0 = pts[Math.max(0, k - 1)], p1 = pts[k], p2 = pts[k + 1], p3 = pts[Math.min(pts.length - 1, k + 2)];
+          const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+          const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+          d += ` C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+        }
+        return d;
+      }
+      const draw = (el, t, d, ease) => gsap.set(el, { opacity: 0 }) && tl.set(el, { opacity: 1 }, t) && tl.to(el, { strokeDashoffset: 0, duration: d, ease: ease || "power2.inOut" }, t);
+      const show = (id, a, b) => { tl.set(id, { visibility: "visible" }, a); if (b != null) tl.set(id, { visibility: "hidden" }, b); };
+      const D = "#dot"; const DOT = $("#dot");
+
+      /* ---------- S0 · 0.00–0.50 · the token drops ---------- */
+      show("#s0", 0, 0.5);
+      tl.set(D, { visibility: "visible", x: 540, y: -80 }, 0);
+      tl.to(D, { y: 960, duration: 0.28, ease: "power2.in" }, 0.02);
+      tl.to(D, { scaleX: 1.55, scaleY: 0.55, y: 975, duration: 0.05, ease: "power1.out" }, 0.3);
+      tl.to(D, { scaleX: 1, scaleY: 1, y: 960, duration: 0.18, ease: "back.out(3)" }, 0.35);
+      tl.fromTo("#ripple", { attr: { r: 40 }, opacity: 0.9 }, { attr: { r: 150 }, opacity: 0, duration: 0.32, ease: "power2.out" }, 0.3);
+
+      /* ---------- S1 · 0.50–1.25 · the token opens into the arena ---------- */
+      show("#s1", 0.5, 1.25);
+      tl.set(D, { visibility: "hidden" }, 0.5);
+      tl.fromTo("#iris", { scale: 0.078 }, { scale: 1, duration: 0.42, ease: "expo.out" }, 0.5);
+      tl.fromTo("#irisRing", { attr: { r: 35 } }, { attr: { r: 450 }, duration: 0.42, ease: "expo.out" }, 0.5);
+      tl.to("#irisLime", { opacity: 0, duration: 0.14, ease: "power1.in" }, 0.52);
+      tl.fromTo("#irisImg", { scale: 1.45 }, { scale: 1.12, duration: 0.75, ease: "power2.out" }, 0.5);
+      $("#lap").setAttribute("d", loopPath(540, 960, 505, 492, 1.12, -2.1, 0.012, 1));
+      draw("#lap", 0.68, 0.32);
+      draw("#lapTick", 0.86, 0.14, "power2.out");
+      tl.to("#s1cam", { scale: 5.2, transformOrigin: "452px 902px", duration: 0.25, ease: "power3.in" }, 1.0);
+      tl.to("#s1cam", { filter: "blur(10px)", duration: 0.12, ease: "power1.in" }, 1.13);
+
+      /* ---------- S2 · 1.25–2.25 · learn → earn ---------- */
+      const w1 = word($("#w1"), ["l", "e", "a", "r", "n"], true);
+      show("#s2", 1.25, 2.25);
+      tl.fromTo("#w1", { scale: 1.5, filter: "blur(12px)" }, { scale: 1, filter: "blur(0px)", duration: 0.32, ease: "expo.out" }, 1.25);
+      tl.fromTo("#w1 .hl", { scaleX: 0, skewX: -8 }, { scaleX: 1, skewX: -8, duration: 0.22, ease: "power3.out" }, 1.42);
+      tl.set(D, { visibility: "visible", x: 990, y: -60, scale: 1 }, 1.55);
+      tl.to(D, { x: 236, duration: 0.25, ease: "power1.in" }, 1.55);
+      tl.to(D, { y: 820, duration: 0.25, ease: "power2.in" }, 1.55);
+      tl.to(w1[0].firstChild, { rotation: -78, x: -150, y: 520, opacity: 0, transformOrigin: "50% 92%", duration: 0.36, ease: "power2.in" }, 1.8);
+      tl.to(w1[0], { width: "0em", duration: 0.26, ease: "power3.inOut" }, 1.8);
+      tl.to("#w1", { x: 10, duration: 0.05, yoyo: true, repeat: 1, ease: "power1.out" }, 1.8);
+      tl.to(D, { x: 896, duration: 0.26, ease: "power1.inOut" }, 1.8);
+      tl.to(D, { y: 690, duration: 0.13, ease: "power2.out" }, 1.8);
+      tl.to(D, { y: 1028, duration: 0.13, ease: "power2.in" }, 1.93);
+      tl.to(D, { scaleX: 1.4, scaleY: 0.66, duration: 0.05, ease: "power1.out" }, 2.06);
+      tl.to(D, { scaleX: 1, scaleY: 1, duration: 0.16, ease: "back.out(3)" }, 2.11);
+
+      /* ---------- S3 · 2.25–3.55 · everything at once ---------- */
+      show("#s3", 2.25, 3.55);
+      tl.to(D, { x: 540, y: 960, duration: 0.12, ease: "power3.inOut" }, 2.25);
+      tl.to(D, { scale: 0, duration: 0.05, ease: "power2.in" }, 2.36);
+      tl.set(D, { visibility: "hidden" }, 2.42);
+      tl.fromTo("#k0", { scale: 0 }, { scale: 0.48, duration: 0.3, ease: "back.out(1.6)" }, 2.36);
+      const cards = [["#k1", 2.4, -5], ["#k5", 2.43, 6], ["#k2", 2.46, 4], ["#k7", 2.49, -4], ["#k6", 2.52, 5], ["#k4", 2.55, -3], ["#k3", 2.58, 3]];
+      cards.forEach(([k, t, r]) => tl.fromTo(k, { scale: 0, rotation: r * 3 }, { scale: 1, rotation: r, duration: 0.28, ease: "back.out(1.7)" }, t));
+      // the centre card grows, the rest are thrown outward
+      tl.to("#k0", { scale: 1, duration: 0.26, ease: "power3.inOut" }, 2.95);
+      cards.forEach(([k]) => {
+        const e = $(k), cx = e.offsetLeft + e.offsetWidth / 2, cy = e.offsetTop + e.offsetHeight / 2;
+        tl.to(k, { x: (cx - 540) * 1.3, y: (cy - 960) * 1.3, scale: 1.5, filter: "blur(8px)", duration: 0.24, ease: "power3.in" }, 2.95);
+      });
+      // push into one frame of the plate
+      tl.to("#k0", { scale: 5.4, transformOrigin: "678px 401px", duration: 0.33, ease: "power3.in" }, 3.22);
+      tl.to("#k0", { filter: "blur(6px)", duration: 0.1, ease: "power1.in" }, 3.45);
+
+      /* ---------- S4 · 3.55–4.25 · the runner ---------- */
+      show("#s4", 3.55, 4.25);
+      const ticks = $("#track");
+      for (let k = 0; k < 26; k++) {
+        const d = document.createElement("div");
+        d.className = "abs";
+        d.style.cssText = `left:${k * 150}px;top:0;width:8px;height:${k % 2 ? 26 : 46}px;background:#161512`;
+        ticks.appendChild(d);
+        if (k % 2 === 0) {
+          const n = document.createElement("div");
+          n.className = "abs";
+          n.style.cssText = `left:${k * 150 - 30}px;top:56px;width:68px;text-align:center;font:800 40px Figtree,sans-serif;color:#161512`;
+          n.textContent = 10 + k / 2;
+          ticks.appendChild(n);
+        }
+      }
+      const R = { p: 0 };
+      const sinT = (p) => Math.sin(p * Math.PI * 2);
+      const RF = {}; ["#thighA", "#shinA", "#thighB", "#shinB", "#uArmA", "#fArmA", "#uArmB", "#fArmB", "#torso", "#fig"].forEach((k) => (RF[k] = $(k)));
+      function pose() {
+        const p = R.p;
+        const leg = (ph, th, sh) => {
+          const s = sinT(ph), c = Math.cos(ph * Math.PI * 2);
+          RF[th].setAttribute("transform", `rotate(${(-18 - 42 * s).toFixed(2)})`);
+          const knee = 12 + 78 * Math.max(0, Math.sin(ph * Math.PI * 2 + 2.2)) + 10 * (1 - c) / 2;
+          RF[sh].setAttribute("transform", `translate(0 170) rotate(${knee.toFixed(2)})`);
+        };
+        leg(p, "#thighA", "#shinA");
+        leg(p + 0.5, "#thighB", "#shinB");
+        const arm = (ph, u, f) => {
+          RF[u].setAttribute("transform", `translate(0 -178) rotate(${(48 * sinT(ph)).toFixed(2)})`);
+          RF[f].setAttribute("transform", `translate(0 118) rotate(${(-100 + 18 * sinT(ph)).toFixed(2)})`);
+        };
+        arm(p, "#uArmA", "#fArmA");
+        arm(p + 0.5, "#uArmB", "#fArmB");
+        RF["#torso"].setAttribute("transform", "rotate(14)");
+        const bob = -22 * Math.abs(Math.cos(p * Math.PI * 2));
+        RF["#fig"].setAttribute("transform", `translate(300 ${(420 + bob).toFixed(2)})`);
+      }
+      pose();
+      tl.fromTo(R, { p: 0 }, { p: 2.1, duration: 0.7, ease: "none", onUpdate: pose }, 3.55);
+      tl.fromTo("#runner", { scale: 1.12 }, { scale: 1, duration: 0.2, ease: "expo.out" }, 3.55);
+      tl.fromTo("#track", { x: 0 }, { x: -1500, duration: 0.7, ease: "none" }, 3.55);
+      document.querySelectorAll("#streaks .st").forEach((s, k) =>
+        tl.fromTo(s, { x: 0 }, { x: -1700 - k * 120, duration: 0.42, ease: "none" }, 3.55 + k * 0.07));
+      tl.to("#runner", { x: 900, duration: 0.2, ease: "power2.in" }, 4.05);
+      tl.to("#runner", { filter: "blur(8px)", duration: 0.1 }, 4.12);
+
+      /* ---------- S5 · 4.25–5.00 · run → fun ---------- */
+      const w2 = word($("#w2"), [["r", "f"], "u", "n"]);
+      show("#s5", 4.25, 5.0);
+      tl.fromTo("#w2", { x: 700, skewX: -14, filter: "blur(14px)" }, { x: 0, skewX: 0, filter: "blur(0px)", duration: 0.2, ease: "expo.out" }, 4.25);
+      tl.to(w2[0].firstChild, { y: "-1.35em", duration: 0.2, ease: "power3.inOut" }, 4.58);
+      tl.to(w2[0].firstChild, { keyframes: [{ filter: "blur(7px)", duration: 0.1 }, { filter: "blur(0px)", duration: 0.1 }], ease: "none" }, 4.58);
+      tl.to(w2[0], { width: w2[0].dataset.to + "em", duration: 0.2, ease: "power3.inOut" }, 4.58);
+      {
+        let d = "";
+        for (let k = 0; k < 32; k++) { const a = (k / 32) * Math.PI * 2 - Math.PI / 2, r = k % 2 ? 330 : 470; d += (k ? " L " : "M ") + (Math.cos(a) * r).toFixed(1) + " " + (Math.sin(a) * r).toFixed(1); }
+        $("#starPath").setAttribute("d", d + " Z");
+      }
+      tl.fromTo("#star", { scale: 0, rotation: -40, transformOrigin: "0px 0px" }, { scale: 1, rotation: 0, duration: 0.26, ease: "back.out(2)" }, 4.6);
+      tl.to("#star", { rotation: 12, duration: 0.3, ease: "none" }, 4.86);
+      draw("#funLines", 4.68, 0.14, "power2.out");
+      tl.set(D, { visibility: "visible", x: 860, y: 1062, scale: 0 }, 4.66);
+      tl.to(D, { scale: 1, duration: 0.18, ease: "back.out(3)" }, 4.66);
+      tl.set(D, { visibility: "hidden" }, 5.0);
+
+      /* ---------- S6 · 5.00–6.00 · the throw ---------- */
+      show("#s6", 5.0, 6.0);
+      tl.fromTo("#disco", { scale: 1.2, transformOrigin: "540px 980px" }, { scale: 1.08, duration: 0.25, ease: "expo.out" }, 5.0);
+      tl.to("#disco", { scale: 1.0, duration: 0.17, ease: "power2.out" }, 5.25);
+      draw("#discRing", 5.1, 0.22);
+      tl.fromTo("#discFill", { scale: 0, svgOrigin: "187 427" }, { scale: 1, duration: 0.16, ease: "back.out(3)", svgOrigin: "187 427" }, 5.12);
+      tl.set("#discFill", { opacity: 0 }, 5.45);
+      tl.set(D, { visibility: "visible", x: 187, y: 427, scale: 1.77 }, 5.45);
+      draw("#arcReveal", 5.42, 0.45, "power1.in");
+      // a cubic Bezier the dot follows exactly (same curve as the dotted arc)
+      const ARC = [[187, 427], [440, 120], [840, 170], [1180, 640]];
+      const A = { u: 0 };
+      const bez = (u, k) => (1 - u) ** 3 * ARC[0][k] + 3 * (1 - u) ** 2 * u * ARC[1][k] + 3 * (1 - u) * u * u * ARC[2][k] + u ** 3 * ARC[3][k];
+      tl.fromTo(A, { u: 0 }, { u: 1, duration: 0.5, ease: "power1.in", onUpdate: () => { DOT.style.setProperty("--ax", 0); gsap.set(DOT, { x: bez(A.u, 0), y: bez(A.u, 1) }); } }, 5.45);
+      tl.to(D, { scale: 1, duration: 0.5, ease: "power1.in" }, 5.45);
+      tl.fromTo("#xp", { scale: 0, rotation: 14 }, { scale: 1, rotation: -6, duration: 0.24, ease: "back.out(2.2)" }, 5.56);
+      tl.set(D, { visibility: "hidden" }, 6.0);
+
+      /* ---------- S7 · 6.00–6.75 · no clock to beat ---------- */
+      show("#s7", 6.0, 6.75);
+      tl.fromTo("#hg", { scale: 0.7, rotation: -12, transformOrigin: "540px 954px" }, { scale: 1, rotation: 0, duration: 0.3, ease: "back.out(1.6)" }, 6.0);
+      $("#hgRing").setAttribute("d", loopPath(540, 960, 400, 420, 1.1, -1.2, 0.015, 3));
+      draw("#hgRing", 6.06, 0.26);
+      tl.fromTo("#sandTop", { scale: 1, svgOrigin: "540 930" }, { scale: 0, duration: 0.32, ease: "power1.in", svgOrigin: "540 930" }, 6.08);
+      tl.fromTo("#sandBot", { scaleY: 0, svgOrigin: "540 1196" }, { scaleY: 1, duration: 0.32, ease: "power1.out", svgOrigin: "540 1196" }, 6.08);
+      tl.fromTo("#sandFlow", { opacity: 1 }, { opacity: 0, duration: 0.05 }, 6.38);
+      tl.to("#hg", { rotation: 180, duration: 0.26, ease: "back.inOut(1.3)" }, 6.36);
+      ["#arA", "#arAh", "#arB", "#arBh"].forEach((a, k) => draw(a, 6.34 + (k % 2) * 0.08, 0.1, "power2.out"));
+      tl.to("#s7", { y: -900, filter: "blur(16px)", duration: 0.13, ease: "power3.in" }, 6.62);
+
+      /* ---------- S8 · 6.75–8.25 · the app ---------- */
+      show("#s8", 6.75, 8.25);
+      tl.fromTo("#phone", { y: 1400, rotation: 8, filter: "blur(10px)" }, { y: 0, rotation: 0, filter: "blur(0px)", duration: 0.32, ease: "expo.out" }, 6.75);
+      tl.fromTo("#hand", { x: 520, y: 640 }, { x: 0, y: 0, duration: 0.24, ease: "power3.out" }, 6.98);
+      tl.to("#hand", { scale: 0.93, transformOrigin: "9% 18%", duration: 0.07, ease: "power2.in" }, 7.22);
+      tl.to("#hand", { scale: 1, duration: 0.12, ease: "power2.out" }, 7.29);
+      {
+        const g = $("#burst");
+        for (let k = 0; k < 10; k++) {
+          const a = (k / 10) * Math.PI * 2, l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          l.setAttribute("x1", 642 + Math.cos(a) * 46); l.setAttribute("y1", 839 + Math.sin(a) * 46);
+          l.setAttribute("x2", 642 + Math.cos(a) * 112); l.setAttribute("y2", 839 + Math.sin(a) * 112);
+          l.setAttribute("pathLength", "1"); l.setAttribute("stroke-dasharray", "1 1"); l.setAttribute("stroke-dashoffset", "1");
+          g.appendChild(l);
+        }
+        gsap.set("#burst line", { opacity: 0 }); tl.set("#burst line", { opacity: 1 }, 7.29);
+        tl.to("#burst line", { strokeDashoffset: 0, duration: 0.1, ease: "power2.out" }, 7.29);
+        tl.to("#burst line", { strokeDashoffset: -1, duration: 0.14, ease: "power2.in" }, 7.42);
+      }
+      tl.to("#reveal", { opacity: 1, duration: 0.1 }, 7.32);
+      tl.to("#hand", { x: 600, y: 700, duration: 0.22, ease: "power3.in" }, 7.62);
+      tl.fromTo("#haloA", { scale: 0, svgOrigin: "150 1390" }, { scale: 1, duration: 0.26, ease: "back.out(1.8)", svgOrigin: "150 1390" }, 7.42);
+      tl.fromTo("#haloB", { scale: 0, svgOrigin: "930 1420" }, { scale: 1, duration: 0.26, ease: "back.out(1.8)", svgOrigin: "930 1420" }, 7.5);
+      tl.fromTo("#chA", { y: 260, scale: 0.6, autoAlpha: 0, transformOrigin: "50% 100%" }, { y: 0, scale: 1, autoAlpha: 1, duration: 0.3, ease: "back.out(1.8)" }, 7.45);
+      tl.fromTo("#chB", { y: 260, scale: 0.6, autoAlpha: 0, transformOrigin: "50% 100%" }, { y: 0, scale: 1, autoAlpha: 1, duration: 0.3, ease: "back.out(1.8)" }, 7.55);
+      tl.to("#s8cam", { scale: 4.2, transformOrigin: "752px 1253px", duration: 0.3, ease: "power3.in" }, 7.95);
+      tl.to("#s8cam", { filter: "blur(10px)", duration: 0.1, ease: "power1.in" }, 8.15);
+
+      /* ---------- S9 · 8.25–9.00 · the podium ---------- */
+      show("#s9", 8.25, 9.0);
+      tl.fromTo("#trophy", { scale: 1.35, filter: "blur(10px)" }, { scale: 1, filter: "blur(0px)", duration: 0.26, ease: "expo.out" }, 8.25);
+      tl.to("#trophy", { scale: 0.97, duration: 0.5, ease: "none" }, 8.51);
+      draw("#crown", 8.42, 0.2);
+      {
+        const g = $("#sparks");
+        [[300, 640, 46], [820, 520, 36], [860, 900, 52]].forEach(([x, y, r], k) => {
+          const p = document.createElementNS("http://www.w3.org/2000/svg", "path"), q = r * 0.28;
+          p.setAttribute("d", `M ${x} ${y - r} Q ${x + q} ${y - q} ${x + r} ${y} Q ${x + q} ${y + q} ${x} ${y + r} Q ${x - q} ${y + q} ${x - r} ${y} Q ${x - q} ${y - q} ${x} ${y - r} Z`);
+          g.appendChild(p);
+          tl.fromTo(p, { scale: 0, rotation: -60, svgOrigin: `${x} ${y}` }, { scale: 1, rotation: 0, duration: 0.2, ease: "back.out(2.4)", svgOrigin: `${x} ${y}` }, 8.52 + k * 0.05);
+        });
+      }
+      tl.set(D, { visibility: "visible", x: 540, y: -60, scale: 1 }, 8.6);
+      tl.to(D, { y: 606, duration: 0.18, ease: "power2.in" }, 8.6);
+      tl.to(D, { scaleX: 1.4, scaleY: 0.64, y: 616, duration: 0.05 }, 8.78);
+      tl.to(D, { scaleX: 1, scaleY: 1, y: 606, duration: 0.14, ease: "back.out(3)" }, 8.83);
+      tl.set(D, { visibility: "hidden" }, 9.0);
+
+      /* ---------- S10 · 9.00–10.00 · train → brain ---------- */
+      const w3 = word($("#w3"), [["t", "b"], "r", "a", "i", "n"], true);
+      show("#s10", 9.0, 10.0);
+      tl.fromTo("#brainCam", { x: -500, filter: "blur(14px)" }, { x: 0, filter: "blur(0px)", duration: 0.24, ease: "expo.out" }, 9.0);
+      tl.fromTo("#brainCam", { scale: 1 }, { scale: 1.06, transformOrigin: "540px 600px", duration: 1, ease: "none" }, 9.0);
+      {
+        // a scribble of loops sweeping across the brain
+        let d = "", n = 90;
+        for (let k = 0; k <= n; k++) {
+          const u = k / n, a = u * Math.PI * 2 * 5.5;
+          const x = 330 + u * 520 + Math.cos(a) * 95, y = 450 + Math.sin(a) * 120 + Math.sin(u * Math.PI) * -60;
+          d += (k ? " L " : "M ") + x.toFixed(1) + " " + y.toFixed(1);
+        }
+        $("#scrib").setAttribute("d", d);
+      }
+      draw("#scrib", 9.1, 0.4, "power1.inOut");
+      tl.fromTo("#w3", { y: 160, filter: "blur(12px)", opacity: 0 }, { y: 0, filter: "blur(0px)", opacity: 1, duration: 0.24, ease: "expo.out" }, 9.12);
+      tl.to(w3[0].firstChild, { y: "-1.35em", duration: 0.2, ease: "power3.inOut" }, 9.5);
+      tl.to(w3[0].firstChild, { keyframes: [{ filter: "blur(7px)", duration: 0.1 }, { filter: "blur(0px)", duration: 0.1 }], ease: "none" }, 9.5);
+      tl.to(w3[0], { width: w3[0].dataset.to + "em", duration: 0.2, ease: "power3.inOut" }, 9.5);
+      tl.fromTo("#w3 .hl", { scaleX: 0, skewX: -8 }, { scaleX: 1, skewX: -8, duration: 0.2, ease: "power3.out" }, 9.6);
+      draw("#zap", 9.58, 0.14, "power2.out");
+
+      /* ---------- S11 · 10.00–12.00 · learning → now playing ---------- */
+      const w4 = word($("#w4"), ["+p", "l", "e", "a", ["r", "y"], "n", "i", "n", "g"], true);
+      const w5 = word($("#w5"), ["n", "o", "w"]);
+      show("#s11", 10.0, 12.05);
+      w4.forEach((l, k) => tl.fromTo(l.firstChild, { y: 220, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "expo.out" }, 10.0 + k * 0.025));
+      tl.set(w4[0].firstChild, { opacity: 0, y: 0, scale: 0, transformOrigin: "0% 76%" }, 10.02);
+      const out = (sp, t) => {
+        tl.to(sp, { width: "0em", duration: 0.26, ease: "power3.inOut" }, t);
+        tl.to(sp.firstChild, { scale: 0, opacity: 0, transformOrigin: "0% 76%", duration: 0.26, ease: "power3.inOut" }, t);
+      };
+      tl.to(w4[0], { width: w4[0].dataset.to + "em", duration: 0.28, ease: "power3.inOut" }, 10.5);
+      tl.to(w4[0].firstChild, { scale: 1, opacity: 1, duration: 0.28, ease: "power3.inOut" }, 10.5);
+      out(w4[2], 10.5);
+      tl.to(w4[4].firstChild, { y: "-1.35em", duration: 0.26, ease: "power3.inOut" }, 10.56);
+      tl.to(w4[4].firstChild, { keyframes: [{ filter: "blur(7px)", duration: 0.13 }, { filter: "blur(0px)", duration: 0.13 }], ease: "none" }, 10.56);
+      tl.to(w4[4], { width: w4[4].dataset.to + "em", duration: 0.26, ease: "power3.inOut" }, 10.56);
+      out(w4[5], 10.6);
+      tl.fromTo("#w5", { y: -900, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.3, ease: "expo.out" }, 10.95);
+      tl.fromTo("#w4", { y: 0 }, { y: 70, duration: 0.3, ease: "expo.out" }, 10.95);
+      tl.fromTo("#w4 .hl", { scaleX: 0, skewX: -8 }, { scaleX: 1, skewX: -8, duration: 0.22, ease: "power3.out" }, 11.1);
+      // period: the token lands, then turns into a play button
+      tl.set(D, { visibility: "visible", x: 1000, y: 1060, scale: 0 }, 11.12);
+      tl.to(D, { scale: 1, duration: 0.14, ease: "back.out(3)" }, 11.12);
+      tl.to(D, { scale: 0, duration: 0.08, ease: "power2.in" }, 11.3);
+      tl.set(D, { visibility: "hidden" }, 11.38);
+      tl.fromTo("#play", { x: 1000, y: 1060, scale: 0, rotation: -90 }, { x: 1000, y: 1060, scale: 1, rotation: 0, duration: 0.2, ease: "back.out(2.4)" }, 11.32);
+      tl.to("#play", { strokeWidth: 0, duration: 0.08 }, 11.72);
+      tl.to("#play", { x: 600, y: 960, scale: 48, duration: 0.3, ease: "power3.in" }, 11.75);
+
+      /* ---------- S12 · 12.00–14.80 · the mark ---------- */
+      {
+        const L = $("#logo3d");
+        for (let k = 15; k >= 1; k--) {
+          const d = document.createElement("div");
+          d.className = "layer";
+          d.style.transform = `translateZ(${-k * 2.6}px)`;
+          d.style.background = k === 15 ? "#161512" : "#2b2a26";
+          L.appendChild(d);
+        }
+        const b = document.createElement("div"); b.className = "back"; b.style.transform = "translateZ(-40px) rotateY(180deg)"; L.appendChild(b);
+        const f = document.createElement("div"); f.className = "front"; f.innerHTML = '<img src="assets/art/logo-mark.svg" alt="Ant Arena logo" />'; L.appendChild(f);
+        const wm = $("#wordmark");
+        "ANT ARENA".split("").forEach((c) => { const s = document.createElement("span"); s.textContent = c === " " ? " " : c; wm.appendChild(s); });
+      }
+      show("#s12", 12.0);
+      tl.set("#s12", { background: "#c6f432" }, 12.0);
+      tl.set("#s12", { background: "#ffffff" }, 12.04);
+      tl.fromTo("#logo3d", { scale: 6.2, rotationY: 180, rotationX: 0 }, { scale: 1, duration: 0.34, ease: "power3.inOut" }, 12.04);
+      tl.to("#logo3d", { rotationY: 360, duration: 0.7, ease: "back.out(1.25)" }, 12.3);
+      tl.fromTo("#shadow", { opacity: 0, scaleX: 0.4 }, { opacity: 1, scaleX: 1, duration: 0.4, ease: "power2.out" }, 12.4);
+      document.querySelectorAll("#wordmark span").forEach((s, k) =>
+        tl.fromTo(s, { y: 120, opacity: 0, filter: "blur(8px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.36, ease: "expo.out" }, 12.72 + k * 0.035));
+      tl.fromTo("#endline", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.36, ease: "power3.out" }, 12.98);
+      tl.fromTo("#endDot", { scale: 0 }, { scale: 1, duration: 0.24, ease: "back.out(3)" }, 13.24);
+      tl.to("#logo3d", { y: -12, rotationY: 372, duration: 2.0, ease: "sine.inOut" }, 13.0);
+    </script>
+  </body>
+</html>

@@ -12,7 +12,7 @@ import {
 import type {
   AuditEntry, Branding, Disqualified, Equipped, Game, Gift, Labels, LibraryItem, LiveBoardRow, LiveHostView, LiveRaceMe,
   LivePlayer, LiveSession, OrgConfig, Player, Poll, PollResponse, PollValue, Role, Roster, Run, SlideResults, Tenant, TenantPublic,
-  TenantUsage, UnitType,
+  TenantUsage, UnitType, PushMsg, PushOverview, PushSend, PushSub,
 } from "../../types";
 import { runKey } from "../../types";
 import * as store from "./db";
@@ -22,7 +22,7 @@ import { limitMs, retryPoints, runPoints, statsOf, levelOf } from "../../lib/sco
 import { ITEM } from "../../lib/catalog";
 import { isOpen } from "../../lib/games";
 import { cleanName, cleanText, maskId, normEmpId, sha256, validEmpId, validName } from "../../lib/security";
-import { LS, newId, randHex, randInt } from "../../lib/util";
+import { LS, newId, randHex, randInt, todayKey } from "../../lib/util";
 import { newSecret, otpauthUrl, totp, verifyTotp } from "../../lib/totp";
 import { qrDataUrl } from "../../lib/qr";
 import { validImg } from "../../lib/image";
@@ -1573,6 +1573,83 @@ class DemoApi implements Api {
       if (patch.hidden != null) r.hidden = patch.hidden;
       if (patch.answered != null) r.answered = patch.answered;
     });
+  }
+
+  /* ================= phone notifications ================= */
+  private pushDb(db: DB) {
+    db.push = db.push || { subs: {}, sends: {}, inbox: [] };
+    return db.push;
+  }
+  async pushSubscribe(tid: string, sub: PushSub) {
+    if (!sub?.endpoint || sub.endpoint.length > 1000) throw err("invalid", "That push address isn't valid.");
+    store.tx((db) => {
+      const me = this.me(db, tid);
+      if (!me || me.locked) throw err("auth", "Sign in to your player card first.");
+      const P = this.pushDb(db);
+      const list = (P.subs[tid] || []).filter((x) => x.endpoint !== sub.endpoint);
+      list.push({ endpoint: sub.endpoint, uid: me.uid, at: Date.now() });
+      // at most 5 devices per player: the newest win
+      const mine = list.filter((x) => x.uid === me.uid);
+      P.subs[tid] = list.filter((x) => x.uid !== me.uid || mine.indexOf(x) >= mine.length - 5);
+    });
+  }
+  async pushUnsubscribe(tid: string, endpoint: string) {
+    store.tx((db) => {
+      const me = this.me(db, tid);
+      const P = this.pushDb(db);
+      P.subs[tid] = (P.subs[tid] || []).filter((x) => !(x.endpoint === endpoint && me && x.uid === me.uid));
+    });
+  }
+  async pushSend(tid: string, msg: PushMsg) {
+    const title = cleanText(msg.title, 60).trim();
+    const body = cleanText(msg.body, 180).trim();
+    if (!title || !body) throw err("invalid", "Write a title and a message.");
+    return store.tx((db) => {
+      this.req(db, tid, "admin");
+      this.tenant(db, tid); // throws for a missing company
+      const P = this.pushDb(db);
+      const sends = P.sends[tid] || [];
+      const now = Date.now();
+      const mine = sends.filter((x) => !x.auto);
+      const last = mine[0];
+      if (last && now - last.at < 60_000) throw err("rate_limited", "One message a minute — try again shortly.", 60_000 - (now - last.at));
+      if (mine.filter((x) => now - x.at < 864e5).length >= 20) throw err("rate_limited", "That's 20 messages today — try again tomorrow.", 864e5);
+      const unit = msg.unit ? cleanText(msg.unit, 60) : undefined;
+      const s = db.t[tid];
+      const today = todayKey();
+      const todo = (uid: string) => {
+        const p = s.players[uid];
+        return Object.values(s.games).some((g) => (g.kind === "sprint" || g.kind === "story") && isOpen(g, today) && p?.runs?.[g.id]?.status !== "done");
+      };
+      const devices = (P.subs[tid] || []).filter((x) => {
+        const p = s.players[x.uid];
+        return p && !p.locked && (!unit || p.unit === unit) && (!msg.daily || todo(x.uid));
+      });
+      const uids = [...new Set(devices.map((x) => x.uid))];
+      const send: PushSend = { id: newId("ps-"), at: now, actor: this.actor(db), title, body, unit, daily: !!msg.daily || undefined, sent: devices.length, failed: 0 };
+      P.sends[tid] = [send, ...sends].slice(0, 100);
+      if (uids.length) P.inbox = [...P.inbox.filter((m) => now - m.at < 36e5), { id: send.id, tid, uids, title, body, at: now }].slice(-50);
+      this.logT(db, tid, { action: "Notification sent", target: title, detail: `${unit || "Everyone"}${msg.daily ? " · daily reminder" : ""} · ${devices.length} device${devices.length === 1 ? "" : "s"}` });
+      return { sent: devices.length, failed: 0 };
+    });
+  }
+  async pushOverview(tid: string): Promise<PushOverview> {
+    const db = store.read();
+    this.req(db, tid, "admin");
+    const subs = (db.push?.subs[tid] || []).filter((x) => db.t[tid]?.players[x.uid]);
+    return { devices: subs.length, players: new Set(subs.map((x) => x.uid)).size, sends: structuredClone(db.push?.sends[tid] || []) };
+  }
+  watchPushDemo(tid: string, cb: (m: { id: string; title: string; body: string }) => void): Unsub {
+    let seen = Date.now();
+    const check = () => {
+      const db = store.read();
+      const me = this.me(db, tid);
+      const fresh = (db.push?.inbox || []).filter((m) => m.tid === tid && m.at > seen);
+      if (!fresh.length) return;
+      seen = Math.max(seen, ...fresh.map((m) => m.at));
+      if (me) fresh.filter((m) => m.uids.includes(me.uid)).forEach((m) => cb({ id: m.id, title: m.title, body: m.body }));
+    };
+    return store.subscribe(check);
   }
 
   /* ================= super admin ================= */

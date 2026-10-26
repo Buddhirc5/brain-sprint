@@ -350,3 +350,14 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .edit-player .plays-box { max-height: min(36vh, 380px); overflow: auto; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); }
 .edit-player .plays-box thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
 .edit-player .plays-box td:not(:first-child), .edit-player .plays-box th { white-space: nowrap; }
+
+/* ---------- Notify (phone notifications) ---------- */
+.notify-stats .stat-tile { display: grid; gap: 2px; }
+.notify-stats .stat-tile b { font-family: var(--display); font-weight: 400; font-size: 40px; line-height: 1; }
+.notify-stats .stat-tile span { color: var(--muted); font-weight: 600; font-size: 14px; }
+.notif-prev { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start; margin: 4px 0 12px; padding: 12px; border-radius: 18px; background: #f1f0ea; border: 1px solid var(--line); }
+.notif-prev img { border-radius: 9px; }
+.notif-prev .np-top { display: flex; gap: 8px; align-items: baseline; }
+.notif-prev .np-top b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.notif-prev .np-top span { color: var(--muted); font-size: 12px; }
+.notif-prev p { margin: 2px 0 0; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }

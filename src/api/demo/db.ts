@@ -3,7 +3,7 @@
    player tabs can run a live quiz together without any server. */
 import type {
   AdminMember, AnswerKey, AuditEntry, Disqualified, Game, Gift, LibraryItem, LiveAnswer, LivePlayer, LiveSession,
-  Player, Poll, PollResponse, Roster, Tenant,
+  Player, Poll, PollResponse, PushSend, Roster, Tenant,
 } from "../../types";
 
 export interface DemoUser {
@@ -47,6 +47,12 @@ export interface DB {
   joinKeys?: Record<string, { key: string; required: boolean; rotatedAt: number }>; // tenant id → private invite key
   joinPasses?: Record<string, number>; // "tid:userId" → when the key was accepted
   rate: Record<string, { n: number; until: number }>;
+  /** phone notifications: devices that turned them on, what admins sent, and the demo's delivery queue */
+  push?: {
+    subs: Record<string, { endpoint: string; uid: string; at: number }[]>; // tenant id → devices
+    sends: Record<string, PushSend[]>; // tenant id → newest first
+    inbox: { id: string; tid: string; uids: string[]; title: string; body: string; at: number }[];
+  };
 }
 
 const KEY = "bsx.demo.v1";

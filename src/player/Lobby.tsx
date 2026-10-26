@@ -10,6 +10,7 @@ import type { Game } from "../types";
 import { buildMap } from "../lib/arenaMap";
 import { WHO } from "../lib/answers";
 import { Avatar, certInfo, firstName, pubName } from "./common";
+import { AppCard } from "./AppCard";
 
 export function Lobby() {
   const { me, stats, d, go, players, features, labels } = useApp();
@@ -139,6 +140,8 @@ export function Lobby() {
           </button>
         ))}
       </nav>
+
+      <AppCard />
 
       {mapInfo && mapInfo.total > 0 && (
         <button type="button" className="map-cta" onClick={() => go({ v: "map" })}>

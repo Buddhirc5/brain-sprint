@@ -8,6 +8,7 @@ import { statsOf, type Stats } from "../lib/scoring";
 import { Modal } from "../components/ui";
 import { useApi, errMsg } from "./ApiCtx";
 import { LS, randHex } from "../lib/util";
+import { pushDisable } from "../lib/pwa";
 
 export type PView =
   | { v: "welcome" }
@@ -149,6 +150,8 @@ export function TenantProvider({ pub, area, role, superUser = false, children }:
   }, []);
   const signOut = useCallback(
     async (msg?: string) => {
+      // this phone stops getting the player's reminders once they sign out of it
+      if (area === "player") await pushDisable(api, tid).catch(() => undefined);
       await api.signOut().catch(() => undefined);
       meRef.current = null;
       setMeUid(null);
@@ -156,7 +159,7 @@ export function TenantProvider({ pub, area, role, superUser = false, children }:
       setView({ v: "welcome" });
       if (msg) toast(msg);
     },
-    [api, toast],
+    [api, toast, area, tid],
   );
   const refresh = useCallback(() => api.refresh(tid), [api, tid]);
   const download = useCallback((f: string, t: string, m?: string) => api.download(f, t, m), [api]);

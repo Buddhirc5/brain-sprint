@@ -13,7 +13,7 @@ import {
 import type {
   AdminMember, AuditEntry, Branding, Disqualified, Equipped, Game, Gift, Labels, LibraryItem, LiveHostView,
   LiveSession, OrgConfig, Player, Poll, PollResponse, PollValue, Role, Roster, Run, SlideResults, Slide, Tenant, TenantPublic,
-  TenantUsage, UnitType,
+  TenantUsage, UnitType, PushMsg, PushOverview, PushSub,
 } from "../../types";
 import { aggregate } from "../engine";
 import { authError, fromPayload, isErrPayload, toApiError } from "./errors";
@@ -600,6 +600,37 @@ class SupabaseApi implements Api {
   }
   async qaModerate(pollId: string, responseId: string, patch: Partial<Pick<PollResponse, "hidden" | "answered">>) {
     await this.rpc<void>("qa_moderate", { p_poll: pollId, p_response: responseId, p_patch: patch });
+  }
+
+  /* ================= phone notifications ================= */
+  async pushSubscribe(tenantId: string, sub: PushSub) {
+    this.needSession();
+    await this.rpc<void>("push_subscribe", { p_tid: tenantId, p_endpoint: sub.endpoint, p_p256dh: sub.keys.p256dh, p_auth: sub.keys.auth });
+  }
+  async pushUnsubscribe(tenantId: string, endpoint: string) {
+    await this.rpc<void>("push_unsubscribe", { p_tid: tenantId, p_endpoint: endpoint });
+  }
+  async pushOverview(tenantId: string): Promise<PushOverview> {
+    return this.rpc<PushOverview>("push_overview", { p_tid: tenantId });
+  }
+  /** Sent by the "push" Edge Function (it holds the Web Push private key); it checks the admin's role first. */
+  async pushSend(tenantId: string, msg: PushMsg) {
+    this.needSession();
+    let res;
+    try {
+      res = await this.sb.functions.invoke("push", { body: { tid: tenantId, title: msg.title, body: msg.body, unit: msg.unit ?? null, daily: !!msg.daily } });
+    } catch (e) {
+      throw toApiError(e);
+    }
+    if (res.error) {
+      // the function answers errors as { error: { code, message } }
+      const ctx = (res.error as { context?: Response }).context;
+      const j = ctx && typeof ctx.json === "function" ? await ctx.json().catch(() => null) : null;
+      if (isErrPayload(j)) throw fromPayload(j);
+      throw new ApiError("network", "Couldn't reach the notification service. Is the push function deployed? (see supabase/README.md)");
+    }
+    if (isErrPayload(res.data)) throw fromPayload(res.data);
+    return res.data as { sent: number; failed: number };
   }
 
   /* ================= super admin ================= */

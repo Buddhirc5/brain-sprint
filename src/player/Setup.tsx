@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ReminderSwitch } from "./AppCard";
 import { ApiError } from "../api/Api";
 import { errMsg, useApi } from "../app/ApiCtx";
 import { deviceLabel, useApp } from "../app/ctx";
@@ -343,6 +344,7 @@ export function Setup({ editing }: { editing?: boolean }) {
         <button className="btn primary block" type="submit" disabled={busy}>
           {busy ? "Saving…" : editing ? "Save changes" : "Save and start"}
         </button>
+        {editing && <ReminderSwitch />}
         {editing && (
           <button type="button" className="link" style={{ justifySelf: "center" }} onClick={() => signOut(`Signed out. See you soon, ${firstName(me?.name)}!`)}>
             Not {firstName(me?.name)}? Sign out of this device

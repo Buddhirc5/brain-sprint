@@ -1,14 +1,42 @@
 {
+  "id": "/",
   "name": "Ant Arena — learning games for teams",
   "short_name": "Ant Arena",
   "description": "Daily quiz sprints, live quiz games, polls and certification for your team.",
-  "start_url": "/",
+  "start_url": "/#/app",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#E8E7E2",
+  "orientation": "portrait",
+  "background_color": "#F4F3EE",
   "theme_color": "#C6F432",
+  "categories": [
+    "education",
+    "business",
+    "productivity"
+  ],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }

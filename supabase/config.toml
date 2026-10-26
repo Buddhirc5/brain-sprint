@@ -68,3 +68,7 @@ enabled = false
 client_id = "env(AZURE_CLIENT_ID)"
 secret = "env(AZURE_SECRET)"
 url = "https://login.microsoftonline.com/YOUR-TENANT-ID/v2.0"
+
+# Phone notifications: the function checks the caller itself (admin role in push_begin, or the cron secret)
+[functions.push]
+verify_jwt = false

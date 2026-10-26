@@ -21,6 +21,7 @@ import { useEffect } from "react";
 import { nav } from "../app/router";
 import { cleanJoinKey, setJoinKey } from "../app/joinKey";
 import { takeReturnTo } from "../app/returnTo";
+import { pushResync, rememberTenant, showLocal } from "../lib/pwa";
 
 export function Gone({ title, text }: { title: string; text: string }) {
   return (
@@ -57,6 +58,18 @@ export function TenantApp({ slug, joinKey }: { slug: string; joinKey?: string })
 function PlayerShell() {
   const { d, me, view, pub } = useApp();
   const { api } = useApi();
+  // phone app: open this company next time, and keep this device's notification address current
+  const hasMe = !!me;
+  useEffect(() => {
+    if (!hasMe) return;
+    rememberTenant(pub.slug);
+    void pushResync(api, pub.id);
+  }, [hasMe, api, pub.slug, pub.id]);
+  // the demo has no push server: the open app shows what an admin sends
+  useEffect(() => {
+    if (!hasMe || !api.watchPushDemo) return;
+    return api.watchPushDemo(pub.id, (m) => void showLocal(m.title, m.body, m.id, `/#/t/${pub.slug}`));
+  }, [hasMe, api, pub.id, pub.slug]);
   // came here from a live game (QR / PIN) to sign in or register: go back to the game once the card exists
   useEffect(() => {
     if (!me) return;

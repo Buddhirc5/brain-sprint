@@ -10,7 +10,7 @@
 import type {
   AdminMember, AnswerKey, AuditEntry, Disqualified, Game, Gift, LibraryItem, LiveHostView, LiveSession,
   OrgConfig, Player, Poll, PollResponse, PollValue, Question, Role, Roster, Run, SlideResults, Tenant,
-  TenantPublic, TenantUsage, Branding, Labels, Equipped, UnitType,
+  TenantPublic, TenantUsage, Branding, Labels, Equipped, UnitType, PushMsg, PushOverview, PushSub,
 } from "../types";
 
 export type Unsub = () => void;
@@ -226,6 +226,17 @@ export interface Api {
   pollMyResponses(pollId: string): Promise<Record<string, PollValue>>; // slideId → my last answer
   qaVote(pollId: string, responseId: string): Promise<void>;
   qaModerate(pollId: string, responseId: string, patch: Partial<Pick<PollResponse, "hidden" | "answered">>): Promise<void>;
+
+  /* ---- phone notifications (Web Push) ---- */
+  /** Save this device's subscription for the signed-in player. */
+  pushSubscribe(tenantId: string, sub: PushSub): Promise<void>;
+  pushUnsubscribe(tenantId: string, endpoint: string): Promise<void>;
+  /** Admins: send now. Rate limited (one a minute, 20 a day). */
+  pushSend(tenantId: string, msg: PushMsg): Promise<{ sent: number; failed: number }>;
+  /** Admins: how many devices have notifications on, and what was sent. */
+  pushOverview(tenantId: string): Promise<PushOverview>;
+  /** Demo only: messages for the signed-in player, which the open app shows as notifications. */
+  watchPushDemo?(tenantId: string, cb: (m: { id: string; title: string; body: string }) => void): Unsub;
 
   /* ---- super admin ---- */
   superStatus(): Promise<{ isSuperUser: boolean }>; // on the super admin list (access also needs the authenticator: mfaState)

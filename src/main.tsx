@@ -7,9 +7,13 @@ import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App";
 import { currentRoute, pathToHash } from "./app/router";
+import { initPwa, resolveAppStart } from "./lib/pwa";
 
 // /signin, /t/acme … (no #) → #/signin, #/t/acme
 pathToHash();
+// the installed phone app opens on #/app → this device's company
+resolveAppStart();
+initPwa();
 
 const root = document.getElementById("root")!;
 const app = (
