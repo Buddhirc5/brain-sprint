@@ -67,6 +67,19 @@ export function resolveAppStart() {
   if (location.hash === "#/app" || location.hash === "#/app/") history.replaceState(null, "", location.pathname + location.search + appHash());
 }
 
+/** On a company's player pages, point the manifest at /t/<slug>/manifest.webmanifest: its start page is "./",
+ *  so the installed app opens on that company. (iPhone home-screen apps get fresh storage, so they can't
+ *  look up "the last company" — the address has to carry it.) Vercel serves public/app.webmanifest there. */
+export function useAppManifest(slug: string) {
+  useEffect(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (!link || !canSW()) return;
+    const before = link.getAttribute("href") || "/manifest.webmanifest";
+    link.setAttribute("href", `/t/${encodeURIComponent(slug)}/manifest.webmanifest`);
+    return () => link.setAttribute("href", before);
+  }, [slug]);
+}
+
 /* ---------------- install ---------------- */
 export type InstallWay = "installed" | "prompt" | "ios" | "none";
 export function installWay(): InstallWay {

@@ -21,7 +21,7 @@ import { useEffect } from "react";
 import { nav } from "../app/router";
 import { cleanJoinKey, setJoinKey } from "../app/joinKey";
 import { takeReturnTo } from "../app/returnTo";
-import { pushResync, rememberTenant, showLocal } from "../lib/pwa";
+import { pushResync, rememberTenant, showLocal, useAppManifest } from "../lib/pwa";
 
 export function Gone({ title, text }: { title: string; text: string }) {
   return (
@@ -58,6 +58,7 @@ export function TenantApp({ slug, joinKey }: { slug: string; joinKey?: string })
 function PlayerShell() {
   const { d, me, view, pub } = useApp();
   const { api } = useApi();
+  useAppManifest(pub.slug);
   // phone app: open this company next time, and keep this device's notification address current
   const hasMe = !!me;
   useEffect(() => {
