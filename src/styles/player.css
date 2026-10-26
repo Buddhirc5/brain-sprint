@@ -397,3 +397,19 @@
 @media (prefers-reduced-motion: reduce) { .pet, .pet *, .ride * { animation: none !important; } }
 /* with a ride, the character rides along the progress bar instead of standing over it */
 .me .me-char:has(.kit) { margin-bottom: -16px; }
+
+/* ---------- phone app: install & reminders ---------- */
+.app-cta {
+  display: flex; align-items: center; gap: 12px; padding: 12px 10px 12px 14px; border-radius: var(--r-md); width: 100%;
+  background: #fff; box-shadow: var(--shadow); text-align: left;
+}
+.app-cta .seal { width: 40px; height: 40px; border-radius: 12px; background: var(--lime); color: var(--ink); display: grid; place-items: center; flex: none; }
+.app-cta .grow { flex: 1; min-width: 0; display: grid; }
+.app-cta small { color: var(--muted); font-weight: 600; font-size: 13px; }
+.app-cta .btn { flex: none; }
+.app-x { flex: none; width: 32px; height: 32px; border-radius: 50%; font-size: 22px; line-height: 1; color: var(--muted); background: none; border: 0; cursor: pointer; }
+.app-x:hover { background: var(--soft, #f1f0ea); color: var(--ink); }
+.ios-steps ol { display: grid; gap: 10px; padding-left: 22px; font-weight: 600; }
+.ios-steps li::marker { font-weight: 900; }
+.remind-row { background: #fff; border-radius: var(--r-md); padding: 12px 14px; box-shadow: var(--shadow); }
+.remind-row.sw-row { border-bottom: 0; }

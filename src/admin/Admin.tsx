@@ -16,12 +16,13 @@ import { Security } from "./Security";
 import { Settings } from "./Settings";
 import { Team } from "./Team";
 import { Brand } from "./Brand";
+import { Notify } from "./Notify";
 import { useLiveTenant } from "./common";
 import { applyBranding, setTitle } from "../app/theme";
 import { LiveTab } from "../live/LiveTab";
 import { PollsTab } from "../polls/PollsTab";
 
-export type ATab = "dash" | "games" | "edit" | "live" | "polls" | "users" | "results" | "rewards" | "security" | "team" | "brand" | "settings";
+export type ATab = "dash" | "games" | "edit" | "live" | "polls" | "notify" | "users" | "results" | "rewards" | "security" | "team" | "brand" | "settings";
 
 interface ACtx {
   tab: ATab;
@@ -39,6 +40,7 @@ const TABS: { k: ATab; label: string; min: Role; feature?: "live" | "polls" | "r
   { k: "live", label: "Live quiz", min: "host", feature: "live" },
   { k: "polls", label: "Polls", min: "host", feature: "polls" },
   { k: "users", label: "Players", min: "admin" },
+  { k: "notify", label: "Notify", min: "admin" },
   { k: "results", label: "Results", min: "viewer" },
   { k: "rewards", label: "Rewards", min: "admin", feature: "rewards" },
   { k: "security", label: "Security", min: "admin" },
@@ -148,6 +150,7 @@ export function Admin({ tab: routeTab }: { tab?: string }) {
             {tab === "live" && <LiveTab />}
             {tab === "polls" && <PollsTab />}
             {tab === "users" && <Users />}
+            {tab === "notify" && <Notify />}
             {tab === "results" && <ResultsAdmin />}
             {tab === "rewards" && <Rewards />}
             {tab === "security" && <Security />}

@@ -91,6 +91,44 @@ export interface OrgConfig {
   maxQ: number;
   features: Features;
   signIn: SignIn;
+  /** Phone notifications: the daily "today's sprint is ready" reminder (missing = on at 17:00 company time). */
+  push?: PushCfg;
+}
+
+export interface PushCfg {
+  daily: boolean;
+  hour: number; // 0–23, company time
+}
+
+/* ---------------- phone notifications (Web Push) ---------------- */
+/** A device's push subscription (PushSubscription.toJSON()). */
+export interface PushSub {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+/** A message from an admin. unit = one branch/department; missing = everyone. */
+export interface PushMsg {
+  title: string;
+  body: string;
+  unit?: string;
+  daily?: boolean; // the "today's sprint is ready" reminder: only players with something left to play
+}
+export interface PushSend {
+  id: string;
+  at: number;
+  actor: string;
+  title: string;
+  body: string;
+  unit?: string;
+  daily?: boolean;
+  auto?: boolean; // sent by the daily schedule
+  sent: number;
+  failed: number;
+}
+export interface PushOverview {
+  devices: number; // devices with notifications on
+  players: number; // players with at least one
+  sends: PushSend[]; // newest first
 }
 
 export interface Tenant {
