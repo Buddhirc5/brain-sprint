@@ -97,6 +97,10 @@
   ],
   "rewrites": [
     {
+      "source": "/t/:slug/manifest.webmanifest",
+      "destination": "/app.webmanifest"
+    },
+    {
       "source": "/((?!assets/|features$|how-it-works$|use-cases$|security$|faq$)[^.]*)",
       "destination": "/index.html"
     }
