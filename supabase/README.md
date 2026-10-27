@@ -26,6 +26,7 @@ the same `Api` contract as the in-browser demo (`src/api/demo/`), with the same 
 | `migrations/0021_live_race.sql` | Live quiz **race mode**: no timer, everyone plays every question at their own pace (`live_set_race`, race columns on `live_players`, `private.live_race_answer`); ranked by right answers, then total time; ends by itself when everyone has finished |
 | `migrations/0022_live_delete.sql` | Admins can delete a finished live game and its results (`live_delete`) |
 | `migrations/0023_push.sql` | Phone notifications: devices (`push_subscribe` / `push_unsubscribe`), admin sends with a rate limit (`push_begin`, `push_overview`) and the daily reminder (`push_daily_claim`); the service-only `push_targets` / `push_done` are used by the Edge Function |
+| `migrations/0024_gift_push.sql` | Hall of Fame: tells the winner (or the winning team) on their phone when an admin records the gift, once per gift (`push_begin_gift`) |
 | `functions/push/` | Edge Function that sends Web Push (admin messages and the hourly daily-reminder run) — see section 6 |
 | `migrations/0010_mfa_reset_by_email.sql` | Lost authenticator: reset with an emailed link (10-minute window, audited) |
 | `migrations/0009_super_requires_authenticator.sql` | Super admins must verify with an authenticator app before the code unlocks the console |
@@ -40,7 +41,7 @@ the same `Api` contract as the in-browser demo (`src/api/demo/`), with the same 
 ## 1. Create the database
 
 **Option A: dashboard (no tools).** Open your project → **SQL Editor** → paste and run, in order:
-`migrations/0001_schema.sql` → `0002_security.sql` → `0003_functions.sql` → `0004_question_images.sql` → `0005_live_player_count.sql` → `0006_super_self_approve.sql` → `0007_rename_ant_arena.sql` → `0008_special_characters.sql` → `0009_super_requires_authenticator.sql` → `0010_mfa_reset_by_email.sql` → `0011_private_invite_links.sql` → `0012_certificate_signature.sql` → `0013_poll_slide_types.sql` → `0014_super_admin_authenticator_only.sql` → `0015_passwords.sql` → `0016_units_and_live_join.sql` → `0017_new_types_second_chance.sql` → `0018_story_mode.sql` → `0019_store_pets_rides.sql` → `0020_untimed_sprints.sql` → `0021_live_race.sql` → `0022_live_delete.sql` → `0023_push.sql` → `seed.sql`.
+`migrations/0001_schema.sql` → `0002_security.sql` → `0003_functions.sql` → `0004_question_images.sql` → `0005_live_player_count.sql` → `0006_super_self_approve.sql` → `0007_rename_ant_arena.sql` → `0008_special_characters.sql` → `0009_super_requires_authenticator.sql` → `0010_mfa_reset_by_email.sql` → `0011_private_invite_links.sql` → `0012_certificate_signature.sql` → `0013_poll_slide_types.sql` → `0014_super_admin_authenticator_only.sql` → `0015_passwords.sql` → `0016_units_and_live_join.sql` → `0017_new_types_second_chance.sql` → `0018_story_mode.sql` → `0019_store_pets_rides.sql` → `0020_untimed_sprints.sql` → `0021_live_race.sql` → `0022_live_delete.sql` → `0023_push.sql` → `0024_gift_push.sql` → `seed.sql`.
 
 **Updating an existing project:** run only the new migrations, in number order. Every migration from 0016 on is safe to run more than once.
 

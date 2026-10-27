@@ -233,6 +233,8 @@ export interface Api {
   pushUnsubscribe(tenantId: string, endpoint: string): Promise<void>;
   /** Admins: send now. Rate limited (one a minute, 20 a day). */
   pushSend(tenantId: string, msg: PushMsg): Promise<{ sent: number; failed: number }>;
+  /** Admins: tell a gift's winner (or the winning team) on their phone. Sent once per gift. */
+  pushGift(tenantId: string, giftId: string): Promise<{ sent: number; failed: number }>;
   /** Admins: how many devices have notifications on, and what was sent. */
   pushOverview(tenantId: string): Promise<PushOverview>;
   /** Demo only: messages for the signed-in player, which the open app shows as notifications. */

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../app/ctx";
 import { Chibi } from "../components/Chibi";
 import { Kit } from "../components/Companions";
@@ -11,9 +11,17 @@ import { buildMap } from "../lib/arenaMap";
 import { WHO } from "../lib/answers";
 import { Avatar, certInfo, firstName, pubName } from "./common";
 import { AppCard } from "./AppCard";
+import { AwardModal, AwardTile, awardWho, isMine } from "../components/Award";
+import { Seg } from "../components/ui";
+import { LS } from "../lib/util";
+import type { Gift } from "../types";
 
 export function Lobby() {
-  const { me, stats, d, go, players, features, labels } = useApp();
+  const { me, stats, d, go, players, features, labels, pub } = useApp();
+  const [tab, setTab] = useState<"play" | "done" | "stories" | null>(null);
+  const [allDone, setAllDone] = useState(false);
+  const [, setSeen] = useState(0); // bumped when a new win has been shown
+  const [award, setAward] = useState<{ g: Gift; celebrate?: boolean } | null>(null);
   const s = me ? stats[me.uid] : undefined;
   const t = todayKey();
   // fetch the 3D map's code while the lobby sits idle, so the Arena Map opens without a wait
@@ -35,9 +43,25 @@ export function Lobby() {
   const todays = open.filter((g) => g.date === t);
   const catchUp = open.filter((g) => g.date !== t && !played(g));
   const soon = sprints.filter((g) => isScheduled(g)).slice(0, 3);
-  const done = sprints.filter((g) => g.date !== t && played(g)).slice(0, 12);
+  const done = [...sprints, ...stories].filter((g) => g.date !== t && played(g)).sort((a, b) => (me.runs?.[b.id]?.finishedAt || 0) - (me.runs?.[a.id]?.finishedAt || 0));
   const myWeek = weekBoard.findIndex((r) => r.uid === me.uid) + 1;
-  const gifts = features.rewards ? Object.values(d.gifts).sort((a, b) => b.at - a.at).slice(0, 8) : [];
+  const gifts = features.rewards ? Object.values(d.gifts).sort((a, b) => b.at - a.at).slice(0, 12) : [];
+  const who = (g: Gift) => awardWho(g, d.players, (p) => pubName(p, d.cfg));
+  // a win this player hasn't seen yet → show it once, with confetti
+  const seenKey = `aa.awards.${pub.slug}.${me.uid}`;
+  const unseen = gifts.find((g) => isMine(g, me) && !(LS.get(seenKey) || "").split(",").includes(g.id) && Date.now() - g.at < 30 * 864e5);
+  const shownAward = award || (unseen ? { g: unseen, celebrate: true } : null);
+  const closeAward = () => {
+    if (shownAward?.celebrate) LS.set(seenKey, [...(LS.get(seenKey) || "").split(",").filter(Boolean), shownAward.g.id].slice(-50).join(","));
+    setAward(null);
+    setSeen((n) => n + 1); // re-render: the next unseen win (if any) shows
+  };
+  const toPlay = catchUp.length + soon.length;
+  const tabs: [("play" | "done" | "stories"), string][] = [];
+  if (toPlay) tabs.push(["play", `To play${catchUp.length ? ` · ${catchUp.length}` : ""}`]);
+  if (stories.length) tabs.push(["stories", `Stories · ${stories.length}`]);
+  if (done.length) tabs.push(["done", `Done · ${done.length}`]);
+  const cur = tab && tabs.some(([k]) => k === tab) ? tab : tabs[0]?.[0];
   const lv = s.level;
   const hasToday = todays.some((g) => !played(g));
   const certOpen = certs.filter((g) => isOpen(g, t));
@@ -206,48 +230,59 @@ export function Lobby() {
         </>
       )}
 
-      {stories.length > 0 && (
+      {tabs.length > 0 && (
         <>
-          <div className="sec-h">
-            <h2 className="sm-h">Story Mode</h2>
-            <span className="sub">Comic case studies · no timer</span>
-          </div>
-          <div className="sm-shelf">
-            {stories.map((g, i) => (
-              <StoryCover key={g.id} g={g} n={i + 1} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {catchUp.length > 0 && (
-        <>
-          <div className="sec-h">
-            <h2>Catch up</h2>
-            <span className="sub">{catchUp.length} to play</span>
-          </div>
-          <div className="games">
-            {catchUp.map((g) => (
-              <GameCard key={g.id} g={g} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {soon.length > 0 && (
-        <>
-          <div className="sec-h">
-            <h2>Coming up</h2>
-          </div>
-          <div className="done-list">
-            {soon.map((g) => (
-              <div key={g.id} className="done-row">
-                <span className="dot" style={{ background: dotColor(g) }} />
-                <b>{g.title}</b>
-                <span className="sub">{fmtDate(g.date)}</span>
-              </div>
-            ))}
-          </div>
+          <Seg value={cur!} onChange={setTab} options={tabs} label="Your quizzes" className="lobby-tabs" />
+          {cur === "play" && (
+            <>
+              {catchUp.length > 0 && (
+                <div className="mini-row" role="list">
+                  {catchUp.map((g) => (
+                    <MiniGame key={g.id} g={g} />
+                  ))}
+                </div>
+              )}
+              {soon.length > 0 && (
+                <div className="done-list">
+                  {soon.map((g) => (
+                    <div key={g.id} className="done-row">
+                      <span className="dot" style={{ background: dotColor(g) }} />
+                      <b>{g.title}</b>
+                      <span className="sub">Opens {fmtDate(g.date)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+          {cur === "stories" && (
+            <div className="sm-shelf">
+              {stories.map((g, i) => (
+                <StoryCover key={g.id} g={g} n={i + 1} />
+              ))}
+            </div>
+          )}
+          {cur === "done" && (
+            <div className="done-list">
+              {(allDone ? done : done.slice(0, 5)).map((g) => {
+                const r = me.runs![g.id];
+                return (
+                  <button type="button" key={g.id} className="done-row" onClick={() => go({ v: "results", gid: g.id })}>
+                    <span className="dot" style={{ background: dotColor(g) }} />
+                    <b>{g.title}</b>
+                    <span className="sub num">
+                      {runCorrect(r)}/{r.total} · {runPoints(r).total} pts
+                    </span>
+                  </button>
+                );
+              })}
+              {done.length > 5 && (
+                <button type="button" className="link" style={{ justifySelf: "center" }} onClick={() => setAllDone((v) => !v)}>
+                  {allDone ? "Show fewer" : `Show all ${done.length}`}
+                </button>
+              )}
+            </div>
+          )}
         </>
       )}
 
@@ -255,48 +290,12 @@ export function Lobby() {
         <>
           <div className="sec-h">
             <h2>Hall of fame</h2>
-            <span className="sub">Recent winners</span>
+            <span className="sub">Tap a card</span>
           </div>
-          <div className="fame">
-            {gifts.map((g) => {
-              const p = d.players[g.winner];
-              return (
-                <div className="f" key={g.id}>
-                  {p ? (
-                    <Avatar p={p} size={56} />
-                  ) : (
-                    <span className="lock-badge">
-                      <Icon.trophy />
-                    </span>
-                  )}
-                  <b>{g.winner.startsWith("unit:") ? g.winner.slice(5) : pubName(p, d.cfg)}</b>
-                  <small>{g.label}</small>
-                  <span className="prize">{g.period}</span>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {done.length > 0 && (
-        <>
-          <div className="sec-h">
-            <h2>Completed</h2>
-          </div>
-          <div className="done-list">
-            {done.map((g) => {
-              const r = me.runs![g.id];
-              return (
-                <button type="button" key={g.id} className="done-row" onClick={() => go({ v: "results", gid: g.id })}>
-                  <span className="dot" style={{ background: dotColor(g) }} />
-                  <b>{g.title}</b>
-                  <span className="sub num">
-                    {runCorrect(r)}/{r.total} · {runPoints(r).total} pts
-                  </span>
-                </button>
-              );
-            })}
+          <div className="aw-row">
+            {gifts.map((g) => (
+              <AwardTile key={g.id} g={g} who={who(g)} mine={isMine(g, me)} onOpen={() => setAward({ g })} />
+            ))}
           </div>
         </>
       )}
@@ -308,7 +307,7 @@ export function Lobby() {
         </button>
       </div>
       <div className="lb">
-        {weekBoard.slice(0, 5).map((row, i) => {
+        {weekBoard.slice(0, 3).map((row, i) => {
           const p = d.players[row.uid];
           const mine = row.uid === me.uid;
           return (
@@ -331,6 +330,7 @@ export function Lobby() {
         })}
         {!weekBoard.length && <div className="empty">No plays yet this week. Be first on the board.</div>}
       </div>
+      {shownAward && <AwardModal g={shownAward.g} who={who(shownAward.g)} company={pub.name} branding={pub.branding} canSave={isMine(shownAward.g, me)} celebrate={shownAward.celebrate} onClose={closeAward} />}
       {features.battle && (
         <button type="button" className="btn ghost block" onClick={() => go({ v: "board" })}>
           {labels.battle}: see how your {labels.branch.toLowerCase()} is doing
@@ -364,6 +364,21 @@ function StoryCover({ g, n }: { g: Game; n: number }) {
       <small>
         {g.questions[0]?.topic} · {steps.length} pages
       </small>
+    </button>
+  );
+}
+
+/** A catch-up quiz as a small card in a sideways row. */
+function MiniGame({ g }: { g: Game }) {
+  const { me, go } = useApp();
+  const run = me?.runs?.[g.id];
+  return (
+    <button type="button" role="listitem" className={`mini-game game ${g.color}`} onClick={() => go({ v: "play", gid: g.id })} aria-label={`${run ? "Resume" : "Play"} ${g.title}`}>
+      <b>{g.title}</b>
+      <small>
+        {g.questions.length}Q · {untimed(g) ? "No timer" : fmtMin(limitMs(g) / 60000)}
+      </small>
+      <span className="mini-go">{run ? "Resume" : "Play"} →</span>
     </button>
   );
 }

@@ -1633,6 +1633,31 @@ class DemoApi implements Api {
       return { sent: devices.length, failed: 0 };
     });
   }
+  async pushGift(tid: string, giftId: string) {
+    return store.tx((db) => {
+      this.req(db, tid, "admin");
+      const s = db.t[tid];
+      const g = s.gifts[giftId];
+      if (!g) throw err("not_found", "Gift not found.");
+      const P = this.pushDb(db);
+      const sends = P.sends[tid] || [];
+      const id = "ps-gift-" + giftId;
+      if (sends.some((x) => x.id === id)) return { sent: 0, failed: 0 }; // already told
+      const unit = g.winner.startsWith("unit:") ? g.winner.slice(5) : undefined;
+      const devices = (P.subs[tid] || []).filter((x) => {
+        const p = s.players[x.uid];
+        return p && !p.locked && (unit ? p.unit === unit : x.uid === g.winner);
+      });
+      const product = this.tenant(db, tid).branding.productName || "Ant Arena";
+      const title = unit ? `${unit} won! 🏆` : "You won! 🏆";
+      const body = `${g.label} · ${g.period}. Open ${product} to see and share your award card.`;
+      const now = Date.now();
+      P.sends[tid] = [{ id, at: now, actor: this.actor(db), title, body, unit, sent: devices.length, failed: 0, auto: true }, ...sends].slice(0, 100);
+      const uids = [...new Set(devices.map((x) => x.uid))];
+      if (uids.length) P.inbox = [...P.inbox.filter((m) => now - m.at < 36e5), { id, tid, uids, title, body, at: now }].slice(-50);
+      return { sent: devices.length, failed: 0 };
+    });
+  }
   async pushOverview(tid: string): Promise<PushOverview> {
     const db = store.read();
     this.req(db, tid, "admin");
