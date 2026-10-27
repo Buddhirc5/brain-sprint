@@ -613,12 +613,18 @@ class SupabaseApi implements Api {
   async pushOverview(tenantId: string): Promise<PushOverview> {
     return this.rpc<PushOverview>("push_overview", { p_tid: tenantId });
   }
+  async pushGift(tenantId: string, giftId: string) {
+    return this.pushInvoke({ tid: tenantId, gift: giftId });
+  }
   /** Sent by the "push" Edge Function (it holds the Web Push private key); it checks the admin's role first. */
   async pushSend(tenantId: string, msg: PushMsg) {
+    return this.pushInvoke({ tid: tenantId, title: msg.title, body: msg.body, unit: msg.unit ?? null, daily: !!msg.daily });
+  }
+  private async pushInvoke(body: Record<string, unknown>) {
     this.needSession();
     let res;
     try {
-      res = await this.sb.functions.invoke("push", { body: { tid: tenantId, title: msg.title, body: msg.body, unit: msg.unit ?? null, daily: !!msg.daily } });
+      res = await this.sb.functions.invoke("push", { body });
     } catch (e) {
       throw toApiError(e);
     }

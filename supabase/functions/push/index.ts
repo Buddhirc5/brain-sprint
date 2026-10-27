@@ -1,6 +1,7 @@
 // Ant Arena · phone notifications (Web Push). Deploy: supabase functions deploy push --no-verify-jwt
 //
 //   POST { tid, title, body, unit?, daily? }   an admin sending now (their sign-in in Authorization: Bearer …)
+//   POST { tid, gift }                         an admin telling a Hall of Fame winner (once per gift)
 //   POST { cron: true }                        the hourly schedule (header x-cron-secret) → daily reminders
 //
 // The admin's role, the rate limit and the audit entry are all checked in the database (push_begin), with the
@@ -105,14 +106,17 @@ Deno.serve(async (req) => {
   const auth = req.headers.get("Authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return fail("auth", "Please sign in.");
   const asAdmin = createClient(SB_URL, ANON, { global: { headers: { Authorization: auth } }, auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = await asAdmin.rpc("push_begin", {
-    p_tid: String(body.tid ?? ""),
-    p_title: String(body.title ?? ""),
-    p_body: String(body.body ?? ""),
-    p_unit: body.unit ? String(body.unit) : null,
-    p_daily: body.daily === true,
-  });
+  const { data, error } = body.gift
+    ? await asAdmin.rpc("push_begin_gift", { p_tid: String(body.tid ?? ""), p_gift: String(body.gift) }) // a Hall of Fame win → the winner
+    : await asAdmin.rpc("push_begin", {
+        p_tid: String(body.tid ?? ""),
+        p_title: String(body.title ?? ""),
+        p_body: String(body.body ?? ""),
+        p_unit: body.unit ? String(body.unit) : null,
+        p_daily: body.daily === true,
+      });
   if (error) return pgError(error.message);
+  if (!data) return json({ sent: 0, failed: 0 }); // this gift's winner was already told
   try {
     return json(await deliver(data as { id: string; slug: string; title: string; body: string; daily: boolean }));
   } catch {

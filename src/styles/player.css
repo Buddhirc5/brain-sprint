@@ -413,3 +413,26 @@
 .ios-steps li::marker { font-weight: 900; }
 .remind-row { background: #fff; border-radius: var(--r-md); padding: 12px 14px; box-shadow: var(--shadow); }
 .remind-row.sw-row { border-bottom: 0; }
+
+/* ---------- lobby: tabs, sideways rows, Hall of Fame cards ---------- */
+.lobby-tabs { margin-top: 6px; }
+.mini-row, .aw-row { display: flex; gap: 10px; overflow-x: auto; padding: 4px 4px 10px; margin: 0 -4px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.mini-row::-webkit-scrollbar, .aw-row::-webkit-scrollbar { display: none; }
+.mini-game { flex: 0 0 168px; min-height: 132px; scroll-snap-align: start; text-align: left; align-content: start; gap: 6px; padding: 14px; }
+.mini-game b { font-size: 16px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.mini-game small { font-weight: 700; opacity: .75; font-size: 12px; }
+.mini-game .mini-go { margin-top: auto; font-weight: 900; font-size: 14px; }
+.aw-tile { position: relative; flex: 0 0 140px; scroll-snap-align: start; display: grid; justify-items: center; gap: 2px; padding: 12px 10px; border-radius: var(--r-md); background: var(--lime); box-shadow: var(--shadow); text-align: center; }
+.aw-tile.k-improved { background: #FFD9C9; }
+.aw-tile.k-branch { background: var(--ink); color: #fff; }
+.aw-tile.mine { outline: 3px solid var(--orange); outline-offset: 2px; }
+.aw-tile .aw-kind { font-family: var(--display); font-size: 17px; text-transform: uppercase; letter-spacing: .02em; }
+.aw-tile .aw-fig { height: 74px; display: grid; place-items: center; }
+.aw-tile .aw-cup { font-size: 46px; }
+.aw-tile b { font-size: 14px; line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aw-tile small { font-size: 11px; font-weight: 700; opacity: .7; }
+.aw-tile .aw-you { position: absolute; top: -8px; right: -6px; background: var(--orange); color: #fff; font-weight: 900; font-size: 11px; padding: 3px 8px; border-radius: 999px; }
+.aw-modal .aw-img img { width: 100%; height: auto; display: block; border-radius: 18px; box-shadow: var(--shadow); }
+.aw-modal .aw-ph { aspect-ratio: 4 / 5; display: grid; place-items: center; border-radius: 18px; background: var(--paper-2, #eceae3); font-weight: 700; color: var(--muted); }
+.aw-modal .aw-cheer { text-align: center; font-family: var(--display); font-size: 34px; font-weight: 400; text-transform: uppercase; }
+.aw-acts .grow { flex: 1; }

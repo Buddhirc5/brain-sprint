@@ -7,6 +7,8 @@ import { monthStart, newId, pct, weekStart } from "../lib/util";
 import type { Gift } from "../types";
 import { useScan } from "./useScan";
 import { useLiveTenant } from "./common";
+import { AwardModal, awardWho } from "../components/Award";
+import { pubName } from "../player/common";
 
 type Per = "tw" | "lw" | "tm" | "lm";
 const DAY = 864e5;
@@ -25,10 +27,11 @@ function range(p: Per): { from: number; to: number; prevFrom: number; label: str
 }
 
 export function Rewards() {
-  const { d, players, approve, api, tid, toast } = useApp();
-  const { labels } = useLiveTenant();
+  const { d, players, approve, api, tid, toast, pub } = useApp();
+  const { labels, branding } = useLiveTenant();
   const { flags } = useScan();
   const [per, setPer] = useState<Per>("lw");
+  const [card, setCard] = useState<Gift | null>(null);
   const [award, setAward] = useState<Omit<Gift, "id" | "at" | "by" | "prize"> & { prize: string } | null>(null);
   const R = range(per);
 
@@ -58,7 +61,10 @@ export function Rewards() {
       yes: "Record gift",
       run: async () => {
         await api.saveGift(tid, g);
-        toast("Gift recorded — it's in the Hall of Fame");
+        // tell the winner on their phone (players with reminders on); a failure here never blocks the gift
+        const sent = await api.pushGift(tid, g.id).then((r) => r.sent, () => 0);
+        toast(sent ? "Gift recorded — the winner was notified" : "Gift recorded — it's in the Hall of Fame");
+        setCard(g);
         setAward(null);
       },
     });
@@ -138,7 +144,10 @@ export function Rewards() {
                   <td>{g.label}</td>
                   <td>{g.prize}</td>
                   <td className="num">{new Date(g.at).toLocaleDateString()}</td>
-                  <td><button className="link danger" onClick={() => remove(g)}>Remove</button></td>
+                  <td className="row" style={{ gap: 12, flexWrap: "nowrap" }}>
+                    <button className="link" onClick={() => setCard(g)}>Card</button>
+                    <button className="link danger" onClick={() => remove(g)}>Remove</button>
+                  </td>
                 </tr>
               ))}
               {!issued.length && <tr><td colSpan={7} className="fine">No gifts recorded yet.</td></tr>}
@@ -161,6 +170,7 @@ export function Rewards() {
           </div>
         </Modal>
       )}
+      {card && <AwardModal g={card} who={awardWho(card, d.players, (p) => pubName(p, d.cfg))} company={pub.name} branding={branding} canSave onClose={() => setCard(null)} />}
     </>
   );
 }
