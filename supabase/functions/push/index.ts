@@ -1,7 +1,7 @@
 // Ant Arena · phone notifications (Web Push). Deploy: supabase functions deploy push --no-verify-jwt
 //
-//   POST { tid, title, body, unit?, daily? }   an admin sending now
-//   POST { tid, gift }                         tell a Hall of Fame winner (once per gift) (their sign-in in Authorization: Bearer …)
+//   POST { tid, title, body, unit?, daily? }   an admin sending now (their sign-in in Authorization: Bearer …)
+//   POST { tid, gift }                         an admin telling a Hall of Fame winner (once per gift)
 //   POST { cron: true }                        the hourly schedule (header x-cron-secret) → daily reminders
 //
 // The admin's role, the rate limit and the audit entry are all checked in the database (push_begin), with the
