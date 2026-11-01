@@ -10,7 +10,7 @@
 import type {
   AdminMember, AnswerKey, AuditEntry, Disqualified, Game, Gift, LibraryItem, LiveHostView, LiveSession,
   OrgConfig, Player, Poll, PollResponse, PollValue, Question, Role, Roster, Run, SlideResults, Tenant,
-  TenantPublic, TenantUsage, Branding, Labels, Equipped, UnitType, PushMsg, PushOverview, PushSub,
+  TenantPublic, TenantUsage, Branding, Labels, Equipped, UnitType, PushMsg, PushOverview, PushSub, ProfileResult,
 } from "../types";
 
 export type Unsub = () => void;
@@ -200,6 +200,16 @@ export interface Api {
   library(): Promise<LibraryItem[]>;
   importLibrary(tenantId: string, ids: string[]): Promise<number>;
   download(filename: string, text: string, mime?: string): void;
+
+  /* ---- profile quizzes (personality / work style) ---- */
+  /** Take a profile quiz: one option index per question. Once each (an admin can reset). Worked out on the server. */
+  profileSubmit(tenantId: string, gid: string, choices: number[]): Promise<ProfileResult>;
+  /** The signed-in player's own results: gid → result. */
+  profileMine(tenantId: string): Promise<Record<string, ProfileResult>>;
+  /** Admins and viewers: everyone's result for one profile quiz (never the answers). */
+  profileResults(tenantId: string, gid: string): Promise<{ uid: string; at: number; result: ProfileResult }[]>;
+  /** Admins: let a player take it again. */
+  profileReset(tenantId: string, gid: string, uid: string): Promise<void>;
 
   /* ---- live quiz (game-show style) ---- */
   liveCreate(tenantId: string, gid: string, opts: { guests: boolean; race?: boolean }): Promise<LiveSession>;

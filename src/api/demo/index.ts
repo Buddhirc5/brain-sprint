@@ -27,6 +27,7 @@ import { newSecret, otpauthUrl, totp, verifyTotp } from "../../lib/totp";
 import { qrDataUrl } from "../../lib/qr";
 import { validImg } from "../../lib/image";
 import { cleanCert } from "../../lib/cert";
+import { computeProfile, weightsOf } from "../../lib/profile";
 
 const AUTH_KEY = "bsx.demo.auth";
 const RANK: Record<Role, number> = { viewer: 0, host: 1, editor: 2, admin: 3, owner: 4 };
@@ -818,7 +819,10 @@ class DemoApi implements Api {
       const cfg = normalizeCfg(t.cfg, t.template);
       const prev = s.games[d.game.id];
       const g: Game = { ...structuredClone(d.game), updatedAt: Date.now(), editedBy: this.actor(db), createdBy: prev?.createdBy || this.actor(db) };
-      if (!["sprint", "live", "cert", "story"].includes(g.kind)) throw err("invalid", "Unknown quiz type.");
+      if (!["sprint", "live", "cert", "story", "profile"].includes(g.kind)) throw err("invalid", "Unknown quiz type.");
+      if (g.questions.some((q) => (q.type === "pick") !== (g.kind === "profile"))) throw err("invalid", "A profile quiz holds profile questions only.");
+      if (g.kind === "profile" && (!g.profile || g.profile.traits.length < 2 || g.profile.traits.length > 6)) throw err("invalid", "A profile quiz needs 2–6 traits.");
+      if (g.kind === "profile" && g.questions.some((q) => !/^[0-9:,;]{1,200}$/.test(d.key.answers[q.id] || ""))) throw err("invalid", "A profile question is missing its trait weights.");
       if (g.kind === "story" && g.questions.some((q) => q.type !== "story")) throw err("invalid", "Story Mode holds case studies only.");
       if (g.questions.length > 50) throw err("invalid", "50 questions at most.");
       for (const q of g.questions) if (!d.key.answers[q.id]) throw err("invalid", "Every question needs an answer.");
@@ -937,6 +941,47 @@ class DemoApi implements Api {
       this.logT(db, tid, { action: "Player deleted", target: p?.name || uid, sev: "alert" });
     });
   }
+  /* ================= profile quizzes ================= */
+  async profileSubmit(tid: string, gid: string, choices: number[]) {
+    return store.tx((db) => {
+      const me = this.needMe(db, tid);
+      const s = db.t[tid];
+      const g = s.games[gid];
+      if (!g || g.kind !== "profile" || !g.profile) throw err("not_found", "Quiz not found.");
+      if (!isOpen(g, todayKey())) throw err("closed", "This quiz isn't open.");
+      db.profiles = db.profiles || {};
+      const mine = ((db.profiles[tid] = db.profiles[tid] || {})[gid] = db.profiles[tid][gid] || {});
+      if (mine[me.uid]) throw err("conflict", "You've already taken this one. Ask your admin if you'd like to retake it.");
+      if (!Array.isArray(choices) || choices.length !== g.questions.length) throw err("invalid", "Answer every question.");
+      const w = g.questions.map((q) => weightsOf(s.keys[gid]?.answers[q.id] || ""));
+      if (choices.some((c, i) => !Number.isInteger(c) || c < 0 || c >= w[i].length)) throw err("invalid", "Answer every question.");
+      const result = { ...computeProfile(g.profile, w, choices), at: Date.now() };
+      mine[me.uid] = { at: result.at, choices: [...choices], result };
+      return structuredClone(result);
+    });
+  }
+  async profileMine(tid: string) {
+    const db = store.read();
+    const me = this.me(db, tid);
+    if (!me) return {};
+    const all = db.profiles?.[tid] || {};
+    return Object.fromEntries(Object.entries(all).filter(([, m]) => m[me.uid]).map(([gid, m]) => [gid, structuredClone(m[me.uid].result)]));
+  }
+  async profileResults(tid: string, gid: string) {
+    const db = store.read();
+    this.req(db, tid, "viewer");
+    return Object.entries(db.profiles?.[tid]?.[gid] || {})
+      .map(([uid, r]) => ({ uid, at: r.at, result: structuredClone(r.result) }))
+      .sort((a, b) => b.at - a.at);
+  }
+  async profileReset(tid: string, gid: string, uid: string) {
+    store.tx((db) => {
+      this.req(db, tid, "admin");
+      delete db.profiles?.[tid]?.[gid]?.[uid];
+      this.logT(db, tid, { action: "Profile reset", target: db.t[tid].games[gid]?.title || gid, detail: db.t[tid].players[uid]?.name || uid });
+    });
+  }
+
   async adminResetRun(tid: string, uid: string, key: string) {
     store.tx((db) => {
       this.req(db, tid, "admin");

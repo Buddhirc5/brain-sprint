@@ -361,3 +361,29 @@ code.box { display: block; background: var(--paper); border-radius: var(--r-sm);
 .notif-prev .np-top b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .notif-prev .np-top span { color: var(--muted); font-size: 12px; }
 .notif-prev p { margin: 2px 0 0; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+
+/* ---------- profile quizzes (admin) ---------- */
+.pf-script { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.5; min-height: 420px; white-space: pre; overflow: auto; }
+.pfe-help { background: var(--paper-2, #f1f0ea); border-radius: 14px; padding: 12px 14px; font-size: 13px; margin-bottom: 10px; display: grid; gap: 6px; }
+.pfe-help p, .pfe-help ul { margin: 0; }
+.pfe-help code { background: #fff; border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+.pfe-traits { display: flex; flex-wrap: wrap; gap: 6px; }
+.pfe-trait { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 12px; background: color-mix(in srgb, var(--c) 12%, #fff); color: var(--ink); }
+.pfe-trait svg { color: var(--c); }
+.pfe-trait small { color: var(--muted); }
+.pfe-h { margin: 6px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.pfe-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.pfe-type { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: #fff; border: 1px solid var(--line); }
+.pfe-pair { display: inline-flex; gap: 2px; }
+.pfe-qs { margin: 0; padding-left: 22px; display: grid; gap: 10px; max-height: 520px; overflow: auto; }
+.pfe-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.pfe-opt { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 8px; border-radius: 8px; background: #f1f0ea; }
+.pfr-mix, .pfr-traits { display: grid; gap: 10px; }
+.pfr-row { display: flex; gap: 10px; align-items: center; }
+.pfr-ic { flex: none; width: 46px; display: inline-flex; gap: 2px; justify-content: center; }
+.pfr-t { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.pfr-n { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.pfr-track { height: 8px; border-radius: 4px; background: rgba(22,21,18,.08); overflow: hidden; }
+.pfr-track span { display: block; height: 100%; border-radius: 4px; }
+.pf-admin-modal .phone { padding: 0; max-width: 100%; }
+.pfr-mix { align-content: start; align-self: start; }

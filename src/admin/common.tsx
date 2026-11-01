@@ -18,6 +18,7 @@ export const KIND: Record<QuizKind, { label: string; short: string; text: string
   cert: { label: "Certification", short: "Cert", text: "A graded exam with a pass mark, limited attempts and a printable certificate.", feature: "cert" },
   live: { label: "Live quiz", short: "Live", text: "A game show you host on a big screen. Everyone answers on their phone at the same time.", feature: "live" },
   story: { label: "Story Mode", short: "Story", text: "A comic-book case study: scenes with characters, a reply to pick in each, and an ending. No timer.", feature: "sprint" },
+  profile: { label: "Profile quiz", short: "Profile", text: "A personality / work-style test with no right answers. Each player gets their type, privately. No points.", feature: "sprint" },
 };
 
 export const ROLES: Role[] = ["viewer", "host", "editor", "admin", "owner"];

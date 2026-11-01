@@ -5,7 +5,7 @@
    on the server (Postgres functions), or inside the demo engine.
    ===================================================================== */
 
-export type QType = "mcq" | "tf" | "match" | "order" | "swipe" | "bucket" | "story";
+export type QType = "mcq" | "tf" | "match" | "order" | "swipe" | "bucket" | "story" | "pick"; // pick: a profile question (no right answer)
 /** Who speaks in a case-study scene (each has its own character on screen). */
 export type StoryWho = "customer" | "manager" | "colleague" | "narrator";
 /** A case study (question type "story"): an intro, then scenes where the player picks a reply.
@@ -28,7 +28,7 @@ export interface StoryStep {
 }
 export type UnitType = "branch" | "dept"; // labelled per tenant (Branch/Department, Location/Department…)
 export type GameStatus = "draft" | "pending" | "live" | "closed";
-export type QuizKind = "sprint" | "live" | "cert" | "story"; // story: Story Mode, comic-book case studies
+export type QuizKind = "sprint" | "live" | "cert" | "story" | "profile"; // story: Story Mode, comic-book case studies · profile: personality / work style, no right answers
 export type CardColor = "lime" | "orange" | "pink" | "blue" | "blush" | "ink";
 export type Role = "owner" | "admin" | "editor" | "host" | "viewer";
 
@@ -198,11 +198,46 @@ export interface Game {
   order?: number;
   questions: Question[];
   cert?: CertSettings;
+  profile?: ProfileMeta; // profile quizzes: traits and types (the answer weights stay in the key)
   createdAt: number;
   updatedAt: number;
   createdBy?: string;
   editedBy?: string;
   approvedBy?: string;
+}
+
+/* ---------------- profile quizzes ---------------- */
+export type ProfileIconName = "compass" | "clipboard" | "bolt" | "hands" | "anchor" | "star" | "heart" | "flame" | "leaf" | "eye" | "shield" | "rocket" | "puzzle" | "crown" | "wave" | "target";
+export interface ProfileTrait {
+  name: string; // "Explorer"
+  icon: ProfileIconName;
+  desc: string; // "Curious, loves new ideas"
+}
+export interface ProfileType {
+  a: number; // trait index
+  b: number; // trait index (order doesn't matter)
+  name: string; // "The Risk Sentinel"
+  role: string; // "Credit, Risk & Compliance Officer"
+  line: string; // one-line summary
+  strengths?: string[];
+  watch?: string[];
+  work?: string[]; // how to work with them
+}
+export interface ProfileMeta {
+  traits: ProfileTrait[];
+  types: ProfileType[];
+  checks?: { q: [number, number]; t: [number, number] }[]; // honesty checks: question indexes + the traits that clash
+  intro?: string;
+}
+/** What a player gets back — private to them and the company's admins. */
+export interface ProfileResult {
+  pct: number[]; // per trait, 0–100
+  hits: number[]; // answers that leaned most to each trait
+  top: [number, number];
+  type: number; // index in meta.types, or -1
+  mixed: boolean; // answers in an honesty check pointed opposite ways
+  n: number;
+  at?: number;
 }
 
 /** Answer key — admins only (table quiz_keys). qid → canonical answer

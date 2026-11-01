@@ -13,6 +13,7 @@ import { Guide } from "../player/Guide";
 import { Login, EmailLogin } from "../player/Login";
 import { Certs } from "../player/Certs";
 import { ArenaMap } from "../player/ArenaMap";
+import { ProfilePlay } from "../player/Profile";
 import { Loading } from "../App";
 import { useTenantPub } from "./useTenantPub";
 import { useApi } from "../app/ApiCtx";
@@ -114,6 +115,9 @@ function PlayerShell() {
         break;
       case "map":
         screen = <ArenaMap />;
+        break;
+      case "profile":
+        screen = <ProfilePlay key={view.gid} gid={view.gid} />;
         break;
       default:
         screen = <Lobby />;

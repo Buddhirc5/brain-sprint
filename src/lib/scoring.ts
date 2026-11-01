@@ -191,7 +191,7 @@ export const dqKey = (uid: string, gid: string) => `${uid}:${gid}`;
 
 export function validRuns(p: Player, dq?: Disqualified | null): Run[] {
   // certification exams are separate: they never add points, coins, levels or streak days
-  return Object.values(p.runs || {}).filter((r) => r.kind !== "cert" && !dq?.runs?.[dqKey(p.uid, r.gid)]);
+  return Object.values(p.runs || {}).filter((r) => r.kind !== "cert" && r.kind !== "profile" && !dq?.runs?.[dqKey(p.uid, r.gid)]);
 }
 
 export function statsOf(p: Player, dq?: Disqualified | null): Stats {
