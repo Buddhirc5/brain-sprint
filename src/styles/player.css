@@ -564,3 +564,23 @@
 .pf-hero .pf-pair b { color: var(--ink); }
 .pf-hero .pf-pair i { color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .pf-rays, .pf-float, .pf-spark { animation: none; } }
+
+/* ---------- lobby: small live button, profile card, light profile tiles ---------- */
+.live-pill { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 800; font-size: 13px; text-decoration: none; box-shadow: var(--shadow); white-space: nowrap; }
+.live-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); animation: live-pulse 1.6s ease-in-out infinite; }
+.pf-cta { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px; border-radius: var(--r-md); box-shadow: var(--shadow);
+  background: linear-gradient(120deg, #EFEBFF 0%, #E6F4FF 50%, #F3FFD6 100%); color: var(--ink); }
+.pf-cta .grow { flex: 1; min-width: 0; display: grid; }
+.pf-cta b { font-size: 16px; }
+.pf-cta small { color: var(--muted); font-weight: 600; font-size: 13px; }
+.pf-cta-icons { display: flex; flex: none; }
+.pf-cta-icons span { width: 32px; height: 32px; margin-left: -8px; border-radius: 10px; display: grid; place-items: center; background: #fff; box-shadow: 0 2px 6px rgba(22,21,18,.12); }
+.pf-cta-icons span:first-child { margin-left: 0; }
+.pf-tile { background: #fff; color: var(--ink); }
+.pf-tile::after { background: radial-gradient(closest-side, rgba(124,92,255,.18), transparent); }
+.pf-tile.done { background: linear-gradient(140deg, #EFEBFF, #fff 70%); }
+.pf-tile small { color: var(--muted); }
+.pf-tile-icons span { background: #f4f3ee; }
+.pf-tile .mini-go { color: #7C5CFF; }
+.pf-cta .btn { background: #7C5CFF; color: #fff; box-shadow: 0 4px 0 #5a3fd6; }
+.pf-cta-icons span { width: 28px; height: 28px; }

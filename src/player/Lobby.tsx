@@ -99,6 +99,12 @@ export function Lobby() {
       <div className="topbar">
         <span className="pill">{me.unit}</span>
         <span className="grow" />
+        {features.live && (
+          <a className="live-pill" href="#/join" aria-label="Join a live game with a PIN">
+            <span className="dot" aria-hidden="true" />
+            Join live
+          </a>
+        )}
         {features.coins && (
           <span className="pill num" data-coin-target title="Coins">
             <span className="coin-ic" />
@@ -196,18 +202,7 @@ export function Lobby() {
         </button>
       )}
 
-      {features.live && (
-        <a className="live-cta" href="#/join">
-          <span className="dot" aria-hidden="true" />
-          <span className="grow">
-            <b>Join a live game</b>
-            <small>Got a game PIN from your host? Jump in.</small>
-          </span>
-          <span className="btn lime small" aria-hidden="true">
-            Join
-          </span>
-        </a>
-      )}
+      {profiles.length > 0 && <ProfileCta games={profiles} mine={mineP} />}
 
       {certTodo > 0 && (
         <button type="button" className="cert-cta" onClick={() => go({ v: "certs" })}>
@@ -381,6 +376,33 @@ function StoryCover({ g, n }: { g: Game; n: number }) {
       <small>
         {g.questions[0]?.topic} · {steps.length} pages
       </small>
+    </button>
+  );
+}
+
+/** Lobby card: discover your profile (the next one not taken), or see the one you got. */
+function ProfileCta({ games, mine }: { games: Game[]; mine: Record<string, ProfileResult> }) {
+  const { go } = useApp();
+  const next = games.find((g) => !mine[g.id]);
+  const g = next || games[0];
+  const r = next ? undefined : mine[g.id];
+  const meta = g.profile!;
+  const t = r ? typeOf(meta, r) : null;
+  const icons = r ? r.top : meta.traits.map((_, i) => i).slice(0, 5);
+  return (
+    <button type="button" className={`pf-cta ${r ? "done" : ""}`} onClick={() => go({ v: "profile", gid: g.id })}>
+      <span className="pf-cta-icons" aria-hidden="true">
+        {icons.map((i, k) => (
+          <span key={i} style={{ color: TRAIT_COLORS[i % 6], transform: `rotate(${(k - (icons.length - 1) / 2) * 8}deg)` }}>
+            <ProfileIcon name={meta.traits[i].icon} size={20} />
+          </span>
+        ))}
+      </span>
+      <span className="grow">
+        <b>{t ? `You're ${t.name}` : g.title}</b>
+        <small>{t ? `Like a ${t.role} · see your profile` : `${g.questions.length} quick questions · find your type`}</small>
+      </span>
+      <span className="btn primary small" aria-hidden="true">{r ? "View" : "Start"}</span>
     </button>
   );
 }
