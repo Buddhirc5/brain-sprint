@@ -146,7 +146,7 @@ export function ProfileReport({ g }: { g: Game }) {
 
       {view && (
         <Modal label={`${d.players[view.uid]?.name}'s profile`} onClose={() => setView(null)} className="pf-admin-modal">
-          <ProfileResultView g={g} r={view.result} admin={{ name: d.players[view.uid]?.name || "Player", onClose: () => setView(null) }} />
+          <ProfileResultView g={g} r={view.result} admin={{ name: d.players[view.uid]?.name || "Player", player: d.players[view.uid], onClose: () => setView(null) }} />
         </Modal>
       )}
     </>

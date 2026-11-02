@@ -5,7 +5,8 @@ import { useApp } from "../app/ctx";
 import { errMsg } from "../app/ApiCtx";
 import { ProfileIcon, TRAIT_COLORS, iconPath } from "../components/ProfileIcon";
 import { typeOf, whyLines } from "../lib/profile";
-import type { Game, ProfileMeta, ProfileResult } from "../types";
+import type { Game, Player, ProfileMeta, ProfileResult } from "../types";
+import { Kit } from "../components/Companions";
 import { TopBar } from "./common";
 
 export function ProfilePlay({ gid }: { gid: string }) {
@@ -162,8 +163,9 @@ function Radar({ meta, r }: { meta: ProfileMeta; r: ProfileResult }) {
   );
 }
 
-export function ProfileResultView({ g, r, admin }: { g: Game; r: ProfileResult; admin?: { name: string; onClose: () => void } }) {
+export function ProfileResultView({ g, r, admin }: { g: Game; r: ProfileResult; admin?: { name: string; player?: Player; onClose: () => void } }) {
   const { go, pub, me } = useApp();
+  const who = admin ? admin.player : me;
   const meta = g.profile!;
   const t = typeOf(meta, r);
   const [a, b] = r.top;
@@ -172,7 +174,7 @@ export function ProfileResultView({ g, r, admin }: { g: Game; r: ProfileResult; 
   const [shareMsg, setShareMsg] = useState("");
   const share = async (dl: boolean) => {
     const m = await import("../lib/profileCard");
-    const c = await m.drawProfileCard({ g, r, name: admin?.name || me?.name || "", company: pub.name, branding: pub.branding });
+    const c = await m.drawProfileCard({ g, r, name: admin?.name || me?.name || "", look: who?.look, equipped: who?.equipped, company: pub.name, branding: pub.branding });
     const file = `${t.name}.png`.replace(/[^a-z0-9.]+/gi, "-").toLowerCase();
     const aw = await import("../lib/awardCard");
     if (dl || !(await aw.shareCard(c, file, `I'm ${t.name} — ${g.title}`))) {
@@ -184,18 +186,28 @@ export function ProfileResultView({ g, r, admin }: { g: Game; r: ProfileResult; 
     <div className="phone pf">
       <TopBar title={admin ? admin.name : "Your profile"} back={admin ? admin.onClose : () => go({ v: "lobby" })} />
       <section className="pf-hero" style={{ ["--ca" as string]: TRAIT_COLORS[a % 6], ["--cb" as string]: TRAIT_COLORS[b % 6] }}>
-        <div className="pf-badges" aria-hidden="true">
-          <span className="pf-badge a"><ProfileIcon name={meta.traits[a].icon} size={34} /></span>
-          <span className="pf-badge b"><ProfileIcon name={meta.traits[b].icon} size={30} /></span>
+        <div className="pf-stage" aria-hidden="true">
+          <span className="pf-rays" />
+          <span className="pf-disc" />
+          {who && (
+            <span className="pf-char">
+              <Kit look={who.look} equipped={who.equipped} size={132} mood="happy" />
+            </span>
+          )}
+          <span className="pf-float a"><ProfileIcon name={meta.traits[a].icon} size={26} /></span>
+          <span className="pf-float b"><ProfileIcon name={meta.traits[b].icon} size={22} /></span>
+          <span className="pf-spark s1" />
+          <span className="pf-spark s2" />
+          <span className="pf-spark s3" />
         </div>
         <small className="pf-kicker">{admin ? `${admin.name} is` : "You're"}</small>
         <h1>{t.name}</h1>
         <p className="pf-role">Like a <b>{t.role}</b></p>
         <p className="pf-line">{t.line}</p>
         <div className="pf-pair">
-          <span><ProfileIcon name={meta.traits[a].icon} size={16} /> {meta.traits[a].name}</span>
+          <span style={{ color: TRAIT_COLORS[a % 6] }}><ProfileIcon name={meta.traits[a].icon} size={16} /> <b>{meta.traits[a].name}</b></span>
           <i>+</i>
-          <span><ProfileIcon name={meta.traits[b].icon} size={16} /> {meta.traits[b].name}</span>
+          <span style={{ color: TRAIT_COLORS[b % 6] }}><ProfileIcon name={meta.traits[b].icon} size={16} /> <b>{meta.traits[b].name}</b></span>
         </div>
       </section>
 
