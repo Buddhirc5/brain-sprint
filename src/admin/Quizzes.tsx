@@ -20,6 +20,7 @@ import { useAdmin } from "./Admin";
 import { BucketEdit, StoryEdit, SwipeEdit } from "./QTypeEditors";
 import { StoryEpisode } from "./StoryEditor";
 import { parseScript, SCRIPT_EXAMPLE } from "../lib/storyScript";
+import { ProfileEditor } from "./ProfileEditor";
 import { KIND } from "./common";
 
 const MAX_Q_HARD = 50; // backend limit
@@ -67,6 +68,15 @@ export function Quizzes() {
     run(async () => {
       const key = d.keys[g.id];
       if (!key) throw new Error("This quiz has no answer key to copy.");
+      if (g.kind === "profile") {
+        // profile questions copy as they are: same weights under new question ids
+        const id = newId("g-");
+        const now = Date.now();
+        const qs = g.questions.map((q) => ({ ...q, id: newId("q") }));
+        const ng: Game = { ...g, id, title: `${g.title} (copy)`.slice(0, 60), status: "draft", questions: qs, createdAt: now, updatedAt: now, createdBy: undefined, editedBy: undefined, approvedBy: undefined };
+        await api.saveQuiz(tid, { game: ng, key: { gid: id, answers: Object.fromEntries(qs.map((q, i) => [q.id, key.answers[g.questions[i].id]])), updatedAt: now } });
+        return;
+      }
       const sealed = g.questions.map((q) => sealQuestion({ ...unseal(q, key.answers[q.id]), id: newId("q") }));
       const id = newId("g-");
       const now = Date.now();
@@ -88,7 +98,7 @@ export function Quizzes() {
         </button>
       </div>
       <div className="chips-row" role="group" aria-label="Filter by type">
-        {(["all", "sprint", "story", "cert", "live"] as const).map((k) => (
+        {(["all", "sprint", "story", "profile", "cert", "live"] as const).map((k) => (
           <button key={k} className={`chip-tg ${kind === k ? "on" : ""}`} aria-pressed={kind === k} onClick={() => setKind(k)}>
             {k === "all" ? "All" : KIND[k].label} <span className="sub num">{k === "all" ? all.length : count(k)}</span>
           </button>
@@ -121,7 +131,7 @@ export function Quizzes() {
                       <span className={`st ${st.key}`}>{k === "live" ? (g.status === "draft" ? "Draft" : "Ready") : st.label}</span>
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 700 }}>
-                      {k === "live" ? `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${liveSecs < 60 ? `${liveSecs}s` : `${Math.floor(liveSecs / 60)}:${String(liveSecs % 60).padStart(2, "0")} min`}` : <>{g.date ? (g.date === t ? "Today" : fmtDate(g.date)) : "No date"} · {untimed(g) ? "no timer" : fmtMin(limitMs(g) / 60000)}</>}
+                      {k === "live" ? `${g.questions.length} question${g.questions.length === 1 ? "" : "s"} · ${liveSecs < 60 ? `${liveSecs}s` : `${Math.floor(liveSecs / 60)}:${String(liveSecs % 60).padStart(2, "0")} min`}` : <>{g.date ? (g.date === t ? "Today" : fmtDate(g.date)) : "No date"} · {k === "profile" || untimed(g) ? "no timer" : fmtMin(limitMs(g) / 60000)}</>}
                     </span>
                   </div>
                   <h3>{g.title}</h3>
@@ -138,6 +148,11 @@ export function Quizzes() {
                       <>
                         <div><b className="num">{d.live.filter((s) => s.gid === g.id).length}</b>sessions</div>
                         <div><b className="num">{g.questions.length ? Math.round(liveSecs / g.questions.length) : 0}s</b>per question</div>
+                      </>
+                    ) : k === "profile" ? (
+                      <>
+                        <div><b className="num">{g.profile?.traits.length || 0}</b>traits</div>
+                        <div><b className="num">{g.profile?.types.length || 0}</b>profiles</div>
                       </>
                     ) : (
                       <>
@@ -184,7 +199,7 @@ export function Quizzes() {
         )}
       </div>
       {picker && <KindPicker onClose={() => setPicker(false)} onPick={(k) => { setPicker(false); setTab("edit", "new:" + k); }} />}
-      {packs && <StarterPacks kinds={["sprint", "story", "cert", "live", "poll"]} onClose={() => setPacks(false)} />}
+      {packs && <StarterPacks kinds={["sprint", "profile", "story", "cert", "live", "poll"]} onClose={() => setPacks(false)} />}
     </>
   );
 }
@@ -196,7 +211,7 @@ function KindPicker({ onClose, onPick }: { onClose: () => void; onPick: (k: Quiz
       <div className="stack">
         <h3>What kind of quiz?</h3>
         <div className="kind-grid">
-          {(["sprint", "story", "cert", "live"] as const).map((k) => {
+          {(["sprint", "story", "profile", "cert", "live"] as const).map((k) => {
             const off = !features[KIND[k].feature];
             return (
               <button key={k} type="button" className="kind-opt" disabled={off} onClick={() => onPick(k)}>
@@ -230,6 +245,12 @@ interface Form {
 }
 
 export function Editor({ gid }: { gid?: string }) {
+  const { d } = useApp();
+  const profile = gid === "new:profile" || (!!gid && d.games[gid]?.kind === "profile");
+  return profile ? <ProfileEditor gid={gid} /> : <QuizEditor gid={gid} />;
+}
+
+function QuizEditor({ gid }: { gid?: string }) {
   const { d, api, tid, approve, toast, features } = useApp();
   const { setTab } = useAdmin();
   const isNew = !gid || gid.startsWith("new:");

@@ -13,11 +13,11 @@ import { shuffle } from "./util";
 
 export const TYPE_LABEL: Record<QType, string> = {
   mcq: "Pick one", tf: "True or false?", match: "Match the pairs", order: "Put in order",
-  swipe: "Swipe to sort", bucket: "Sort into buckets", story: "Case study",
+  swipe: "Swipe to sort", bucket: "Sort into buckets", story: "Case study", pick: "Pick what fits you",
 };
 export const TYPE_NAME: Record<QType, string> = {
   mcq: "Multiple choice", tf: "True / False", match: "Match pairs", order: "Put in order",
-  swipe: "Swipe sort", bucket: "Buckets", story: "Case study",
+  swipe: "Swipe sort", bucket: "Buckets", story: "Case study", pick: "Profile question",
 };
 /** Question types that score partially (a share of the points for a share right). */
 export const PARTIAL: QType[] = ["swipe", "bucket", "story"];

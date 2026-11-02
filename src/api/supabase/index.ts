@@ -13,7 +13,7 @@ import {
 import type {
   AdminMember, AuditEntry, Branding, Disqualified, Equipped, Game, Gift, Labels, LibraryItem, LiveHostView,
   LiveSession, OrgConfig, Player, Poll, PollResponse, PollValue, Role, Roster, Run, SlideResults, Slide, Tenant, TenantPublic,
-  TenantUsage, UnitType, PushMsg, PushOverview, PushSub,
+  TenantUsage, UnitType, PushMsg, PushOverview, PushSub, ProfileResult,
 } from "../../types";
 import { aggregate } from "../engine";
 import { authError, fromPayload, isErrPayload, toApiError } from "./errors";
@@ -400,6 +400,19 @@ class SupabaseApi implements Api {
   }
   async adminDeletePlayer(tenantId: string, uid: string) {
     await this.adminCall<void>(tenantId, "admin_delete_player", { p_uid: uid });
+  }
+  async profileSubmit(tenantId: string, gid: string, choices: number[]) {
+    return this.rpc<ProfileResult>("profile_submit", { p_tid: tenantId, p_gid: gid, p_choices: choices });
+  }
+  async profileMine(tenantId: string) {
+    if (!this.session) return {};
+    return this.rpc<Record<string, ProfileResult>>("profile_mine", { p_tid: tenantId });
+  }
+  async profileResults(tenantId: string, gid: string) {
+    return this.rpc<{ uid: string; at: number; result: ProfileResult }[]>("profile_results", { p_tid: tenantId, p_gid: gid });
+  }
+  async profileReset(tenantId: string, gid: string, uid: string) {
+    await this.rpc<void>("profile_reset", { p_tid: tenantId, p_gid: gid, p_uid: uid });
   }
   async adminResetRun(tenantId: string, uid: string, runKey: string) {
     await this.adminCall<void>(tenantId, "admin_reset_run", { p_uid: uid, p_key: runKey });

@@ -14,11 +14,14 @@ import { AppCard } from "./AppCard";
 import { AwardModal, AwardTile, awardWho, isMine } from "../components/Award";
 import { Seg } from "../components/ui";
 import { LS } from "../lib/util";
-import type { Gift } from "../types";
+import type { Gift, ProfileResult } from "../types";
+import { ProfileIcon, TRAIT_COLORS } from "../components/ProfileIcon";
+import { typeOf } from "../lib/profile";
 
 export function Lobby() {
   const { me, stats, d, go, players, features, labels, pub } = useApp();
-  const [tab, setTab] = useState<"play" | "done" | "stories" | null>(null);
+  const [tab, setTab] = useState<"play" | "done" | "stories" | "profiles" | null>(null);
+  const [mineP, setMineP] = useState<Record<string, ProfileResult>>({});
   const [allDone, setAllDone] = useState(false);
   const [, setSeen] = useState(0); // bumped when a new win has been shown
   const [award, setAward] = useState<{ g: Gift; celebrate?: boolean } | null>(null);
@@ -32,6 +35,11 @@ export function Lobby() {
     else setTimeout(load, 2500);
   }, []);
   const all = useMemo(() => sortGames(Object.values(d.games)), [d.games]);
+  const { api, tid } = useApp();
+  const hasProfiles = all.some((g) => g.kind === "profile");
+  useEffect(() => {
+    if (hasProfiles) api.profileMine(tid).then(setMineP, () => undefined);
+  }, [api, tid, hasProfiles]);
   const sprints = features.sprint ? all.filter((g) => g.kind === "sprint") : [];
   const stories = features.sprint ? all.filter((g) => g.kind === "story" && isOpen(g, todayKey())) : [];
   const certs = features.cert ? all.filter((g) => g.kind === "cert" && (g.status === "live" || g.status === "closed")) : [];
@@ -56,10 +64,12 @@ export function Lobby() {
     setAward(null);
     setSeen((n) => n + 1); // re-render: the next unseen win (if any) shows
   };
+  const profiles = all.filter((g) => g.kind === "profile" && g.profile && isOpen(g, t));
   const toPlay = catchUp.length + soon.length;
-  const tabs: [("play" | "done" | "stories"), string][] = [];
+  const tabs: [("play" | "done" | "stories" | "profiles"), string][] = [];
   if (toPlay) tabs.push(["play", `To play${catchUp.length ? ` · ${catchUp.length}` : ""}`]);
   if (stories.length) tabs.push(["stories", `Stories · ${stories.length}`]);
+  if (profiles.length) tabs.push(["profiles", "Profiles"]);
   if (done.length) tabs.push(["done", `Done · ${done.length}`]);
   const cur = tab && tabs.some(([k]) => k === tab) ? tab : tabs[0]?.[0];
   const lv = s.level;
@@ -255,6 +265,13 @@ export function Lobby() {
               )}
             </>
           )}
+          {cur === "profiles" && (
+            <div className="mini-row" role="list">
+              {profiles.map((g) => (
+                <ProfileTile key={g.id} g={g} r={mineP[g.id]} />
+              ))}
+            </div>
+          )}
           {cur === "stories" && (
             <div className="sm-shelf">
               {stories.map((g, i) => (
@@ -364,6 +381,27 @@ function StoryCover({ g, n }: { g: Game; n: number }) {
       <small>
         {g.questions[0]?.topic} · {steps.length} pages
       </small>
+    </button>
+  );
+}
+
+/** A profile quiz in the sideways row: its trait icons, then your type once taken. */
+function ProfileTile({ g, r }: { g: Game; r?: ProfileResult }) {
+  const { go } = useApp();
+  const meta = g.profile!;
+  const t = r ? typeOf(meta, r) : null;
+  return (
+    <button type="button" role="listitem" className={`pf-tile ${r ? "done" : ""}`} onClick={() => go({ v: "profile", gid: g.id })} aria-label={t ? `${g.title}: you're ${t.name}` : `Take ${g.title}`}>
+      <span className="pf-tile-icons" aria-hidden="true">
+        {(r ? r.top : meta.traits.map((_, i) => i).slice(0, 5)).map((i) => (
+          <span key={i} style={{ color: TRAIT_COLORS[i % 6] }}>
+            <ProfileIcon name={meta.traits[i].icon} size={r ? 22 : 18} />
+          </span>
+        ))}
+      </span>
+      <b>{t ? t.name : g.title}</b>
+      <small>{t ? `Like a ${t.role}` : `${g.questions.length} questions · find your type`}</small>
+      <span className="mini-go">{r ? "See my profile →" : "Discover →"}</span>
     </button>
   );
 }

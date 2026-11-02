@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ProfileReport } from "./ProfileReport";
 import { useApp } from "../app/ctx";
 import { Modal } from "../components/ui";
 import { analyze, scope } from "../lib/analytics";
@@ -51,6 +52,26 @@ export function ResultsAdmin() {
       run: () => api.adminResetRun(tid, p.uid, key),
     });
 
+  const picker = (
+    <select className="sel" value={gid} onChange={(e) => setGid(e.target.value)} aria-label="Quiz">
+      {(["sprint", "story", "cert", "profile"] as const).map((k) => {
+        const list = gs.filter((x) => (x.kind || "sprint") === k);
+        return list.length ? (
+          <optgroup key={k} label={KIND[k].label}>
+            {list.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+          </optgroup>
+        ) : null;
+      })}
+    </select>
+  );
+  if (g?.kind === "profile" && g.profile)
+    return (
+      <>
+        <div className="toolbar"><h1>Results</h1>{picker}</div>
+        <ProfileReport key={g.id} g={g} />
+      </>
+    );
+
   if (!gs.length)
     return (
       <>
@@ -73,16 +94,7 @@ export function ResultsAdmin() {
     <>
       <div className="toolbar">
         <h1>Results</h1>
-        <select className="sel" value={gid} onChange={(e) => setGid(e.target.value)} aria-label="Quiz">
-          {(["sprint", "story", "cert"] as const).map((k) => {
-            const list = gs.filter((x) => (x.kind || "sprint") === k);
-            return list.length ? (
-              <optgroup key={k} label={KIND[k].label}>
-                {list.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
-              </optgroup>
-            ) : null;
-          })}
-        </select>
+        {picker}
         {g && <button className="btn primary small" onClick={() => exportCSV(`${slugify(pub.slug)}-${slugify(g.title)}-${dayKey(Date.now())}.csv`, `results for ${g.title}`, quizReport(rctx, g.id))}>Export this quiz (CSV)</button>}
         <button className="btn ghost small" onClick={() => exportCSV(`${slugify(pub.slug)}-all-answers-${dayKey(Date.now())}.csv`, "every answer", answersReport(rctx))}>Every answer (CSV)</button>
       </div>

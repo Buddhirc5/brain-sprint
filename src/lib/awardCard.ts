@@ -28,7 +28,7 @@ export function awardTitle(g: Gift) {
   return r === 1 ? "Champion" : `#${r} of the week`;
 }
 
-async function character(look: number, eq: Equipped | undefined, W: number): Promise<CanvasImageSource | null> {
+export async function character(look: number, eq: Equipped | undefined, W: number): Promise<CanvasImageSource | null> {
   const H = Math.round(W * 1.4);
   const c = document.createElement("canvas");
   c.width = W;

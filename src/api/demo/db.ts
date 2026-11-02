@@ -47,6 +47,8 @@ export interface DB {
   joinKeys?: Record<string, { key: string; required: boolean; rotatedAt: number }>; // tenant id → private invite key
   joinPasses?: Record<string, number>; // "tid:userId" → when the key was accepted
   rate: Record<string, { n: number; until: number }>;
+  /** profile quizzes: tenant id → quiz id → player uid → result (private: the player and admins) */
+  profiles?: Record<string, Record<string, Record<string, { at: number; choices: number[]; result: import("../../types").ProfileResult }>>>;
   /** phone notifications: devices that turned them on, what admins sent, and the demo's delivery queue */
   push?: {
     subs: Record<string, { endpoint: string; uid: string; at: number }[]>; // tenant id → devices

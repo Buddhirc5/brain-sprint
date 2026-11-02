@@ -9,11 +9,13 @@ import { blankPoll, LIVE } from "../api/engine";
 import { STARTER_PACKS, type PackQ, type QuizPack, type StarterPack, type StoryPack } from "../data/starterPacks";
 import { parseScript } from "../lib/storyScript";
 import { todayKey } from "../lib/util";
+import { PROFILE_PACKS } from "../data/profilePacks";
+import { parseProfileScript, profileDraft } from "../lib/profile";
 import type { AnswerKey, Game, LibraryItem, Poll } from "../types";
 
 const KIND_LABEL: Record<StarterPack["kind"], string> = { cert: "Certification", live: "Live quiz", poll: "Live poll", story: "Story Mode" };
-type Tab = "sprint" | StarterPack["kind"];
-const TAB_LABEL: Record<Tab, string> = { sprint: "Daily sprints", story: "Story Mode", cert: "Certifications", live: "Live quizzes", poll: "Live polls" };
+type Tab = "sprint" | "profile" | StarterPack["kind"];
+const TAB_LABEL: Record<Tab, string> = { sprint: "Daily sprints", profile: "Profile quizzes", story: "Story Mode", cert: "Certifications", live: "Live quizzes", poll: "Live polls" };
 
 function toDraft(q: PackQ, i: number, topic: string, live: boolean): DraftQ {
   const base = { id: `q${i + 1}-${randHex(3)}`, topic, explain: "", options: ["", "", "", ""], answer: 0, tf: true, pairs: [], steps: [], ...(live ? { seconds: LIVE.defaultSeconds } : {}) };
@@ -74,7 +76,7 @@ export function StarterPacks({ kinds, onClose }: { kinds: Tab[]; onClose: () => 
             ))}
           </div>
         )}
-        {tab === "sprint" ? <LibraryList ind={ind} onClose={onClose} /> : <PackGrid kind={tab} ind={ind} onClose={onClose} />}
+        {tab === "sprint" ? <LibraryList ind={ind} onClose={onClose} /> : tab === "profile" ? <ProfileGrid ind={ind} onClose={onClose} /> : <PackGrid kind={tab} ind={ind} onClose={onClose} />}
       </div>
     </Modal>
   );
@@ -124,6 +126,51 @@ function PackGrid({ kind, ind, onClose }: { kind: StarterPack["kind"]; ind: "all
       ) : (
         <p className="fine">Nothing here for this filter.</p>
       )}
+      <div className="row end">
+        <button type="button" className="btn ghost small" onClick={onClose}>Done</button>
+      </div>
+    </>
+  );
+}
+
+/** Profile quizzes (personality / work style): added as drafts from their scripts. */
+function ProfileGrid({ ind, onClose }: { ind: "all" | "bank" | "any"; onClose: () => void }) {
+  const { api, tid, run, toast, features } = useApp();
+  const [busy, setBusy] = useState("");
+  const packs = PROFILE_PACKS.filter((p) => ind === "all" || p.industry === ind);
+  const add = async (id: string) => {
+    const p = PROFILE_PACKS.find((x) => x.id === id)!;
+    setBusy(id);
+    const ok = await run(async () => {
+      const parsed = parseProfileScript(p.script);
+      if (!parsed.data) throw new Error(parsed.errors[0] || "This pack couldn't be read.");
+      await api.saveQuiz(tid, profileDraft(parsed.data, { status: "draft" }));
+      return true;
+    });
+    setBusy("");
+    if (ok) toast(`“${p.title}” added as a draft — review it, then publish`);
+  };
+  return (
+    <>
+      <div className="sp-grid">
+        {packs.map((p) => {
+          const n = (p.script.match(/^(Q\*?|Scale):/gm) || []).length;
+          return (
+            <article key={p.id} className="sp-card k-profile">
+              <div className="sp-top">
+                <span className="sp-kind">Profile quiz</span>
+                <span className={`chip ${p.industry === "bank" ? "bank" : ""}`}>{p.industry === "bank" ? "Banking" : "General"}</span>
+              </div>
+              <b className="sp-title">{p.title}</b>
+              <span className="fine">{p.desc}</span>
+              <span className="fine num">{n} questions · 10 profiles</span>
+              <button type="button" className="btn primary small" disabled={!!busy || !features.sprint} onClick={() => void add(p.id)}>
+                {busy === p.id ? "Adding…" : features.sprint ? "Add as draft" : "Turned off in Settings"}
+              </button>
+            </article>
+          );
+        })}
+      </div>
       <div className="row end">
         <button type="button" className="btn ghost small" onClick={onClose}>Done</button>
       </div>

@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import type { Api } from "../api/Api";
 
-const WRITE = /^(save|set|delete|remove|admin|import|invite|purge|buy|updateMyCard|pushSend|pushGift|liveCreate|liveControl|liveDelete|pollControl|qaModerate|joinKeySet|superCreate|superUpdate|superDelete|superInvite|superSave|superReset|changeMyPassword)/;
+const WRITE = /^(save|set|delete|remove|admin|import|invite|purge|buy|updateMyCard|pushSend|pushGift|liveCreate|liveControl|liveDelete|pollControl|qaModerate|joinKeySet|superCreate|superUpdate|superDelete|superInvite|superSave|superReset|changeMyPassword|profileReset)/;
 const VERB: [RegExp, string][] = [
   [/^(delete|remove|purge|liveDelete|superDelete)/, "Deleting"],
+  [/^profileReset/, "Resetting"],
   [/^(push|invite|superInvite)/, "Sending"],
   [/^(import)/, "Importing"],
   [/^(liveCreate|superCreate)/, "Creating"],
