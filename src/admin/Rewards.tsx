@@ -7,6 +7,7 @@ import { monthStart, newId, pct, weekStart } from "../lib/util";
 import type { Gift } from "../types";
 import { useScan } from "./useScan";
 import { useLiveTenant } from "./common";
+import { periodWord } from "../lib/awards";
 import { AwardModal, awardWho } from "../components/Award";
 import { pubName } from "../player/common";
 
@@ -139,7 +140,7 @@ export function Rewards() {
               {issued.map((g) => (
                 <tr key={g.id}>
                   <td>{g.period}</td>
-                  <td>{g.kind === "weekly" ? "Top players" : g.kind === "improved" ? "Most improved" : `${labels.branch} / ${labels.dept}`}</td>
+                  <td>{g.kind === "weekly" ? `Top players (${periodWord(g)})` : g.kind === "improved" ? "Most improved" : `${labels.branch} / ${labels.dept}`}</td>
                   <td><b>{g.winner.startsWith("unit:") ? g.winner.slice(5) : d.players[g.winner]?.name || "Former player"}</b></td>
                   <td>{g.label}</td>
                   <td>{g.prize}</td>
