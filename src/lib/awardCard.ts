@@ -20,13 +20,8 @@ export interface CardInput {
   branding: Branding;
 }
 
-const TITLE: Record<Gift["kind"], string> = { weekly: "Champion", improved: "Most improved", branch: "Team champion" };
-/** "Champion" for #1, "#2 of the week" for the others; team and most improved by kind. */
-export function awardTitle(g: Gift) {
-  if (g.kind !== "weekly") return TITLE[g.kind];
-  const r = Number(/#(\d+)/.exec(g.label)?.[1] || 1);
-  return r === 1 ? "Champion" : `#${r} of the week`;
-}
+export { awardTitle } from "./awards";
+import { awardTitle } from "./awards";
 
 export async function character(look: number, eq: Equipped | undefined, W: number): Promise<CanvasImageSource | null> {
   const H = Math.round(W * 1.4);

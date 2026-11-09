@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Branding, Gift, Player } from "../types";
 import { Modal, confetti } from "./ui";
 import { Chibi } from "./Chibi";
+import { awardShort } from "../lib/awards";
 
 export interface AwardWho {
   name: string;
@@ -18,12 +19,7 @@ export const awardWho = (g: Gift, players: Record<string, Player>, pubName: (p?:
 /** Is this award the given player's (their own win, or a win for their branch / department)? */
 export const isMine = (g: Gift, me?: Player) => !!me && (g.winner === me.uid || g.winner === `unit:${me.unit}`);
 
-const TITLE: Record<Gift["kind"], string> = { weekly: "Champion", improved: "Most improved", branch: "Team champion" };
-const shortTitle = (g: Gift) => {
-  if (g.kind !== "weekly") return TITLE[g.kind];
-  const r = Number(/#(\d+)/.exec(g.label)?.[1] || 1);
-  return r === 1 ? "Champion" : `#${r} this week`;
-};
+const shortTitle = awardShort;
 
 /** The compact tile shown in the Hall of Fame row. */
 export function AwardTile({ g, who, mine, onOpen }: { g: Gift; who: AwardWho; mine: boolean; onOpen: () => void }) {
